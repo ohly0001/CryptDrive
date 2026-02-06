@@ -8,11 +8,45 @@
     </head>
     <body>
         <h1>CryptDrive</h1>
-        <h2>Password Keeper</h2>
+        <h2>Profile Manager</h2>
         <div>
-            <button>Add Password</button>
+            <form>
+                <fieldset>
+                    <legend>Switch Profile</legend>
+                    <select name="profiles" id="profiles">
+                        <option value="test 1">Test 1</option>
+                        <option value="test 2">Test 2</option>
+                        <option value="test 3">Test 3</option>
+                    </select>
+                    <input type="submit" value="⇄" title="Switch Profile">
+                </fieldset>
+            </form>
         </div>
+        <h2>Password Keeper</h2>
         <div id="passwordContainer">
+            <form>
+                <fieldset>
+                    <legend>Add Password</legend>
+                    <label for="savedUrl">URL</label><br>
+                    <input id="savedUrl" type="url" placeholder="https://example.com" size="30" required><br><br>
+                    <label for="savedUser">Username</label><br>
+                    <input id="savedUser" type="email" placeholder="abc@email.com" required><br><br>
+                    <label for="savedPassword">Password</label><br>
+                    <input id="savedPassword" type="text"><br><br>
+                    <input type="submit" value="Save">
+                </fieldset>
+            </form>
+            <form>
+                <fieldset>
+                    <legend>Filter Passwords</legend>
+                    <select name="profiles" id="profiles">
+                        <option value="test 1">Test 1</option>
+                        <option value="test 2">Test 2</option>
+                        <option value="test 3">Test 3</option>
+                    </select>
+                    <input type="submit">
+                </fieldset>
+            </form>
         </div>
         <h2>File Keeper</h2>
 

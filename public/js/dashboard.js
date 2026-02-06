@@ -18,6 +18,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    fetch('/passwords/pull', {
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' } 
+    }).then(
+        
+    );
+
     const passwordData = [
         {url: 'algonquincollege.com', username: 'ohly0001', password: 'pass'}, 
         {url: 'reddit.com', username: 'hjuldahr', password: '1234'}, 
@@ -64,8 +71,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     const navHere = document.getElementById('navHere');
-    navHere.href = '/api/drive/view?dir=.';
+    //navHere.href = '/api/drive/view?dir=.';
 
     const navUp = document.getElementById('navUp');
-    navUp.href = '/api/drive/view?dir=..';
+    //navUp.href = '/api/drive/view?dir=..';
 });

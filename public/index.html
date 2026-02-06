@@ -1,17 +1,42 @@
 <!DOCTYPE html>
 <html>
-    <header>
-        <title>Access your Drive</title>
+    <head>
+        <title>CryptDrive Authentication</title>
         <script src="js/index.js" defer></script>
-    </header>
+    </head>
     <body>
-        <form id="connectForm">
-            <label>
-                Please Enter your Private Key<br>
-                <input id="privateKeyTF" type="text">
-            </label>
-            <br><br>
-            <input type="submit" value="Connect to your Drive">
+        <h1>CryptDrive</h1>
+        <form id="loginForm">
+            <fieldset>
+                <legend>Login</legend>
+                <label>
+                    Email<br>
+                    <input id="loginEmail" type="email" placeholder="abc@mail.dom" required>
+                </label><br><br>
+                <label>
+                   Password<br>
+                    <input id="loginPassword" type="password">
+                </label><br><br>
+                <input type="submit" value="Login" required>
+            </fieldset>
+        </form>
+        <form id="registerForm">
+            <fieldset>
+                <legend>Register</legend>
+                <label>
+                    Email<br>
+                    <input id="registerEmail" type="email" placeholder="abc@mail.dom" required>
+                </label><br><br>
+                <label>
+                    Password<br>
+                    <input id="registerPassword1" type="password" required>
+                </label><br>
+                <label>
+                    Confirm Password<br>
+                    <input id="registerPassword2" type="password" required>
+                </label><br><br>
+                <input type="submit" value="Register">
+            </fieldset>
         </form>
     </body>
 </html>

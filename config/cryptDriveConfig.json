@@ -1,0 +1,4 @@
+{
+    "minPasswordSize": 12,
+    "passwordSaltRounds": 12
+}

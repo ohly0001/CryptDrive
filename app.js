@@ -1,119 +1,121 @@
-import express from "express";
-import dotenv from "dotenv";
-import path from "path";
-import { fileURLToPath } from "url";
-import session from "express-session";
-import MongoStore from "connect-mongo";
-import mongoose from "mongoose";
-import cookieParser from "cookie-parser";
+import cookieParser from 'cookie-parser';
+import dotenv from 'dotenv';
+import express from 'express';
+import configurePassport from './config/passportConfigurator.js';
+import mongoose from 'mongoose';
+import MongoStore from 'connect-mongo';
+import passport from 'passport';
+import path from 'path';
+import rootRouter from './routers/rootRouter.js';
+import session from 'express-session';
+import { connectDB, initializeDB } from './config/database.js';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
+configurePassport(passport);
 
-// __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 export const PROJECT_ROOT = __dirname;
 
-const PORT = process.env.PORT || 2121;
+const PORT = process.env.PORT || 8000;
+const HOST = process.env.HOST || 'localhost';
 
-let server;
-let shuttingDown = false;
+let isShuttingDown = false;
 
-async function startServer() {
+const startServer = async () => {
     const app = express();
 
-    app.use((req, res, next) => {
-        if (shuttingDown) {
-            res.set("Connection", "close");
-            return res.sendStatus(503);
-        }
-        next();
-    });
+    // --- Static files ---
+    app.use('/private', express.static(path.join(PROJECT_ROOT, 'private')));
+    app.use(express.static(path.join(PROJECT_ROOT, 'public')));
 
-    /* ---------- Static + Parsers ---------- */
-    app.use(express.static(path.join(PROJECT_ROOT, "public")));
-    app.use("/cms", express.static(path.join(process.cwd(), "cms")));
+    // --- Body parsing & cookies ---
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
     app.use(cookieParser());
 
-    /* ---------- Sessions ---------- */
-    app.use(
-        session({
-            name: "dashboard.sid",
-            secret: process.env.SESSION_SECRET,
-            resave: false,
-            saveUninitialized: false,
-            store: MongoStore.create({
-                client: mongoose.connection.getClient(),
-            }),
-            cookie: {
-                maxAge: 1000 * 60 * 60 * 24,
-            },
-        })
-    );
+    // --- Sessions ---
+    app.use(session({
+        name: 'cryptdrive',
+        secret: process.env.SESSION_SECRET,
+        resave: false,
+        saveUninitialized: false,
+        store: MongoStore.create({
+            mongoUrl: process.env.MONGO_URL
+        }),
+        cookie: {
+            maxAge: 1000 * 60 * 60 * 24, // 1 day
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax'
+        }
+    }));
 
-    /* ---------- Auth ---------- */
+    // --- Passport ---
     app.use(passport.initialize());
     app.use(passport.session());
 
-    /* ---------- Views ---------- */
-    //app.set("views", path.join(PROJECT_ROOT, "views"));
-    //app.set("view engine", "ejs");
+    // --- Routers ---
+    app.use('/', rootRouter);
 
-    /* ---------- Swagger ---------- */
-    const swaggerDocument = YAML.load(
-        path.join(__dirname, "./documentation/openapi.yml")
-    );
-    app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-
-    /* ---------- Server ---------- */
-    server = app.listen(PORT, () => {
-        console.log(`Server running on http://localhost:${PORT}`);
+    // --- Start HTTP server ---
+    const server = app.listen(PORT, () => {
+        console.log(`Server running at http://${HOST}:${PORT}`);
     });
-}
 
-/* ---------- Graceful Shutdown ---------- */
-const shutdown = async (signal) => {
-    if (shuttingDown) return;
-    shuttingDown = true;
-
-    console.log(`\n[${signal}] Shutting down...`);
-
-    const forceExitTimer = setTimeout(() => {
-        console.error("Force exit");
+    // --- Error handling ---
+    server.on('error', (err) => {
+        if (err.code === 'EADDRINUSE') {
+            console.error(`Port ${PORT} is already in use.`);
+        } else {
+            console.error('[Server Error]', err);
+        }
         process.exit(1);
-    }, 10_000);
+    });
 
-    try {
-        await new Promise((resolve, reject) => {
-            server.close(err => (err ? reject(err) : resolve()));
+    // --- Reject new connections during shutdown ---
+    server.on('connection', (socket) => {
+        if (isShuttingDown) {
+            socket.destroy();
+        }
+    });
+
+    // --- Graceful shutdown ---
+    const shutdown = async (signal) => {
+        if (isShuttingDown) return;
+        isShuttingDown = true;
+
+        console.log(`\n[Shutdown] Received [${signal}] - initiating shutdown.`);
+
+        // Fallback timer to force exit
+        const forceTimeout = setTimeout(() => {
+            console.error('[Shutdown] Grace period expired. Killing remaining connections.');
+            process.exit(0);
+        }, 5000);
+
+        // Close HTTP server
+        server.close(async () => {
+            clearTimeout(forceTimeout);
+            console.log('[Shutdown] HTTP server closed.');
+
+            // Disconnect from MongoDB
+            await mongoose.disconnect();
+            console.log('[Shutdown] MongoDB disconnected.');
+
+            process.exit(0);
         });
+    };
 
-        server.closeAllConnections?.();
-        server.closeIdleConnections?.();
-
-        await mongoose.disconnect();
-
-        clearTimeout(forceExitTimer);
-        process.exit(0);
-    } catch (err) {
-        console.error("Shutdown failed:", err);
-        clearTimeout(forceExitTimer);
-        process.exit(1);
-    }
+    process.on('SIGINT', shutdown);
+    process.on('SIGTERM', shutdown);
 };
 
-/* ---------- Signals ---------- */
-process.on("SIGINT", shutdown);
-process.on("SIGTERM", shutdown);
-
-/* ---------- Bootstrap ---------- */
-(async () => {
-    try {
-        await startServer();
-    } catch (err) {
-        console.error("Startup failure:", err);
-        process.exit(1);
-    }
-})();
+connectDB()
+.then(async () => {
+    await initializeDB();
+    startServer();
+})
+.catch((err) => {
+    console.error('[Startup Error] Failed to connect to database:', err);
+    process.exit(1);
+});

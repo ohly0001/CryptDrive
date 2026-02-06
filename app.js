@@ -26,8 +26,11 @@ let isShuttingDown = false;
 const startServer = async () => {
     const app = express();
 
+    // --- View engine ---
+    app.set('view engine', 'ejs');
+    app.set('views', path.join(PROJECT_ROOT, 'views'));
+
     // --- Static files ---
-    app.use('/private', express.static(path.join(PROJECT_ROOT, 'private')));
     app.use(express.static(path.join(PROJECT_ROOT, 'public')));
 
     // --- Body parsing & cookies ---

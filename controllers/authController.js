@@ -67,7 +67,7 @@ const logout = async (req, res, next) => {
 };
 
 const completed = async (req, res, next) => {
-    res.redirect(302, 'http://127.0.0.1:8000/dashPage.html');
+    res.json({ redirect: '/dash' });
 };
 
 export default {

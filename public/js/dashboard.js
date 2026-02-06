@@ -10,7 +10,7 @@ function refreshAutoHideCopyOptionContainer(copyOptionsContainer) {
 
 document.addEventListener('DOMContentLoaded', () => {
     // add sub headers for multiple passwords under the same url (multiple accounts)
-    const passwordContainer = document.getElementById('password_container');
+    const passwordContainer = document.getElementById('passwordContainer');
 
     function hideChildPasswordContainers(callingNode) {
         Array.from(passwordContainer.children).forEach((child) => {

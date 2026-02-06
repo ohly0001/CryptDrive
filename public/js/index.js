@@ -6,18 +6,19 @@ function processLoginForm(form) {
 
     fetch('/auth/login', {
         method: 'POST', 
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({email, password}), 
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }), 
     })
-    .then(response => {
-        if (!response.ok) {
-            alert("Email or Password not correct");
-            document.getElementById('loginPassword').value = "";
+    .then(res => res.json())
+    .then(data => {
+        if (data.redirect) {
+            window.location.href = data.redirect;
+        } else if (data.message) {
+            alert(data.message);
+            document.getElementById('loginPassword').value = '';
         }
-    })
-};
+    });
+}
 
 function processRegisterForm(form) {
     if (!form.reportValidity()) return;
@@ -57,16 +58,12 @@ function processRegisterForm(form) {
 document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('loginForm');
     loginForm.addEventListener('submit', (e) => {
-        console.log("submitted login"); //not visible
-
         e.preventDefault();
         processLoginForm(loginForm);
     });
 
     const registerForm = document.getElementById('registerForm');
     registerForm.addEventListener('submit', (e) => {
-        console.log("submitted register");
-
         e.preventDefault();
         processRegisterForm(registerForm);
     });

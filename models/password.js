@@ -54,5 +54,13 @@ PasswordSchema.methods.getDecryptedUsername = async function () {
     return decrypt(this.username, acc.decodeSecretKey());
 };
 
+AccountSchema.set('toJSON', {
+    transform: (doc, ret) => {
+        delete ret.password;
+        delete ret.username;
+        return ret;
+    }
+});
+
 const Password = mongoose.model('Password', PasswordSchema);
 export default Password;

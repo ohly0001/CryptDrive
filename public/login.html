@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>CryptDrive Authentication</title>
+        <script src="js/index.js" defer></script>
+    </head>
+    <body>
+        <h1>CryptDrive</h1>
+        <form id="loginForm">
+            <fieldset>
+                <legend>Login</legend>
+                <label for="loginEmail">Email</label><br>
+                <input id="loginEmail" type="email" placeholder="abc@email.com" required><br><br>
+                <label for="loginPassword">Password</label><br>
+                <input id="loginPassword" type="password" required><br><br>
+                <input id="rememberMe" type="checkbox">
+                <label>Remember Me?</label><br><br>
+                <input type="submit" value="Login"><br><br>
+                <a href="./resetpassword.html">Forgot Password?</a>
+            </fieldset>
+            <fieldset>
+                <legend>Other</legend>
+                <button onclick="document.location.href='./register.html'">Register</button>
+
+            </fieldset>
+        </form>
+    </body>
+</html>

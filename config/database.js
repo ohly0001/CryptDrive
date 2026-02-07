@@ -34,6 +34,7 @@ const seedRootAccount = async () => {
         const rootAccount = new Account({
             email: ROOT_ACCOUNT_EMAIL,
             password: ROOT_ACCOUNT_PASSWORD,
+            active: true
         });
 
         await rootAccount.save();

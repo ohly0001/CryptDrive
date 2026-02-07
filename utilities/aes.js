@@ -1,4 +1,4 @@
-import { createHash, randomBytes, createCipheriv, createDecipheriv } from 'crypto';
+import { createHash, randomBytes, createCipheriv, createDecipheriv, pbkdf2 } from 'crypto';
 const algorithm = 'aes-256-gcm';
 
 export function find_kek(password) {
@@ -41,25 +41,30 @@ export function decrypt(encryptedObject, secretKey) {
 }
 
 export function encrypt_obj(obj, secretKey) {
+    const res = {};
     for (const key in obj) {
-        if (obj.hasOwnProperty(key)) {
-            const value = obj[key];
-            obj[key] = (typeof value === 'object' && value !== null)
-                ? encrypt_obj(value, secretKey)
-                : encrypt(value, secretKey);
-        }
+        if (!obj.hasOwnProperty(key)) continue;
+        const value = obj[key];
+        res[key] = (typeof value === 'object' && value !== null)
+            ? encrypt_obj(value, secretKey)
+            : encrypt(value, secretKey);
     }
-    return obj;
+    return res;
 }
 
 export function decrypt_obj(obj, secretKey) {
+    const res = {};
     for (const key in obj) {
-        if (obj.hasOwnProperty(key)) {
-            const value = obj[key];
-            obj[key] = (typeof value === 'object' && value !== null)
-                ? decrypt_obj(value, secretKey)
-                : decrypt(value, secretKey);
-        }
+        if (!obj.hasOwnProperty(key)) continue;
+        const value = obj[key];
+        res[key] = (typeof value === 'object' && value !== null)
+            ? decrypt_obj(value, secretKey)
+            : decrypt(value, secretKey);
     }
-    return obj;
+    return res;
+}
+
+export async function generate_kek(password) {
+    const salt = 'cryptdrive-kek-salt';
+    return await pbkdf2(password, salt, 100_000, 32, 'sha256');
 }

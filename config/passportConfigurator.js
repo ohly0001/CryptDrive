@@ -12,6 +12,10 @@ function configurePassport() {
                 return done(null, false, { message: 'Invalid login credentials' });
             }
 
+            if (!account.active) {
+                return done(null, false, { message: 'Account is inactive' });
+            }
+
             const isMatch = await account.comparePassword(password);
             if (!isMatch) {
                 return done(null, false, { message: 'Invalid login credentials' });
@@ -30,7 +34,7 @@ function configurePassport() {
     passport.deserializeUser(async (id, done) => {
         try {
             const account = await Account.findById(id)
-                .select('-passwordHash') // remove sensitive info
+                .select('-password -secretKey') // remove sensitive info
                 .lean(); // return plain JS object
             done(null, account || false);
         } catch (err) {

@@ -1,4 +1,5 @@
 {
     "minPasswordSize": 12,
+    "maxPasswordSize": 99,
     "passwordSaltRounds": 12
 }

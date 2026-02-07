@@ -12,19 +12,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // add sub headers for multiple passwords under the same url (multiple accounts)
     const passwordContainer = document.getElementById('passwordContainer');
 
-    function hideChildPasswordContainers(callingNode) {
-        Array.from(passwordContainer.children).forEach((child) => {
-            child.getElementsByClassName('copy_options')[0].classList.add('hidden');
-        });
-    }
-
+    /*
     fetch('/passwords/pull', {
         method: 'POST', 
         headers: { 'Content-Type': 'application/json' } 
     }).then(
         
     );
-
+    */
     const passwordData = [
         {url: 'algonquincollege.com', username: 'ohly0001', password: 'pass'}, 
         {url: 'reddit.com', username: 'hjuldahr', password: '1234'}, 
@@ -69,6 +64,12 @@ document.addEventListener('DOMContentLoaded', () => {
         childPasswordContainer.appendChild(copyOptionsContainer);
         passwordContainer.appendChild(childPasswordContainer);
     });
+
+    function hideChildPasswordContainers(callingNode) {
+        Array.from(passwordContainer.children).forEach((child) => {
+            child.getElementsByClassName('copy_options')[0].classList.add('hidden');
+        });
+    }
     
     const navHere = document.getElementById('navHere');
     //navHere.href = '/api/drive/view?dir=.';

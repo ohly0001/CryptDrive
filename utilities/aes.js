@@ -1,56 +1,65 @@
-import { randomBytes, createCipheriv, createDecipheriv } from 'crypto';
-// For production, the key should be loaded from a secure environment variable
-// or key management system, not hardcoded.
-//const secretKey = crypto.randomBytes(32); 
+import { createHash, randomBytes, createCipheriv, createDecipheriv } from 'crypto';
 const algorithm = 'aes-256-gcm';
 
-function encrypt_obj(obj, secretKey) {
-    for (const key in user) {
-        if (obj.hasOwnProperty(key)) {
-            user[key] = typeof value === 'object' ? 
-            encrypt_obj(value, secretKey) : 
-            encrypt(user[key], secretKey);
-        }
-    }
-    return obj;
+export function find_kek(password) {
+    return createHash('sha256').update(password).digest('base64'); // 32 bytes base64
 }
 
-function encrypt(text, secretKey) {
-    const iv = randomBytes(16);
-    const cipher = createCipheriv(algorithm, Buffer.from(secretKey), iv);
-    
-    let encrypted = cipher.update(text, 'utf8', 'hex');
-    encrypted += cipher.final('hex');
-    const authTag = cipher.getAuthTag(); // Authentication tag for GCM
+export function encrypt(text, secretKey) {
+    const key = Buffer.from(secretKey, 'base64');
+    if (key.length !== 32) throw new Error('AES key must be 32 bytes');
 
-    // Store IV and authTag with the encrypted data
+    const iv = randomBytes(16);
+    const cipher = createCipheriv(algorithm, key, iv);
+
+    let encrypted = cipher.update(text, 'utf8', 'base64');
+    encrypted += cipher.final('base64');
+
+    const authTag = cipher.getAuthTag();
+
     return {
         encryptedData: encrypted,
-        iv: iv.toString('hex'),
-        authTag: authTag.toString('hex')
+        iv: iv.toString('base64'),
+        authTag: authTag.toString('base64')
     };
 }
 
-function decrypt_obj(obj, secretKey) {
-    for (const key in user) {
+export function decrypt(encryptedObject, secretKey) {
+    const key = Buffer.from(secretKey, 'base64');
+    if (key.length !== 32) throw new Error('AES key must be 32 bytes');
+
+    const iv = Buffer.from(encryptedObject.iv, 'base64');
+    const authTag = Buffer.from(encryptedObject.authTag, 'base64');
+
+    const decipher = createDecipheriv(algorithm, key, iv);
+    decipher.setAuthTag(authTag);
+
+    let decrypted = decipher.update(encryptedObject.encryptedData, 'base64', 'utf8');
+    decrypted += decipher.final('utf8');
+
+    return decrypted;
+}
+
+export function encrypt_obj(obj, secretKey) {
+    for (const key in obj) {
         if (obj.hasOwnProperty(key)) {
-            user[key] = typeof value === 'object' ? 
-            decrypt_obj(value, secretKey) : 
-            decrypt(user[key], secretKey);
+            const value = obj[key];
+            obj[key] = (typeof value === 'object' && value !== null)
+                ? encrypt_obj(value, secretKey)
+                : encrypt(value, secretKey);
         }
     }
     return obj;
 }
 
-function decrypt(encryptedObject, secretKey) {
-    const iv = Buffer.from(encryptedObject.iv, 'hex');
-    const authTag = Buffer.from(encryptedObject.authTag, 'hex');
-    
-    const decipher = createDecipheriv(algorithm, Buffer.from(secretKey), iv);
-    decipher.setAuthTag(authTag); // Set the auth tag before decryption
-
-    let decrypted = decipher.update(encryptedObject.encryptedData, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
-
-    return decrypted;
+export function decrypt_obj(obj, secretKey) {
+    for (const key in obj) {
+        if (obj.hasOwnProperty(key)) {
+            const value = obj[key];
+            obj[key] = (typeof value === 'object' && value !== null)
+                ? decrypt_obj(value, secretKey)
+                : decrypt(value, secretKey);
+        }
+    }
+    return obj;
 }

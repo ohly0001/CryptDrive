@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import Account from './account.js';
-import { encrypt, decrypt } from '../utilities/aes.js';
+import { encrypt, decrypt } from '../utilities/encryption.js';
 
 const EncryptedFieldSchema = new mongoose.Schema({
     encryptedData: { type: String, required: true },
@@ -42,16 +42,20 @@ PasswordSchema.pre('save', async function () {
 });
 
 // Methods to decrypt individual fields
-PasswordSchema.methods.getDecryptedPassword = async function () {
-    const acc = await Account.findById(this.account);
-    if (!acc) throw new Error('Account missing.');
-    return decrypt(this.password, acc.decodeSecretKey());
+PasswordSchema.methods.getDecryptedPassword = async function(req) {
+    if (!req.session.kek) throw new Error('KEK not found');
+    const kek = Buffer.from(req.session.kek, 'base64');
+    const account = await Account.findById(this.account);
+    const secretKey = account.decodeSecretKey(kek);
+    return decrypt(this.password, secretKey);
 };
 
-PasswordSchema.methods.getDecryptedUsername = async function () {
-    const acc = await Account.findById(this.account);
-    if (!acc) throw new Error('Account missing.');
-    return decrypt(this.username, acc.decodeSecretKey());
+PasswordSchema.methods.getDecryptedUsername = async function (req) {
+    if (!req.session.kek) throw new Error('KEK not found');
+    const kek = Buffer.from(req.session.kek, 'base64');
+    const account = await Account.findById(this.account);
+    const secretKey = account.decodeSecretKey(kek);
+    return decrypt(this.username, secretKey);
 };
 
 AccountSchema.set('toJSON', {

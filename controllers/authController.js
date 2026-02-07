@@ -3,7 +3,7 @@ import Account from '../models/account.js';
 import Code from '../models/codes.js';
 import nodemailer from 'nodemailer';
 import { randomInt } from 'crypto';
-import { generate_kek } from "../utilities/aes.js";
+import { deriveKEK } from "../utilities/encryption.js";
 
 const GMAIL_USER = "cryptdrive08@gmail.com";
 
@@ -21,13 +21,19 @@ const sendConfirmationEmail = async (email, code) => {
         to: email,
         subject: 'CryptDrive Registration Code',
         html: `
-            <p>Your activation code is: <strong>${code}</strong></p>
+            <p>Your activation code is: <strong>${code.code}</strong></p>
             <p>Please do not reply to this email.</p>
         `,
-        text: `Your activation code is: ${code}\nPlease do not reply to this email.`
+        text: `Your activation code is: ${code.code}\nPlease do not reply to this email.`
     };
 
     return transporter.sendMail(mailOptions);
+};
+
+const resendConfirmationEmail = async (email, code) => {
+    await code.deleteOne();
+
+    //TODO
 };
 
 const register = async (req, res) => {
@@ -71,6 +77,9 @@ const register = async (req, res) => {
             return res.status(500).send('Failed to send activation email.');
         }
 
+        const kek = await deriveKEK(req.body.password);
+        req.session.kek = kek.toString('base64');
+
         res.render('activationCode', { email }); // Render page to enter activation code
 
     } catch (error) {
@@ -104,8 +113,6 @@ const activate = async (req, res, next) => {
 
         await code.deleteOne();
 
-        req.session.kek = await generate_kek(account.password).toString('base64');
-
         // Log in the user
         req.login(account, (err) => {
             if (err) return next(err);
@@ -119,14 +126,13 @@ const activate = async (req, res, next) => {
 };
 
 const login = async (req, res, next) => {
-    passport.authenticate('local', (err, account, info) => {
+    passport.authenticate('local', async (err, account, info) => {
         if (err) return next(err);
+        if (!account) return res.status(401).json({ message: info?.message || 'Authentication failed.' });
 
-        if (!account) {
-            return res.status(401).json({ message: info?.message || 'Authentication failed.' });
-        }
-
-        req.session.kek = generate_kek(account.password).toString('base64');
+        // Derive KEK from the plaintext password used to log in
+        const kek = await deriveKEK(req.body.password);
+        req.session.kek = kek.toString('base64'); // store in memory
 
         req.login(account, (err) => {
             if (err) return next(err);

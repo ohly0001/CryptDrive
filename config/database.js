@@ -1,5 +1,6 @@
 import mongoose from 'mongoose'; 
 import Account from '../models/account.js';
+import { derivekek } from "../utilities/encryption.js";
 
 const connectDB = async () => {
     try {
@@ -36,8 +37,9 @@ const seedRootAccount = async () => {
             password: ROOT_ACCOUNT_PASSWORD,
             active: true
         });
+        const kek = await derivekek(ROOT_ACCOUNT_PASSWORD, rootAccount.kekSalt);
+        await rootAccount.secure(kek);
 
-        await rootAccount.save();
         console.log('[Setup] Root account created successfully.');
     } catch (err) {
         console.error('[Setup] Error seeding root account:', err);

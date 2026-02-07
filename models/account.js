@@ -1,8 +1,7 @@
 import cryptDriveConfig from '../config/cryptDriveConfig.json' with { type: 'json' };
 import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
-import { encrypt, decrypt, generate_kek } from '../utilities/aes.js';
-import { randomBytes } from 'crypto';
+import { encrypt, decrypt, derivekek, generateAESKey, saltShaker } from '../utilities/encryption.js';
 
 const EncryptedFieldSchema = new mongoose.Schema({
     encryptedData: { type: String, required: true },
@@ -12,51 +11,74 @@ const EncryptedFieldSchema = new mongoose.Schema({
 
 const AccountSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-    password: { type: String, required: true }, // still bcrypt hash
+    password: { type: String, required: true }, // bcrypt hash
     secretKey: { type: EncryptedFieldSchema }, // store as AES object
-    active: { type: Boolean, default: false }
+    kekSalt: { type: String, default: () => saltShaker() },
+    isActive: { type: Boolean, default: false }
 }, { timestamps: true });
 
-AccountSchema.methods._hashPass = async function() {
-    this.password = await bcrypt.hash(this.password, cryptDriveConfig.passwordSaltRounds);
-};
+AccountSchema.methods.secure = async function(kek) {
+    if (!this.isNew) return;
+    
+    const session = await mongoose.startSession();
+    try {
+        session.startTransaction();
 
-AccountSchema.methods._encryptSecret = function(key, kek) {
-    this.secretKey = encrypt(key, kek);
-};
+        const secretKey = encrypt(generateAESKey(), kek);
+        const passwordHash = await bcrypt.hash(this.password, cryptDriveConfig.passwordSaltRounds);
 
-AccountSchema.methods._decryptedSecret = function(kek) {
-    return decrypt(this.secretKey, kek);
-};
+        await Account.updateOne(
+            { _id: this._id },
+            { password: passwordHash, secretKey: secretKey },
+            { session }
+        );
 
-AccountSchema.methods.updatePassword = async function(kek) {
-    if (this.password.length < cryptDriveConfig.minPasswordSize || this.password.length > cryptDriveConfig.maxPasswordSize) {
-        throw new Error(`Password must be between ${cryptDriveConfig.minPasswordSize} and ${cryptDriveConfig.maxPasswordSize} characters.`);
-    }
-
-    if (this.isNew) {
-        await this._hashPass();
-        this._encryptSecret(randomBytes(32).toString('base64'), kek);
-    } else if (this.isModified('password')) {
-        const oldAccount = await Account.findById(this._id);
-        if (!oldAccount) throw new Error('Account not found for password change.');
-
-        let plainSecretKey;
-        try {
-            const oldKek = await generate_kek(oldAccount.password);
-            plainSecretKey = oldAccount._decryptedSecret(oldKek);
-        } catch {
-            throw new Error('Failed to decrypt secret key with old password. Password change aborted.');
-        }
-
-        await this._hashPass();
-        this._encryptSecret(plainSecretKey);
+        await session.commitTransaction();
+        session.endSession();
+    } catch (err) {
+        await session.abortTransaction();
+        session.endSession();
+        throw err;
+    }  finally {
+        session.endSession();
     }
 };
 
-// Returns decrypted secretKey (sync since AES is sync)
-AccountSchema.methods.decodeSecretKey = function (kek) {
-    return decrypt(this.secretKey, kek);
+AccountSchema.methods.resecure = async function(kek, oldPassword) {
+    if (!this.isModified('password')) return; 
+    if (this.password.startsWith('$2b$')) 
+        throw new Error('Password appears already hashed. Refusing to re-hash.'); 
+
+    // old password must be in plaintext for rekek
+    const session = await mongoose.startSession();
+    try {
+        session.startTransaction();
+
+        const oldAccount = await Account.findById(this._id).session(session);
+        if (!oldAccount) throw new Error('Account not found.');
+
+        const oldKek = await derivekek(oldPassword, oldAccount.kekSalt);
+        let secretKey = decrypt(oldAccount.secretKey, oldKek);
+
+        secretKey = encrypt(secretKey, kek);
+
+        const passwordHash = await bcrypt.hash(this.password, cryptDriveConfig.passwordSaltRounds);
+
+        await Account.updateOne(
+            { _id: this._id },
+            { password: passwordHash, secretKey: secretKey },
+            { session }
+        );
+
+        await session.commitTransaction();
+        session.endSession();
+    } catch (err) {
+        await session.abortTransaction();
+        session.endSession();
+        throw err;
+    }  finally {
+        session.endSession();
+    }
 };
 
 // Compare candidate password

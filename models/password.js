@@ -58,7 +58,7 @@ PasswordSchema.methods.getDecryptedUsername = async function (req) {
     return decrypt(this.username, secretKey);
 };
 
-AccountSchema.set('toJSON', {
+PasswordSchema.set('toJSON', {
     transform: (doc, ret) => {
         delete ret.password;
         delete ret.username;

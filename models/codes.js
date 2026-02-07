@@ -17,7 +17,7 @@ const CodeSchema = new mongoose.Schema({
         trim: true
     },
     expiresAt: {
-        type: Integer
+        type: Date
     }
 }, { timestamps: true });
 

@@ -1,6 +1,6 @@
 import Password from '../models/password.js';
 import Account from '../models/account.js';
-import { decrypt } from '../utilities/aes.js';
+import { decrypt } from '../utilities/encryption.js';
 
 const pull = async (req, res, next) => {
     try {
@@ -44,7 +44,7 @@ const copyUsername = async (req, res, next) => {
             return res.status(404).send('Password not found.');
         }
 
-        const secretKey = req.user.decodeSecretKey();
+        const secretKey = decrypt(req.user.secretKey, req.session.kek);
         const decryptedUsername = decrypt(pwd.username, secretKey);
 
         res.json({ username: decryptedUsername });

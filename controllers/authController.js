@@ -2,8 +2,8 @@ import passport from "passport";
 import Account from '../models/account.js';
 import Code from '../models/codes.js';
 import nodemailer from 'nodemailer';
-import { randomInt } from 'crypto';
-import { deriveKEK } from "../utilities/encryption.js";
+import { randomInt, timingSafeEqual } from 'crypto';
+import { derivekek } from "../utilities/encryption.js";
 
 const GMAIL_USER = "cryptdrive08@gmail.com";
 
@@ -15,7 +15,6 @@ const sendConfirmationEmail = async (email, code) => {
             pass: process.env.GMAIL_APP_PASSWORD,
         },
     });
-
     const mailOptions = {
         from: `"CryptDrive No Reply" <${GMAIL_USER}>`,
         to: email,
@@ -26,14 +25,7 @@ const sendConfirmationEmail = async (email, code) => {
         `,
         text: `Your activation code is: ${code.code}\nPlease do not reply to this email.`
     };
-
     return transporter.sendMail(mailOptions);
-};
-
-const resendConfirmationEmail = async (email, code) => {
-    await code.deleteOne();
-
-    //TODO
 };
 
 const register = async (req, res) => {
@@ -49,36 +41,29 @@ const register = async (req, res) => {
             return res.status(409).send('Username or email already exists.');
         }
 
-        // Generate activation code
-        const activationCode = randomInt(0, 1000000).toString().padStart(6, '0');
+        const newAccount = new Account({email, password});
+        const kek = await derivekek(req.body.password, newAccount.kekSalt);
+        await newAccount.secure(kek);
+        req.session.kek = kek;
 
-        // Create account with activation code
-        const newAccount = new Account({
-            email,
-            password,
-            active: false,
-        });
-        await newAccount.save();
+        const code = randomInt(0, 1000000).toString().padStart(6, '0');
 
-        const registerCode = new Code({
+        const activationCode = new Code({
             account: newAccount._id,
-            code: activationCode,
+            code,
             type: "account_activation",
             expiresAt: Date.now() + 10 * 60 * 1000, // 10 minutes
         });
-        await registerCode.save();
+        await activationCode.save();
 
         // Send activation email
         try {
-            await sendConfirmationEmail(email, activationCode);
+            await sendConfirmationEmail(email, code);
             console.log(`Confirmation email sent to ${email}`);
         } catch (err) {
             console.error('Error sending activation email:', err);
             return res.status(500).send('Failed to send activation email.');
         }
-
-        const kek = await deriveKEK(req.body.password);
-        req.session.kek = kek.toString('base64');
 
         res.render('activationCode', { email }); // Render page to enter activation code
 
@@ -87,6 +72,15 @@ const register = async (req, res) => {
         res.status(500).send('An internal server error occurred.');
     }
 };
+
+function testCode(codeObj, candidateCode) {
+    //codeObj: Code.js
+    //candidateCode: String
+    if (!codeObj || !candidateCode) return false;
+    if (!codeObj.expiresAt < Date.now()) return false;
+    if (candidateCode.length !== codeObj.code.length) return false;
+    return !timingSafeEqual(Buffer.from(candidateCode), Buffer.from(codeObj.code));
+}
 
 const activate = async (req, res, next) => {
     try {
@@ -97,21 +91,22 @@ const activate = async (req, res, next) => {
             return res.status(404).json({ message: 'Account not found.' });
         }
 
-        if (account.active) {
+        if (account.isActive) {
             return res.status(400).json({ message: 'Account already confirmed.' });
         }
 
-        const code = await Code.findOne({account: account._id, type: "account_activation"});
+        const codeObj = await Code.findOne({ account: account._id, type: "account_activation" })
+            .sort({ timestamp: -1 });
 
-        if (!code || code.expiresAt < Date.now() || activationCode !== code.code) {
+        if (!testCode(codeObj, activationCode)) {
             return res.status(401).json({ message: 'Invalid or expired activation code.' });
         }
 
         // Mark account as confirmed
-        account.active = true;
+        account.isActive = true;
         await account.save();
 
-        await code.deleteOne();
+        await codeObj.deleteOne();
 
         // Log in the user
         req.login(account, (err) => {
@@ -131,7 +126,7 @@ const login = async (req, res, next) => {
         if (!account) return res.status(401).json({ message: info?.message || 'Authentication failed.' });
 
         // Derive KEK from the plaintext password used to log in
-        const kek = await deriveKEK(req.body.password);
+        const kek = await derivekek(req.body.password, account.kekSalt);
         req.session.kek = kek.toString('base64'); // store in memory
 
         req.login(account, (err) => {
@@ -145,9 +140,9 @@ const deregister = async (req, res, next) => {
     if (!req.isAuthenticated?.() || !req.user) {
         return res.status(401).send('Not authenticated.');
     }
-
     try {
         await Account.deleteOne({ _id: req.user._id });
+        req.session.destroy()
         req.logout(err => {
             if (err) return next(err);
             res.redirect('/');
@@ -158,7 +153,7 @@ const deregister = async (req, res, next) => {
 };
 
 const logout = async (req, res, next) => {
-    req.session.kek = null;
+    req.session.destroy()
     req.logout(err => {
         if (err) return next(err);
         res.redirect('/');

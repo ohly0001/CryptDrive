@@ -12,7 +12,7 @@ function configurePassport() {
                 return done(null, false, { message: 'Invalid login credentials' });
             }
 
-            if (!account.active) {
+            if (!account.isActive) {
                 return done(null, false, { message: 'Account is inactive' });
             }
 

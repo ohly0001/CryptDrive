@@ -2,6 +2,7 @@ import cryptDriveConfig from '../config/cryptDriveConfig.json' with { type: 'jso
 import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
 import { encrypt, decrypt, find_kek } from '../utilities/aes.js';
+import { randomBytes } from 'crypto';
 
 const EncryptedFieldSchema = new mongoose.Schema({
     encryptedData: { type: String, required: true },
@@ -12,7 +13,7 @@ const EncryptedFieldSchema = new mongoose.Schema({
 const AccountSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     password: { type: String, required: true }, // still bcrypt hash
-    secretKey: { type: EncryptedFieldSchema, required: true } // store as AES object
+    secretKey: { type: EncryptedFieldSchema } // store as AES object
 }, { timestamps: true });
 
 AccountSchema.methods._getKek = function() {
@@ -23,7 +24,7 @@ AccountSchema.methods._getKek = function() {
 };
 
 AccountSchema.methods._hashPass = async function() {
-    this.password = bcrypt.hash(this.password, cryptDriveConfig.passwordSaltRounds);
+    this.password = await bcrypt.hash(this.password, cryptDriveConfig.passwordSaltRounds);
 };
 
 AccountSchema.methods._encryptSecret = function(key) {

@@ -61,13 +61,13 @@ AccountSchema.pre('save', async function() {
 
 // Returns decrypted secretKey (sync since AES is sync)
 AccountSchema.methods.decodeSecretKey = function () {
-    return decrypt(this.secretKey, this.kek);
+    return decrypt(this.secretKey, this._getKek());
 };
 
-// Optional: cache decoded key for multiple field decryption
+// Cache decoded key for multiple field decryption
 AccountSchema.methods._getCachedKey = function () {
     if (!this._cachedKey) {
-        this._cachedKey = decrypt(this.secretKey, this.kek);
+        this._cachedKey = this.decodeSecretKey()
     }
     return this._cachedKey;
 };

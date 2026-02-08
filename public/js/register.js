@@ -77,4 +77,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const labels = ["Very Weak", "Weak", "Fair", "Strong", "Very Strong"];
         passwordStrengthLabel.innerText = labels[score];
     });
+
+    const showPassword = () => password.type = 'text';
+    const hidePassword = () => password.type = 'password';
+
+    const peekButton = document.getElementById('passwordPeek');
+    peekButton.addEventListener('mousedown', showPassword);
+    peekButton.addEventListener('mouseup', hidePassword);
+    peekButton.addEventListener('mouseleave', hidePassword);
+    peekButton.addEventListener('touchstart', showPassword);
+    peekButton.addEventListener('touchend', hidePassword);
 });

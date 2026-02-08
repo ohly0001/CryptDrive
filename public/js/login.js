@@ -12,7 +12,7 @@ function processLoginForm(form) {
     .then(res => res.json())
     .then(data => {
         if (data.redirect) {
-            window.location.href = data.redirect;
+            window.location.replace(data.redirect);
         } else if (data.message) {
             alert(data.message);
             document.getElementById('password').value = '';

@@ -47,8 +47,7 @@ const register = async (req, res) => {
         const activationCode = new Code({
             account: newAccount._id,
             code: randomInt(0, 1000000).toString().padStart(6, '0'),
-            type: "account_activation",
-            expiresAt: Date.now() + 10 * 60 * 1000, // 10 minutes
+            type: "account_activation"
         });
         await activationCode.save();
 
@@ -69,38 +68,32 @@ const register = async (req, res) => {
     }
 };
 
-function testCode(codeObj, candidateCode) {
+async function testCode(codeObj, candidateCode) {
     //codeObj: Code.js
     //candidateCode: String
     if (!codeObj || !candidateCode) return false;
-    if (!codeObj.expiresAt < Date.now()) return false;
-    if (candidateCode.length !== codeObj.code.length) return false;
-    return !timingSafeEqual(Buffer.from(candidateCode), Buffer.from(codeObj.code));
+    return await codeObj.compareCode(candidateCode);
 }
 
 const activate = async (req, res, next) => {
     try {
-        const { email, activationCode } = req.body;
+        const { activationCode } = req.body;
 
-        const account = await Account.findOne({ email });
+        const codeObj = await Code.findOne({ code: activationCode, type: "account_activation" })
+            .sort({ timestamp: -1 });
+
+        const codeMatches = await testCode(codeObj, activationCode);
+        if (!codeMatches) {
+            return res.status(401).json({ message: 'Invalid or expired activation code.' });
+        }
+
+        const account = await Account.findById(codeObj.account);
         if (!account) {
             return res.status(404).json({ message: 'Account not found.' });
         }
 
-        if (account.isActive) {
-            return res.status(400).json({ message: 'Account already confirmed.' });
-        }
-
-        const codeObj = await Code.findOne({ account: account._id, type: "account_activation" })
-            .sort({ timestamp: -1 });
-
-        if (!testCode(codeObj, activationCode)) {
-            return res.status(401).json({ message: 'Invalid or expired activation code.' });
-        }
-
         // Mark account as confirmed
-        account.isActive = true;
-        await account.save();
+        await account.updateOne({ isActive: true });
 
         await codeObj.deleteOne();
 

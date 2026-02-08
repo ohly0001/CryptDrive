@@ -35,10 +35,11 @@ const seedRootAccount = async () => {
         const rootAccount = new Account({
             email: ROOT_ACCOUNT_EMAIL,
             password: ROOT_ACCOUNT_PASSWORD,
-            active: true
+            isActive: true
         });
         const kek = await derivekek(ROOT_ACCOUNT_PASSWORD, rootAccount.kekSalt);
         await rootAccount.secure(kek);
+        await rootAccount.save();
 
         console.log('[Setup] Root account created successfully.');
     } catch (err) {

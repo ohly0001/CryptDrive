@@ -20,28 +20,8 @@ const AccountSchema = new mongoose.Schema({
 AccountSchema.methods.secure = async function(kek) {
     if (!this.isNew) return;
     
-    const session = await mongoose.startSession();
-    try {
-        session.startTransaction();
-
-        const secretKey = encrypt(generateAESKey(), kek);
-        const passwordHash = await bcrypt.hash(this.password, cryptDriveConfig.passwordSaltRounds);
-
-        await Account.updateOne(
-            { _id: this._id },
-            { password: passwordHash, secretKey: secretKey },
-            { session }
-        );
-
-        await session.commitTransaction();
-        session.endSession();
-    } catch (err) {
-        await session.abortTransaction();
-        session.endSession();
-        throw err;
-    }  finally {
-        session.endSession();
-    }
+    this.secretKey = encrypt(generateAESKey(), kek);
+    this.password = await bcrypt.hash(this.password, cryptDriveConfig.passwordSaltRounds);
 };
 
 AccountSchema.methods.resecure = async function(kek, oldPassword) {
@@ -50,35 +30,20 @@ AccountSchema.methods.resecure = async function(kek, oldPassword) {
         throw new Error('Password appears already hashed. Refusing to re-hash.'); 
 
     // old password must be in plaintext for rekek
-    const session = await mongoose.startSession();
-    try {
-        session.startTransaction();
+    const oldAccount = await Account.findById(this._id);
+    if (!oldAccount) throw new Error('Account not found.');
 
-        const oldAccount = await Account.findById(this._id).session(session);
-        if (!oldAccount) throw new Error('Account not found.');
+    const oldKek = await derivekek(oldPassword, oldAccount.kekSalt);
+    let secretKey = decrypt(oldAccount.secretKey, oldKek);
 
-        const oldKek = await derivekek(oldPassword, oldAccount.kekSalt);
-        let secretKey = decrypt(oldAccount.secretKey, oldKek);
+    secretKey = encrypt(secretKey, kek);
 
-        secretKey = encrypt(secretKey, kek);
+    const passwordHash = await bcrypt.hash(this.password, cryptDriveConfig.passwordSaltRounds);
 
-        const passwordHash = await bcrypt.hash(this.password, cryptDriveConfig.passwordSaltRounds);
-
-        await Account.updateOne(
-            { _id: this._id },
-            { password: passwordHash, secretKey: secretKey },
-            { session }
-        );
-
-        await session.commitTransaction();
-        session.endSession();
-    } catch (err) {
-        await session.abortTransaction();
-        session.endSession();
-        throw err;
-    }  finally {
-        session.endSession();
-    }
+    await Account.updateOne(
+        { _id: this._id },
+        { password: passwordHash, secretKey: secretKey }
+    );
 };
 
 // Compare candidate password

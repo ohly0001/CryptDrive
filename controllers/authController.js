@@ -5,25 +5,23 @@ import nodemailer from 'nodemailer';
 import { randomInt, timingSafeEqual } from 'crypto';
 import { derivekek } from "../utilities/encryption.js";
 
-const GMAIL_USER = "cryptdrive08@gmail.com";
-
 const sendConfirmationEmail = async (email, code) => {
     const transporter = nodemailer.createTransport({
         service: "gmail",
         auth: {
-            user: GMAIL_USER,
+            user: process.env.GMAIL_USER,
             pass: process.env.GMAIL_APP_PASSWORD,
         },
     });
     const mailOptions = {
-        from: `"CryptDrive No Reply" <${GMAIL_USER}>`,
+        from: `"CryptDrive No Reply" <${process.env.GMAIL_USER}>`,
         to: email,
         subject: 'CryptDrive Registration Code',
         html: `
-            <p>Your activation code is: <strong>${code.code}</strong></p>
-            <p>Please do not reply to this email.</p>
+            <p>Your activation code is: <strong>${code.code}</strong></p><br>
+            <em>We will never send clickable verification links or ask for your password over email or SMS.<em>
         `,
-        text: `Your activation code is: ${code.code}\nPlease do not reply to this email.`
+        text: `Your activation code is: ${code.code}\n\nWe will never send clickable verification links or ask for your password over email or SMS.`
     };
     return transporter.sendMail(mailOptions);
 };
@@ -46,11 +44,9 @@ const register = async (req, res) => {
         await newAccount.secure(kek);
         req.session.kek = kek;
 
-        const code = randomInt(0, 1000000).toString().padStart(6, '0');
-
         const activationCode = new Code({
             account: newAccount._id,
-            code,
+            code: randomInt(0, 1000000).toString().padStart(6, '0'),
             type: "account_activation",
             expiresAt: Date.now() + 10 * 60 * 1000, // 10 minutes
         });
@@ -58,7 +54,7 @@ const register = async (req, res) => {
 
         // Send activation email
         try {
-            await sendConfirmationEmail(email, code);
+            await sendConfirmationEmail(email, activationCode);
             console.log(`Confirmation email sent to ${email}`);
         } catch (err) {
             console.error('Error sending activation email:', err);
@@ -164,11 +160,29 @@ const completed = async (req, res) => {
     res.json({ redirect: '/dash' });
 };
 
+const status = async (req, res) => {
+    const token = req.cookies.remember_token;
+    if (token) {
+        const user = await validateRememberToken(token);
+        if (user) {
+            req.login(user, () => {
+                return res.redirect("/dash");
+            });
+            return;
+        }
+    }
+
+    app.get('/auth/status', (req, res) => {
+        res.json({ authenticated: req.isAuthenticated() });
+    });
+}; 
+
 export default {
     register,
     activate,
     login,
     deregister,
     logout,
-    completed
+    completed,
+    status
 };

@@ -1,20 +1,23 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>CryptDrive Authentication</title>
+        <title>CryptDrive Registration</title>
         <script src="js/register.js" defer></script>
     </head>
     <body>
         <h1>CryptDrive</h1>
-        <form id="registerForm">
+        <form id="form">
             <fieldset>
                 <legend>Register</legend>
-                <label for="registerEmail">Email</label><br>
-                <input id="registerEmail" type="email" placeholder="abc@email.com" required><br><br>
-                <label for="registerPassword1">Password</label><br>
-                <input id="registerPassword1" type="password" required><br><br>
-                <label for="registerPassword2">Confirm Password</label><br>
-                <input id="registerPassword2" type="password" required><br><br>
+                <label for="email">Email</label><br>
+                <input id="email" type="email" placeholder="abc@email.com" required><br><br>
+                <label for="password1">Password</label><br>
+                <input id="password1" type="password" required>
+                <button id="passwordPeek" type="button" title="Reveal Pasword">👁</button><br>
+                <meter id="passwordStrength" min="0" max="4" low="2" high="3" optimum="4" style="width: 170px;" title="Estimated Password Strength"></meter><br>
+                <label for="passwordStrength" id="passwordStrengthLabel">Password Strength</label><br><br>
+                <label for="password2">Confirm Password</label><br>
+                <input id="password2" type="password" required><br><br>
                 <input type="submit" value="Register">
             </fieldset>
             <fieldset>

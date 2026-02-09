@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const generatePassword = () => {
-            const len = Math.min(Math.max(length, 1), 128);
+            if (!enableLowercase && !enableUppercase && !enableNumbers && !enableSymbols) return '';
 
             const activePools = [];
             let allChars = [];
@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (enableNumbers)   { activePools.push(charSets.numbers);   allChars.push(...charSets.numbers); }
             if (enableSymbols)   { activePools.push(charSets.symbols);   allChars.push(...charSets.symbols); }
 
-            if (!activePools.length || len < activePools.length) return null;
+            if (!activePools.length || len < activePools.length) return '';
 
             const password = activePools.map(getRandomElement);
 

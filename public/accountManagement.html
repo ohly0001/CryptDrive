@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>CryptDrive Account Management</title>
+        <script src="js/accountManagement.js" defer></script>
+    </head>
+    <body>
+        <h1>CryptDrive Account Management</h1>
+        <fieldset>
+            <legend>Account Details</legend>
+            <div id="accountDetails">
+                <label for="email">Email</label>
+                <input id="email" type="email" value="Test" readonly>
+            </div>
+        </fieldset>
+        <fieldset>
+            <legend>Account Management</legend>
+            <button id="editAccount">Edit Account</button><br><br>
+            <a href="./passwordResetCode.html">Reset Password</a><br><br>
+            <button id="deleteAccount">Delete Account</button>
+        </fieldset>
+        <fieldset>
+            <legend>Session & Navigation</legend>
+            <button id="logout">Log Out</button><br><br>
+            <button onclick="document.location.href='/dash';">Back To Dashboard</button>
+        </fieldset>
+    </body>
+</html>

@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const lifeSpan = 10 * 60 * 1000;
+const lifeSpan = 10 * 60;
 
 const CodeSchema = new mongoose.Schema({
     account: { 
@@ -22,13 +22,9 @@ const CodeSchema = new mongoose.Schema({
 
 CodeSchema.index({ "createdAt": 1 }, { "expireAfterSeconds":lifeSpan });
 
-CodeSchema.pre('save', async function(next) {
+CodeSchema.pre('save', { document: true, query: false }, async function(next) {
     this.code = await bcrypt.hash(this.code, 12);
 });
-
-CodeSchema.methods.hasExpired = function() {
-    return this.expiresAt < Date.now();
-};
 
 CodeSchema.methods.compareCode = async function(candidateCode) {
     return await bcrypt.compare(candidateCode, this.code);

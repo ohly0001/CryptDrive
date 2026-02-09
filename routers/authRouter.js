@@ -10,5 +10,6 @@ router.post("/logout", controller.logout);
 router.post("/deregister", controller.deregister);
 router.get("/completed", controller.completed);
 router.get("/status", controller.status);
+router.get("/resend", controller.resend);
 
 export default router;

@@ -26,6 +26,10 @@ const sendConfirmationEmail = async (email, code) => {
     return transporter.sendMail(mailOptions);
 };
 
+const resend = async (req, res) => {
+    
+};
+
 const register = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -118,8 +122,9 @@ const login = async (req, res, next) => {
         const kek = await derivekek(req.body.password, account.kekSalt);
         req.session.kek = kek.toString('base64'); // store in memory
 
-        req.login(account, (err) => {
+        req.login(account, async (err) => {
             if (err) return next(err);
+            await account.updateOne({ expireAt: null });
             res.redirect('/auth/completed');
         });
     })(req, res, next);
@@ -130,7 +135,8 @@ const deregister = async (req, res, next) => {
         return res.status(401).send('Not authenticated.');
     }
     try {
-        await Account.deleteOne({ _id: req.user._id });
+        const expireAt = Date.now() + 7 * 24 * 60 * 60;
+        await Account.updateOne({ expireAt });
         req.session.destroy()
         req.logout(err => {
             if (err) return next(err);
@@ -177,5 +183,6 @@ export default {
     deregister,
     logout,
     completed,
-    status
+    status,
+    resend
 };

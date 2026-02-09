@@ -14,8 +14,11 @@ const AccountSchema = new mongoose.Schema({
     password: { type: String, required: true }, // bcrypt hash
     secretKey: { type: EncryptedFieldSchema }, // store as AES object
     kekSalt: { type: String, default: () => saltShaker() },
-    isActive: { type: Boolean, default: false }
+    isActive: { type: Boolean, default: false },
+    expireAt: { type: Date, default: null }
 }, { timestamps: true });
+
+AccountSchema.createIndex( { "expireAt": 1 }, { expireAfterSeconds: 0 } )
 
 AccountSchema.methods.secure = async function(kek) {
     if (!this.isNew) return;
@@ -63,6 +66,15 @@ AccountSchema.set('toJSON', {
         return ret;
     }
 });
+
+AccountSchema.pre('deleteOne', { document: true, query: false }, async function() {
+    await Promise.all([
+        mongoose.model('Code').deleteMany({ account: this._id }),
+        mongoose.model('Password').deleteMany({ account: this._id }),
+        mongoose.model('File').deleteMany({ account: this._id })
+    ]);
+});
+
 
 const Account = mongoose.model('Account', AccountSchema);
 export default Account;

@@ -12,9 +12,10 @@ const update = async (req, res) => {
 };
 
 const view = async (req, res) => {
-    
+    res.render('/accountManagement', {});
 }
 
 export default {
-    update
+    update,
+    view
 };

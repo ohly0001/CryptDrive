@@ -31,7 +31,7 @@ const pull = async (req, res, next) => {
     }
 };
 
-const copyUsername = async (req, res, next) => {
+const paste = async (req, res, next) => {
     try {
         if (!req.isAuthenticated?.() || !req.user) {
             return res.status(401).send('Not authenticated.');
@@ -45,9 +45,9 @@ const copyUsername = async (req, res, next) => {
         }
 
         const secretKey = decrypt(req.user.secretKey, req.session.kek);
-        const decryptedUsername = decrypt(pwd.username, secretKey);
+        const decryptedValue = decrypt(pwd[req.body.category], secretKey);
 
-        res.json({ username: decryptedUsername });
+        res.json({ decryptedValue });
     } catch (err) {
         next(err);
     }
@@ -55,5 +55,5 @@ const copyUsername = async (req, res, next) => {
 
 export default {
     pull, 
-    copyUsername
+    paste
 };

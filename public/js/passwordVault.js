@@ -36,14 +36,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const copyOptionsContainer = document.createElement('div');
             copyOptionsContainer.classList.add('hidden', 'copy_options');
 
-            Object.entries(e).forEach(([key, value]) => {
+            Object.entries(e).forEach((e2 => {
                 const copySubBtn = document.createElement('button');
                 copySubBtn.innerText = key
                 copySubBtn.addEventListener('click', async () => {
-                    fetch('/passwords/pull', {
+                    fetch('/passwords/paste', {
                         method: 'POST', 
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ value })
+                        body: JSON.stringify({ category: e2 })
                     })
                     .then(res => res.json())
                     .then(async data => {

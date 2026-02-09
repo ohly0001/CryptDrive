@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
         edittingAcount = !edittingAcount;
 
         if (edittingAcount) {
-            editAccountButton.innerText = "Save Account";
+            editAccountButton.innerText = "💾 Save Account"; //📝matches the pencil but less obvious
         } else {
             fetch('/account/update', {
                 method: 'POST',
@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(data => {
                 window.alert(data.message);
             });
-            editAccountButton.innerText = "Edit Account";
+            editAccountButton.innerText = "✏️ Edit Account";
         }
     });
 });

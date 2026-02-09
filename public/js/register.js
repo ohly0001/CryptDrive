@@ -10,8 +10,8 @@ function processRegisterForm(form) {
         return;
     }
 
-    if (password.length < 12 || password.length > 99) {
-        alert(`Password must be between 12 to 99 characters.`);
+    if (password.length < 12 || password.length > 128) {
+        alert(`Password must be between 12 to 128 characters.`);
         return;
     }
 
@@ -54,6 +54,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const password = document.getElementById('password1');
     password.addEventListener('input', () => {
+        const passwordStrengthGauge = document.getElementById('passwordStrength');
+        const passwordStrengthLabel = document.getElementById('passwordStrengthLabel');
+
         if (!passInput.value) {
             passwordStrengthGauge.value = 0;
             passwordStrengthLabel.innerText = "Password Strength";
@@ -66,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        if (passInput.value.length > 99) {
+        if (passInput.value.length > 128) {
             passwordStrengthGauge.value = 0;
             passwordStrengthLabel.innerText = "Too Long";
             return;
@@ -82,9 +85,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const hidePassword = () => password.type = 'password';
 
     const peekButton = document.getElementById('passwordPeek');
-    peekButton.addEventListener('mousedown', showPassword);
-    peekButton.addEventListener('mouseup', hidePassword);
-    peekButton.addEventListener('mouseleave', hidePassword);
-    peekButton.addEventListener('touchstart', showPassword);
-    peekButton.addEventListener('touchend', hidePassword);
+    ['mousedown', 'touchstart'].forEach(evt => peekButton.addEventListener(evt, showPassword));
+    ['mouseup', 'mouseleave', 'touchend'].forEach(evt => peekButton.addEventListener(evt, hidePassword));
 });

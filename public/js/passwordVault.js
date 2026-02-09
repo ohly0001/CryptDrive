@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     })
                     .then(res => res.json())
                     .then(async data => {
-                        await navigator.clipboard.writeText(data.decryptedValue); //todo add decryption pre-processing
+                        await navigator.clipboard.writeText(data.decryptedValue); 
                         refreshAutoHideCopyOptionContainer(copyOptionsContainer); // extends duration
                     });
                 });
@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
     //TODO get current pagination settings
     document.getElementById('paginationSize').addEventListener('change', e => {
         pageSize = e.target.value;
-        totalPages = Math.round(totalPasswords / paginationSize);
+        totalPages = Math.round(totalPasswords / pageSize);
 
         updatePaginationSlice();
         document.getElementById('totalPages').innerText = totalPages;

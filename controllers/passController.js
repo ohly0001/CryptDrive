@@ -1,6 +1,7 @@
 import Password from '../models/password.js';
 import Account from '../models/account.js';
 import { decrypt } from '../utilities/encryption.js';
+import { randomInt } from 'crypto';
 
 const pull = async (req, res, next) => {
     try {

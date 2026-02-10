@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
             copyOptionsContainer.classList.add('hidden', 'copy_options');
 
             // fields allowed to copy
-            const copyableFields = ['username', 'password', 'email', 'notes'];
+            const copyableFields = ['url', 'username', 'password', 'email', 'note'];
 
             copyableFields.forEach(key => {
                 if (!e[key]) return;

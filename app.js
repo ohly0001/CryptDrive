@@ -63,15 +63,15 @@ const startServer = async () => {
 
     // --- Start HTTP server ---
     const server = app.listen(PORT, () => {
-        console.log(`Server running at http://${HOST}:${PORT}`);
+        console.log(`[App] Server now connected at http://${HOST}:${PORT}`);
     });
 
     // --- Error handling ---
     server.on('error', (err) => {
         if (err.code === 'EADDRINUSE') {
-            console.error(`Port ${PORT} is already in use.`);
+            console.error(`[Server] Port ${PORT} is already in use.`);
         } else {
-            console.error('[Server Error]', err);
+            console.error('[Server] Error encountered', err);
         }
         process.exit(1);
     });
@@ -80,6 +80,7 @@ const startServer = async () => {
     server.on('connection', (socket) => {
         if (isShuttingDown) {
             socket.destroy();
+            console.log('[Shutdown] Client attempted to conect during shutdown');
         }
     });
 

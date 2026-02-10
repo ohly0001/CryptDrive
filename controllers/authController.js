@@ -156,7 +156,7 @@ const logout = async (req, res, next) => {
 };
 
 const completed = async (req, res) => {
-    res.json({ redirect: '/dash' });
+    res.json({ redirect: '/home' });
 };
 
 const status = async (req, res) => {

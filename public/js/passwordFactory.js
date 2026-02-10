@@ -4,40 +4,55 @@ document.addEventListener('DOMContentLoaded', () => {
         let enableLowercase = true;
         let enableUppercase = true;
         let enableNumbers = true;
-        let enableSymbols = true;
+        let enableSafeSymbols = true;
+        let enableUnsafeSymbols = true;
 
         const charSets = {
             lowercase: [..."abcdefghijklmnopqrstuvwxyz"],
             uppercase: [..."ABCDEFGHIJKLMNOPQRSTUVWXYZ"],
             numbers:   [..."0123456789"],
-            symbols:   [...`~\`!@#$%^&*()-_=+,./?;:'"[{]}|\\`],
+            safeSymbols:     [...`!@#$%^&*()-_=+[]{}./?;:`],
+            unsafeSymbols:   [...` ~,'"\`\\|`],
         };
 
-        const getRandomElement = arr => arr[window.crypto.randomInt(0, arr.length)];
+        const buf = new Uint8Array(1);
+        const randomInt = (max) => {
+            const threshold = 256 - (256 % max);
+            do { crypto.getRandomValues(buf); } while (buf[0] >= threshold);
+            return buf[0] % max;
+        };
+
+        const getRandomElement = arr => arr[randomInt(arr.length)];
 
         const secureShuffle = array => {
             for (let i = array.length - 1; i > 0; i--) {
-                const j = window.crypto.randomInt(0, i + 1);
+                const j = randomInt(i + 1);
                 [array[i], array[j]] = [array[j], array[i]];
             }
             return array;
         };
 
         const generatePassword = () => {
-            if (!enableLowercase && !enableUppercase && !enableNumbers && !enableSymbols) return '';
+            if (!enableLowercase && !enableUppercase && !enableNumbers && !enableSafeSymbols) return '';
 
             const activePools = [];
             let allChars = [];
             if (enableLowercase) { activePools.push(charSets.lowercase); allChars.push(...charSets.lowercase); }
             if (enableUppercase) { activePools.push(charSets.uppercase); allChars.push(...charSets.uppercase); }
             if (enableNumbers)   { activePools.push(charSets.numbers);   allChars.push(...charSets.numbers); }
-            if (enableSymbols)   { activePools.push(charSets.symbols);   allChars.push(...charSets.symbols); }
+            if (enableSafeSymbols)   { activePools.push(charSets.safeSymbols);   allChars.push(...charSets.safeSymbols); }
+            if (enableUnsafeSymbols)   { activePools.push(charSets.unsafeSymbols);   allChars.push(...charSets.unsafeSymbols); }
 
-            if (!activePools.length || len < activePools.length) return '';
+            if (!activePools.length) return '';
 
-            const password = activePools.map(getRandomElement);
-
-            while (password.length < len) {
+            let password = [];
+            // if length exceeds the poolsize, enforce the inclusion of atleast 1 element per pool
+            // otherwise allow for pure randomness
+            if (length >= activePools.length) {
+                password = activePools.map(getRandomElement);
+            }
+            // fill remaining characters
+            while (password.length < length) {
                 password.push(getRandomElement(allChars));
             }
 
@@ -92,10 +107,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     generatePassword();
                 });
             };
-            bindToggle('enableLowercase', val => enableLowercase = val);
-            bindToggle('enableUppercase', val => enableUppercase = val);
-            bindToggle('enableNumbers',   val => enableNumbers   = val);
-            bindToggle('enableSymbols',   val => enableSymbols   = val);
+            bindToggle('enableLowercase',   val => enableLowercase   = val);
+            bindToggle('enableUppercase',   val => enableUppercase   = val);
+            bindToggle('enableNumbers',     val => enableNumbers     = val);
+            bindToggle('enableSafeSymbols', val => enableSafeSymbols = val);
+            bindToggle('enableUnsafeSymbols', val => enableUnsafeSymbols = val);
 
             // Peek password
             const passwordField = document.getElementById('generatedPassword');

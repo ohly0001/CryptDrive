@@ -18,7 +18,7 @@ const AccountSchema = new mongoose.Schema({
     expireAt: { type: Date, default: null }
 }, { timestamps: true });
 
-AccountSchema.createIndex( { "expireAt": 1 }, { expireAfterSeconds: 0 } )
+AccountSchema.index( { "expireAt": 1 }, { expireAfterSeconds: 0 } )
 
 AccountSchema.methods.secure = async function(kek) {
     if (!this.isNew) return;

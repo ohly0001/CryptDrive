@@ -1,7 +1,7 @@
 import passport from "passport";
 import Account from "../models/account.js";
 
-const update = async (req, res) => {
+const update = async (req, res, next) => {
     passport.authenticate('local', async (err, account, info) => {
         if (err) return next(err);
         if (!account) return res.status(401).json({ message: info?.message || 'Updated failed.' });

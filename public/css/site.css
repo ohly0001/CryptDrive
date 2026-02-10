@@ -1,10 +1,24 @@
-div {
-    border: 1px solid black;
+body {
     background-color: white;
+    color: midnightblue;
+}
+button {
+    color: white;
+    background-color: midnightblue;
+    border-radius: 50px;
+    padding: 5px 10px 5px 10px;
+    border-color: unset;
+}
+button:hover {
+    background-color: mediumblue;
+}
+fieldset {
+    background-color: aliceblue;
+}
+div {
     padding: 5px;
     margin: 5px;
 }
-
 a {
     text-decoration: none;
 }
@@ -12,11 +26,19 @@ a {
 .hidden {
     display: none;
 }
-
 .copy_options {
+    background-color: slateblue;
     position: absolute;
     left: 1px;
 }
 .copy_options button {
     display: block;
+}
+#navbar {
+    background-color: slateblue;
+}
+.label {
+    border-radius: 50px;
+    padding: 5px 10px 5px 10px;
+    background-color: cadetblue;
 }

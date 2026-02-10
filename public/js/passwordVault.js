@@ -19,7 +19,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // add sub headers for multiple passwords under the same url (multiple accounts)
     const passwordContainer = document.getElementById('passwordContainer');
 
-    
     fetch('/passwords/pull', {
         method: 'POST', 
         headers: { 'Content-Type': 'application/json' } 
@@ -27,6 +26,10 @@ document.addEventListener('DOMContentLoaded', () => {
     .then(res => res.json())
     .then(data => {
         data.forEach(e => {
+            const selectionBox = document.createElement('input');
+            selectionBox.classList.add('password-selection');
+            selectionBox.type = 'checkbox';
+
             const childPasswordContainer = document.createElement('div');
             childPasswordContainer.classList.add('password');
 
@@ -52,11 +55,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 });
                 copyOptionsContainer.appendChild(copySubBtn);
-            });
+            }));
 
             const copyOptionsBtn = document.createElement('button');
             copyOptionsBtn.innerText = "📋";
-            copyOptionsBtn.title = 'Copy...';
+            copyOptionsBtn.title = 'Copy Me';
             copyOptionsBtn.addEventListener('click', (event) => {
                 hideChildPasswordContainers();
                 copyOptionsContainer.classList.remove('hidden');
@@ -67,9 +70,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 // starts clock (or restarts if already running)
                 refreshAutoHideCopyOptionContainer(copyOptionsContainer);
             });
-
+            const editOptionsBtn = document.createElement('button');
+            editOptionsBtn.innerText = "✏️";
+            editOptionsBtn.title = 'Edit Me';
+            editOptionsBtn.addEventListener('click', (event) => {
+                document.location.href = '/passwords/edit' //TODO add id
+            });
+            childPasswordContainer.appendChild(selectionBox)
             childPasswordContainer.appendChild(label);
             childPasswordContainer.appendChild(copyOptionsBtn);
+            childPasswordContainer.appendChild(editOptionsBtn);
             childPasswordContainer.appendChild(copyOptionsContainer);
             passwordContainer.appendChild(childPasswordContainer);
         });
@@ -83,6 +93,25 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const currentPageNumberField = document.getElementById('currentPageNumber');
     const paginationSlice = document.getElementById('paginationSlice');
+
+    //should not submit but is
+    const savedLabelField = document.getElementById('savedLabel');
+    savedLabelField.addEventListener('keyup', (e) => {
+        e.preventDefault();
+
+        if (e.key === 'Enter') {
+            const savedLabelsContainer = document.getElementById('savedLabels');
+            const label = document.createElement('div');
+            label.innerHTML = `<span>${e.currentTarget.value}</span>`;
+            label.title = "Click to remove";
+            label.classList.add('label');
+            label.addEventListener('click', () => 
+                savedLabelsContainer.removeChild(label)
+            )
+            savedLabelsContainer.appendChild(label);
+            savedLabelField.value = ''; 
+        }
+    });
 
     const updatePaginationSlice = () => { 
         const sliceStart = Math.min(currentPage * pageSize, totalPasswords);

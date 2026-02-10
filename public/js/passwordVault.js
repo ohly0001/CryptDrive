@@ -1,31 +1,51 @@
-const { json } = require("express");
-
-var autoHideCopyOptionContainer;
 var pageSize = 10;
-var totalPasswords = 100;
-var totalPages = 10;
+var totalPasswords = 0;
+var totalPages = 0;
 var currentPage = 0;
-//todo use sesssion management to remember current page and values
 
-function refreshAutoHideCopyOptionContainer(copyOptionsContainer) {
-    clearTimeout(autoHideCopyOptionContainer);
+function refreshAutoHideCopyOptionContainer(container) {
+    if (container._hideTimer) clearTimeout(container._hideTimer);
 
-    autoHideCopyOptionContainer = window.setTimeout(() => {
-        copyOptionsContainer.classList.add('hidden');
+    container._hideTimer = setTimeout(() => {
+        container.classList.add('hidden');
     }, 5000);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    // add sub headers for multiple passwords under the same url (multiple accounts)
-    const passwordContainer = document.getElementById('passwordContainer');
 
-    fetch('/passwords/pull', {
-        method: 'POST', 
-        headers: { 'Content-Type': 'application/json' } 
-    })
-    .then(res => res.json())
-    .then(data => {
-        data.forEach(e => {
+    const passwordContainer = document.getElementById('passwordContainer');
+    const currentPageNumberField = document.getElementById('currentPageNumber');
+    const paginationSlice = document.getElementById('paginationSlice');
+
+    // -------------------------
+    // FETCH + RENDER PASSWORDS
+    // -------------------------
+    async function loadPasswords() {
+        const res = await fetch('/passwords/pull', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                limit: pageSize,
+                offset: currentPage * pageSize
+            })
+        });
+
+        const data = await res.json();
+
+        // expected: { passwords: [], total: number }
+        const passwords = data.passwords || data;
+        totalPasswords = data.total ?? passwords.length;
+
+        totalPages = Math.max(1, Math.ceil(totalPasswords / pageSize));
+
+        renderPasswords(passwords);
+        updatePaginationUI();
+    }
+
+    function renderPasswords(list) {
+        passwordContainer.innerHTML = '';
+
+        list.forEach(e => {
             const selectionBox = document.createElement('input');
             selectionBox.classList.add('password-selection');
             selectionBox.type = 'checkbox';
@@ -34,122 +54,150 @@ document.addEventListener('DOMContentLoaded', () => {
             childPasswordContainer.classList.add('password');
 
             const label = document.createElement('span');
-            label.innerText = e.url;
+            label.innerText = e.url || 'Untitled';
 
             const copyOptionsContainer = document.createElement('div');
             copyOptionsContainer.classList.add('hidden', 'copy_options');
 
-            Object.entries(e).forEach((e2 => {
-                const copySubBtn = document.createElement('button');
-                copySubBtn.innerText = key
-                copySubBtn.addEventListener('click', async () => {
-                    fetch('/passwords/paste', {
-                        method: 'POST', 
+            // fields allowed to copy
+            const copyableFields = ['username', 'password', 'email', 'notes'];
+
+            copyableFields.forEach(key => {
+                if (!e[key]) return;
+
+                const btn = document.createElement('button');
+                btn.innerText = key;
+
+                btn.addEventListener('click', async () => {
+                    const res = await fetch('/passwords/paste', {
+                        method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ category: e2 })
-                    })
-                    .then(res => res.json())
-                    .then(async data => {
-                        await navigator.clipboard.writeText(data.decryptedValue); 
-                        refreshAutoHideCopyOptionContainer(copyOptionsContainer); // extends duration
+                        body: JSON.stringify({
+                            id: e._id,
+                            category: key
+                        })
                     });
+
+                    const data = await res.json();
+                    await navigator.clipboard.writeText(data.decryptedValue);
+                    refreshAutoHideCopyOptionContainer(copyOptionsContainer);
                 });
-                copyOptionsContainer.appendChild(copySubBtn);
-            }));
+
+                copyOptionsContainer.appendChild(btn);
+            });
 
             const copyOptionsBtn = document.createElement('button');
             copyOptionsBtn.innerText = "📋";
-            copyOptionsBtn.title = 'Copy Me';
+            copyOptionsBtn.title = 'Copy';
             copyOptionsBtn.addEventListener('click', (event) => {
-                hideChildPasswordContainers();
+                hideAllCopyMenus();
                 copyOptionsContainer.classList.remove('hidden');
 
                 copyOptionsContainer.style.left = event.clientX + 'px';
                 copyOptionsContainer.style.top = event.clientY + 'px';
 
-                // starts clock (or restarts if already running)
                 refreshAutoHideCopyOptionContainer(copyOptionsContainer);
             });
+
             const editOptionsBtn = document.createElement('button');
             editOptionsBtn.innerText = "✏️";
-            editOptionsBtn.title = 'Edit Me';
-            editOptionsBtn.addEventListener('click', (event) => {
-                document.location.href = '/passwords/edit' //TODO add id
+            editOptionsBtn.title = 'Edit';
+            editOptionsBtn.addEventListener('click', () => {
+                document.location.href = `/passwords/edit/${e._id}`;
             });
-            childPasswordContainer.appendChild(selectionBox)
+
+            childPasswordContainer.appendChild(selectionBox);
             childPasswordContainer.appendChild(label);
             childPasswordContainer.appendChild(copyOptionsBtn);
             childPasswordContainer.appendChild(editOptionsBtn);
             childPasswordContainer.appendChild(copyOptionsContainer);
+
             passwordContainer.appendChild(childPasswordContainer);
         });
-    });
+    }
 
-    function hideChildPasswordContainers(callingNode) {
-        Array.from(passwordContainer.children).forEach((child) => {
-            child.getElementsByClassName('copy_options')[0].classList.add('hidden');
+    function hideAllCopyMenus() {
+        document.querySelectorAll('.copy_options').forEach(el => {
+            el.classList.add('hidden');
         });
     }
-    
-    const currentPageNumberField = document.getElementById('currentPageNumber');
-    const paginationSlice = document.getElementById('paginationSlice');
 
-    //should not submit but is
+    // -------------------------
+    // LABEL FIELD (NO SUBMIT)
+    // -------------------------
     const savedLabelField = document.getElementById('savedLabel');
-    savedLabelField.addEventListener('keyup', (e) => {
+    savedLabelField.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
         e.preventDefault();
 
-        if (e.key === 'Enter') {
-            const savedLabelsContainer = document.getElementById('savedLabels');
-            const label = document.createElement('div');
-            label.innerHTML = `<span>${e.currentTarget.value}</span>`;
-            label.title = "Click to remove";
-            label.classList.add('label');
-            label.addEventListener('click', () => 
-                savedLabelsContainer.removeChild(label)
-            )
-            savedLabelsContainer.appendChild(label);
-            savedLabelField.value = ''; 
-        }
+        const value = e.currentTarget.value.trim();
+        if (!value) return;
+
+        const savedLabelsContainer = document.getElementById('savedLabels');
+
+        const label = document.createElement('div');
+        label.innerHTML = `<span>${value}</span>`;
+        label.title = "Click to remove";
+        label.classList.add('label');
+
+        label.addEventListener('click', () =>
+            savedLabelsContainer.removeChild(label)
+        );
+
+        savedLabelsContainer.appendChild(label);
+        savedLabelField.value = '';
     });
 
-    const updatePaginationSlice = () => { 
-        const sliceStart = Math.min(currentPage * pageSize, totalPasswords);
-        const sliceEnd = Math.min(currentPage * pageSize + pageSize, totalPasswords);
-        paginationSlice.innerText = `${sliceStart}-${sliceEnd} of ${totalPasswords} Passwords`; 
-    };
+    // -------------------------
+    // PAGINATION UI
+    // -------------------------
+    function updatePaginationSlice() {
+        const sliceStart = Math.min(currentPage * pageSize + 1, totalPasswords);
+        const sliceEnd = Math.min((currentPage + 1) * pageSize, totalPasswords);
+        paginationSlice.innerText = `${sliceStart}-${sliceEnd} of ${totalPasswords}`;
+    }
 
-    //TODO get current pagination settings
-    document.getElementById('paginationSize').addEventListener('change', e => {
-        pageSize = e.target.value;
-        totalPages = Math.round(totalPasswords / pageSize);
-
-        updatePaginationSlice();
+    function updatePaginationUI() {
         document.getElementById('totalPages').innerText = totalPages;
         currentPageNumberField.max = totalPages;
-    });
-    document.getElementById('firstPage').addEventListener('click', () => {
+        currentPageNumberField.value = currentPage + 1;
+        updatePaginationSlice();
+    }
+
+    document.getElementById('paginationSize').addEventListener('change', async e => {
+        pageSize = parseInt(e.target.value);
         currentPage = 0;
-        currentPageNumberField.value = 1;
-        updatePaginationSlice();
+        await loadPasswords();
     });
-    document.getElementById('prevPage').addEventListener('click', () => {
+
+    document.getElementById('firstPage').addEventListener('click', async () => {
+        currentPage = 0;
+        await loadPasswords();
+    });
+
+    document.getElementById('prevPage').addEventListener('click', async () => {
         currentPage = Math.max(currentPage - 1, 0);
-        currentPageNumberField.value = currentPage + 1;
-        updatePaginationSlice();
+        await loadPasswords();
     });
-    document.getElementById('nextPage').addEventListener('click', () => {
+
+    document.getElementById('nextPage').addEventListener('click', async () => {
         currentPage = Math.min(currentPage + 1, totalPages - 1);
-        currentPageNumberField.value = currentPage + 1;
-        updatePaginationSlice();
+        await loadPasswords();
     });
-    document.getElementById('lastPage').addEventListener('click', () => {
+
+    document.getElementById('lastPage').addEventListener('click', async () => {
         currentPage = totalPages - 1;
-        currentPageNumberField.value = totalPages;
-        updatePaginationSlice();
+        await loadPasswords();
     });
-    currentPageNumberField.addEventListener('change', (e) => {
-        currentPage = e.value - 1;
-        updatePaginationSlice();
+
+    currentPageNumberField.addEventListener('change', async (e) => {
+        let val = parseInt(e.target.value);
+        if (isNaN(val)) return;
+
+        currentPage = Math.max(0, Math.min(val - 1, totalPages - 1));
+        await loadPasswords();
     });
+
+    // initial load
+    loadPasswords();
 });

@@ -41,22 +41,7 @@ PasswordSchema.pre('save', async function () {
     }
 });
 
-// Methods to decrypt individual fields
-PasswordSchema.methods.getDecryptedPassword = async function(req) {
-    if (!req.session.kek) throw new Error('KEK not found');
-    const kek = Buffer.from(req.session.kek, 'base64');
-    const account = await Account.findById(this.account);
-    const secretKey = account.decodeSecretKey(kek);
-    return decrypt(this.password, secretKey);
-};
 
-PasswordSchema.methods.getDecryptedUsername = async function (req) {
-    if (!req.session.kek) throw new Error('KEK not found');
-    const kek = Buffer.from(req.session.kek, 'base64');
-    const account = await Account.findById(this.account);
-    const secretKey = account.decodeSecretKey(kek);
-    return decrypt(this.username, secretKey);
-};
 
 PasswordSchema.set('toJSON', {
     transform: (doc, ret) => {

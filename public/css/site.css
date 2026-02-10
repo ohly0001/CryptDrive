@@ -17,12 +17,7 @@ fieldset {
 }
 div {
     padding: 5px;
-    margin: 5px;
 }
-a {
-    text-decoration: none;
-}
-
 .hidden {
     display: none;
 }
@@ -34,11 +29,16 @@ a {
 .copy_options button {
     display: block;
 }
-#navbar {
+#navBar {
     background-color: slateblue;
 }
-.label {
+.searchTag {
+    display: inline;
     border-radius: 50px;
+    margin: 2px;
     padding: 5px 10px 5px 10px;
-    background-color: cadetblue;
+}
+.tagContainer {
+    display: inline;
+    padding: 2px;
 }

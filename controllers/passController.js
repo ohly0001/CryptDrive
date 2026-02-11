@@ -144,7 +144,33 @@ const viewAdd = async (req, res, next) => {
 }
 
 const add = async (req, res, next) => {
-    
+    try {
+        if (!req.isAuthenticated?.() || !req.user) {
+            return res.status(401).redirect('/auth/login');
+        }
+
+        if (!req.session?.kek) {
+            return res.status(401).send('Vault locked');
+        }
+
+        const { url, searchTags, username, password, notes } = req.body;
+
+        const secretKey = decrypt(req.user.secretKey, req.session.kek);
+
+        const passwordObj = new Password({
+            url, 
+            searchTags, 
+            username: encrypt(username, secretKey),
+            password: encrypt(password, secretKey),
+            notes: encrypt(notes, secretKey)
+        });
+        await passwordObj.save();
+
+        res.json({ redirect: '/home/passwordVault' });
+    } catch (err) {
+        res.json({ message: 'Something went wrong when adding your password' });
+        next(err);
+    }
 }
 
 export default {

@@ -139,9 +139,19 @@ const edit = async (req, res, next) => {
     }
 };
 
+const viewAdd = async (req, res, next) => {
+    
+}
+
+const add = async (req, res, next) => {
+
+}
+
 export default {
     pull,
     copy,
     viewEdit,
-    edit
+    edit,
+    viewAdd,
+    add
 };

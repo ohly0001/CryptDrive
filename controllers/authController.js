@@ -134,24 +134,35 @@ const deregister = async (req, res, next) => {
     if (!req.isAuthenticated?.() || !req.user) {
         return res.status(401).send('Not authenticated.');
     }
+
     try {
-        const expireAt = Date.now() + 7 * 24 * 60 * 60;
-        await Account.updateOne({ expireAt });
-        req.session.destroy()
+        const expireAt = Date.now() + 7 * 24 * 60 * 60 * 1000;
+        await Account.updateOne({ _id: req.user._id }, { expireAt });
+
         req.logout(err => {
             if (err) return next(err);
-            res.redirect('/');
+
+            req.session.destroy((err) => {
+                if (err) return next(err);
+                //res.clearCookie('cryptdrive');
+                res.redirect('/');
+            });
         });
+
     } catch (err) {
         next(err);
     }
 };
 
 const logout = async (req, res, next) => {
-    req.session.destroy()
     req.logout(err => {
         if (err) return next(err);
-        res.redirect('/');
+
+        req.session.destroy((err) => {
+            if (err) return next(err);
+            //res.clearCookie('cryptdrive');
+            res.redirect('/');
+        });
     });
 };
 

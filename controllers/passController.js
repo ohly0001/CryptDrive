@@ -15,7 +15,7 @@ const pull = async (req, res, next) => {
         const passwords = await Password.find({ account: req.user._id })
             .skip(offsetNum)
             .limit(limitNum)
-            .select('-__v -password -username');
+            .select('-__v -url -password -username');
 
         const total = await Password.countDocuments({ account: req.user._id });
         const partialPasswords = passwords.map(p => p.toJSON());
@@ -38,7 +38,7 @@ const copy = async (req, res, next) => {
 
         const { id, category } = req.body;
 
-        const allowed = ['username','password','notes'];
+        const allowed = ['url', 'username','password','note'];
         if (!allowed.includes(category)) {
             return res.status(400).send('Invalid field');
         }
@@ -83,11 +83,12 @@ const viewEdit = async (req, res, next) => {
 
         const decrypted = {
             _id: password._id,
-            url: password.url,
+            title: password.title,
+            url: decrypt(password.url, secretKey),
             searchTags: password.searchTags,
             username: decrypt(password.username, secretKey),
             password: decrypt(password.password, secretKey),
-            notes: decrypt(password.notes, secretKey)
+            note: decrypt(password.note, secretKey)
         };
 
         res.render('editPassword', {
@@ -111,7 +112,7 @@ const edit = async (req, res, next) => {
         }
 
         const id = req.params.id;
-        const { url, searchTags, username, password, notes } = req.body;
+        const { title, url, searchTags, username, password, note } = req.body;
 
         const passwordObj = await Password.findOne({
             _id: id,
@@ -124,11 +125,12 @@ const edit = async (req, res, next) => {
 
         const secretKey = decrypt(req.user.secretKey, req.session.kek);
 
-        passwordObj.url = url;
+        passwordObj.title = title;
+        passwordObj.url = encrypt(url, secretKey);
         passwordObj.searchTags = searchTags;
         passwordObj.username = encrypt(username, secretKey);
         passwordObj.password = encrypt(password, secretKey);
-        passwordObj.notes = encrypt(notes, secretKey);
+        passwordObj.note = encrypt(note, secretKey);
 
         await passwordObj.save();
 
@@ -146,23 +148,25 @@ const viewAdd = async (req, res, next) => {
 const add = async (req, res, next) => {
     try {
         if (!req.isAuthenticated?.() || !req.user) {
-            return res.status(401).redirect('/auth/login');
+            return res.status(401).json({ redirect: '/auth/login' });
         }
 
         if (!req.session?.kek) {
             return res.status(401).send('Vault locked');
         }
 
-        const { url, searchTags, username, password, notes } = req.body;
+        const { title, url, searchTags, username, password, note } = req.body;
 
         const secretKey = decrypt(req.user.secretKey, req.session.kek);
 
         const passwordObj = new Password({
-            url, 
+            account: req.user._id,
+            title,
+            url: encrypt(url, secretKey), 
             searchTags, 
             username: encrypt(username, secretKey),
             password: encrypt(password, secretKey),
-            notes: encrypt(notes, secretKey)
+            note: encrypt(note, secretKey)
         });
         await passwordObj.save();
 

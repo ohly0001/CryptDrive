@@ -14,37 +14,17 @@ const PasswordSchema = new mongoose.Schema({
         ref: "Account", 
         required: true 
     },
-    url: { type: String, required: true, trim: true, index: true },
-    htmlId: { type: String },
+    title: { type: String, required: true, trim: true, index: true },
+    url: { type: EncryptedFieldSchema, required: true },
     username: { type: EncryptedFieldSchema, required: true },
     password: { type: EncryptedFieldSchema, required: true },
+    note: { type: EncryptedFieldSchema, required: true },
     searchTags: { type: [String], index: true }
 }, { timestamps: true });
 
-// Encrypt before save
-PasswordSchema.pre('save', async function () {
-    let accountDoc = null;
-
-    const getSecretKey = async () => {
-        if (!accountDoc) accountDoc = await Account.findById(this.account);
-        if (!accountDoc) throw new Error('Account not found for encryption');
-        return accountDoc.decodeSecretKey();
-    };
-
-    if (this.isNew || this.isModified('username')) {
-        const key = await getSecretKey();
-        this.username = encrypt(this.username, key);
-    }
-    if (this.isNew || this.isModified('password')) {
-        const key = await getSecretKey();
-        this.password = encrypt(this.password, key);
-    }
-});
-
-
-
 PasswordSchema.set('toJSON', {
     transform: (doc, ret) => {
+        delete ret.url,
         delete ret.password;
         delete ret.username;
         return ret;

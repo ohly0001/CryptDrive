@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
+    const newTitle = document.getElementById('newTitle');
     const newUrl = document.getElementById('newUrl');
     const newUser = document.getElementById('newUser');
     const newPassword = document.getElementById('newPassword');
@@ -6,6 +7,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const tagContainer = document.getElementById('newTags');
     const newNote = document.getElementById('newNote');
     const newPasswordForm = document.getElementById('newPasswordForm');
+
+    const tags = new Set();
 
     function calculateColour(str) {
         let hash = 0;
@@ -27,32 +30,39 @@ document.addEventListener('DOMContentLoaded', () => {
         const value = e.currentTarget.value.trim();
         if (!value) return;
 
+        if (value in tags) return;
+        tags.add(value);
+
         const tag = document.createElement('span');
         tag.innerText = value;
         tag.title = 'Click to remove';
         tag.classList.add('searchTag');
         tag.style.borderColor = calculateColour(value);
 
-        tag.addEventListener('click', () => filterTagsContainer.removeChild(tag));
+        tag.addEventListener('click', () => {
+            tags.delete(value);
+            tagContainer.removeChild(tag);
+        });
         tagContainer.appendChild(tag);
 
         e.currentTarget.value = '';
-        applyFilters();
     });
 
     newPasswordForm.addEventListener('submit', e => {
+        e.preventDefault();
+
         if (!newPasswordForm.checkValidity()) return;
 
+        const title = newTitle.title;
         const url = newUrl.value;
         const username = newUser.value;
         const password = newPassword.value;
         const note = newNote.value;
-        const tags = tagContainer.children.map(e => e.innerText);
 
-        fetch('/password/add', {
+        fetch('/pass/add', {
             method: "POST",
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url, username, password, tags, note })
+            body: JSON.stringify({ title, url, username, password, searchTags: [...tags], note })
         })
         .then(res => res.json())
         .then(data => {

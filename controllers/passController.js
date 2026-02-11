@@ -5,7 +5,7 @@ import { decrypt, encrypt } from '../utilities/encryption.js';
 const pull = async (req, res, next) => {
     try {
         if (!req.isAuthenticated?.() || !req.user) {
-            return res.status(401).redirect('/auth/login');
+            return res.status(401).json({ redirect: '/auth/login' });
         }
 
         const { limit, offset } = req.body;
@@ -29,7 +29,7 @@ const pull = async (req, res, next) => {
 const copy = async (req, res, next) => {
     try {
         if (!req.isAuthenticated?.() || !req.user) {
-            return res.status(401).redirect('/auth/login');
+            return res.status(401).json({ redirect: '/auth/login' });
         }
 
         if (!req.session?.kek) {
@@ -61,7 +61,7 @@ const copy = async (req, res, next) => {
 const viewEdit = async (req, res, next) => {
     try {
         if (!req.isAuthenticated?.() || !req.user) {
-            return res.status(401).redirect('/auth/login');
+            return res.status(401).json({ redirect: '/auth/login' });
         }
 
         if (!req.session?.kek) {
@@ -104,7 +104,7 @@ const viewEdit = async (req, res, next) => {
 const edit = async (req, res, next) => {
     try {
         if (!req.isAuthenticated?.() || !req.user) {
-            return res.status(401).redirect('/auth/login');
+            return res.status(401).json({ redirect: '/auth/login' });
         }
 
         if (!req.session?.kek) {

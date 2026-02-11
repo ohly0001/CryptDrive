@@ -172,7 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const value = e.currentTarget.value.trim();
         if (!value) return;
 
-        const tag = document.createElement('div');
+        const tag = document.createElement('span');
         tag.innerText = value;
         tag.title = 'Click to remove';
         tag.classList.add('searchTag');
@@ -183,29 +183,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         e.currentTarget.value = '';
         applyFilters();
-    });
-
-    // -------------------------
-    // LABELS FOR ADD PASSWORD
-    // -------------------------
-    savedTagField.addEventListener('keydown', e => {
-        if (e.key !== 'Enter') return;
-        e.preventDefault();
-
-        const value = e.currentTarget.value.trim();
-        if (!value) return;
-
-        const tag = document.createElement('div');
-        tag.innerText = value;
-        tag.title = 'Click to remove';
-        tag.classList.add('searchTag');
-        tag.style.backgroundColor = calculateColour(value);
-        console.log(tag.style.backgroundColor);
-
-        tag.addEventListener('click', () => savedTagsContainer.removeChild(tag));
-        savedTagsContainer.appendChild(tag);
-
-        savedTagField.value = '';
     });
 
     // -------------------------

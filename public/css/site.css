@@ -34,11 +34,16 @@ div {
 }
 .searchTag {
     display: inline;
-    border-radius: 50px;
-    margin: 2px;
-    padding: 5px 10px 5px 10px;
+    border-radius: 15px 0px 0px 15px;
+    corner-shape: bevel;
+    border-width: 4px;
+    border-style: solid;
+    padding: 5px 5px 5px 10px;
+    background-color: white;
 }
 .tagContainer {
-    display: inline;
-    padding: 2px;
+    display: inline-flex;
+    padding: 5px;
+    margin: 5px;
+    gap: 5px;
 }

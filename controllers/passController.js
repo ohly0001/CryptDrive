@@ -140,11 +140,11 @@ const edit = async (req, res, next) => {
 };
 
 const viewAdd = async (req, res, next) => {
-    
+    res.render('addPassword');
 }
 
 const add = async (req, res, next) => {
-
+    
 }
 
 export default {

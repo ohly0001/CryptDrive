@@ -34,7 +34,7 @@ function configurePassport() {
     passport.deserializeUser(async (id, done) => {
         try {
             const account = await Account.findById(id)
-                .select('-password -secretKey') // remove sensitive info
+                .select('-password') // remove irrelevant sensitive info
                 .lean(); // return plain JS object
             done(null, account || false);
         } catch (err) {

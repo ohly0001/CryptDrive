@@ -48,6 +48,10 @@ const register = async (req, res) => {
         await newAccount.secure(kek);
         req.session.kek = kek;
 
+        req.session.save(err => {
+            if (err) return next(err);
+        });
+
         const activationCode = new Code({
             account: newAccount._id,
             code: randomInt(0, 1000000).toString().padStart(6, '0'),
@@ -101,11 +105,20 @@ const activate = async (req, res, next) => {
 
         await codeObj.deleteOne();
 
+        const kek = req.session.kek; 
+
         // Log in the user
         req.login(account, (err) => {
+        if (err) return next(err);
+
+        // restore KEK after passport rewrites session
+        if (kek) req.session.kek = kek;
+
+        req.session.save(err => {
             if (err) return next(err);
             res.redirect('/auth/completed');
         });
+});
 
     } catch (err) {
         console.error(err);
@@ -118,14 +131,19 @@ const login = async (req, res, next) => {
         if (err) return next(err);
         if (!account) return res.status(401).json({ message: info?.message || 'Authentication failed.' });
 
-        // Derive KEK from the plaintext password used to log in
-        const kek = await derivekek(req.body.password, account.kekSalt);
-        req.session.kek = kek.toString('base64'); // store in memory
-
         req.login(account, async (err) => {
             if (err) return next(err);
-            await account.updateOne({ expireAt: null });
-            res.redirect('/auth/completed');
+
+            // Derive KEK from the plaintext password used to log in
+            const kek = await derivekek(req.body.password, account.kekSalt);
+            req.session.kek = kek.toString('base64');
+
+            req.session.save(async err => {
+                if (err) return next(err);
+
+                await account.updateOne({ expireAt: null });
+                res.redirect('/auth/completed');
+            });
         });
     })(req, res, next);
 };

@@ -62,7 +62,7 @@ AccountSchema.methods.comparePassword = async function (candidatePassword) {
 AccountSchema.set('toJSON', {
     transform: (doc, ret) => {
         delete ret.password;
-        delete ret.secretKey;
+        //delete ret.secretKey; Breaking req.user.secretKey
         return ret;
     }
 });
@@ -74,7 +74,6 @@ AccountSchema.pre('deleteOne', { document: true, query: false }, async function(
         mongoose.model('File').deleteMany({ account: this._id })
     ]);
 });
-
 
 const Account = mongoose.model('Account', AccountSchema);
 export default Account;

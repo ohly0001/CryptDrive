@@ -23,7 +23,7 @@ export function generateAESKey() {
     return crypto.randomBytes(32).toString('base64'); // 256-bit AES
 }
 
-export function encrypt(text, secretKey) {
+export function encrypt(text="", secretKey) {
     const key = Buffer.from(secretKey, 'base64');
     if (key.length !== 32) throw new Error('AES key must be 32 bytes');
 

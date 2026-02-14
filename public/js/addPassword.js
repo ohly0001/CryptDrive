@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!newPasswordForm.checkValidity()) return;
 
-        const title = newTitle.title;
+        const title = newTitle.value;
         const url = newUrl.value;
         const username = newUser.value;
         const password = newPassword.value;

@@ -33,7 +33,7 @@ const copy = async (req, res, next) => {
         }
 
         if (!req.session?.kek) {
-            return res.status(401).send('Vault locked');
+            return res.status(401).json({message: 'Vault locked'});
         }
 
         const { id, category } = req.body;
@@ -65,7 +65,7 @@ const viewEdit = async (req, res, next) => {
         }
 
         if (!req.session?.kek) {
-            return res.status(401).send('Vault locked');
+            return res.status(401).json({message: 'Vault locked'});
         }
 
         const id = req.params.id;
@@ -108,7 +108,7 @@ const edit = async (req, res, next) => {
         }
 
         if (!req.session?.kek) {
-            return res.status(401).send('Vault locked');
+            return res.status(401).json({message: 'Vault locked'});
         }
 
         const id = req.params.id;
@@ -152,21 +152,22 @@ const add = async (req, res, next) => {
         }
 
         if (!req.session?.kek) {
-            return res.status(401).send('Vault locked');
+            return res.status(401).json({message: 'Vault locked'});
         }
 
         const { title, url, searchTags, username, password, note } = req.body;
 
+        console.log(req.user);
         const secretKey = decrypt(req.user.secretKey, req.session.kek);
 
         const passwordObj = new Password({
             account: req.user._id,
             title,
-            url: encrypt(url, secretKey), 
+            url: encrypt(url || "", secretKey), 
             searchTags, 
-            username: encrypt(username, secretKey),
-            password: encrypt(password, secretKey),
-            note: encrypt(note, secretKey)
+            username: encrypt(username || "", secretKey),
+            password: encrypt(password || "", secretKey),
+            note: encrypt(note || "", secretKey)
         });
         await passwordObj.save();
 

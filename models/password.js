@@ -15,10 +15,10 @@ const PasswordSchema = new mongoose.Schema({
         required: true 
     },
     title: { type: String, required: true, trim: true, index: true },
-    url: { type: EncryptedFieldSchema, required: true },
+    url: { type: EncryptedFieldSchema, index: true },
     username: { type: EncryptedFieldSchema, required: true },
     password: { type: EncryptedFieldSchema, required: true },
-    note: { type: EncryptedFieldSchema, required: true },
+    note: { type: EncryptedFieldSchema },
     searchTags: { type: [String], index: true }
 }, { timestamps: true });
 
@@ -27,6 +27,7 @@ PasswordSchema.set('toJSON', {
         delete ret.url,
         delete ret.password;
         delete ret.username;
+        delete ret.note;
         return ret;
     }
 });

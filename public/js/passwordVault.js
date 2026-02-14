@@ -16,9 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let allPasswords = []; // store fetched passwords for filtering
 
-    // -------------------------
     // UTILITY FUNCTIONS
-    // -------------------------
     function refreshAutoHideCopyOptionContainer(container) {
         if (container._hideTimer) clearTimeout(container._hideTimer);
 
@@ -50,9 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return colour
     }
 
-    // -------------------------
     // RENDER PASSWORDS
-    // -------------------------
     function renderPasswords(list) {
         passwordContainer.innerHTML = '';
 
@@ -122,9 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // -------------------------
     // FETCH PASSWORDS
-    // -------------------------
     async function loadPasswords() {
         const res = await fetch('/passwords/pull', {
             method: 'POST',
@@ -141,9 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updatePaginationUI();
     }
 
-    // -------------------------
     // FILTERING
-    // -------------------------
     function applyFilters() {
         let filtered = allPasswords.slice();
 
@@ -185,9 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
         applyFilters();
     });
 
-    // -------------------------
     // PAGINATION
-    // -------------------------
     function updatePaginationSlice() {
         const sliceStart = Math.min(currentPage * pageSize + 1, totalPasswords);
         const sliceEnd = Math.min((currentPage + 1) * pageSize, totalPasswords);
@@ -219,9 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
         await loadPasswords();
     });
 
-    // -------------------------
     // BATCH ACTIONS
-    // -------------------------
     document.getElementById('selectAll').addEventListener('click', () => {
         document.querySelectorAll('.password-selection').forEach(c => c.checked = true);
     });
@@ -232,9 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('addTagSelected').addEventListener('click', () => { alert('Add Tag to Selected - Not implemented'); });
     document.getElementById('removeTagSelected').addEventListener('click', () => { alert('Remove Tag from Selected - Not implemented'); });
     document.getElementById('deleteSelected').addEventListener('click', () => { alert('Delete Selected - Not implemented'); });
-
-    // -------------------------
+    
     // INITIAL LOAD
-    // -------------------------
     loadPasswords();
 });

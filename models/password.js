@@ -1,6 +1,4 @@
 import mongoose from 'mongoose';
-import Account from './account.js';
-import { encrypt, decrypt } from '../utilities/encryption.js';
 
 const EncryptedFieldSchema = new mongoose.Schema({
     encryptedData: { type: String, required: true },

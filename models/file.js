@@ -6,14 +6,8 @@ const FileSchema = new mongoose.Schema({
         ref: "Account", 
         required: true 
     },
-    path: {
-        type: String,
-        required: true,
-        trim: true
-    },
-    searchTags: {
-        type: [String]
-    }
+    path: { type: String, required: true, trim: true },
+    searchTags: { type: [String], index: true }
 }, { timestamps: true });
 
 const File = mongoose.model('File', FileSchema);

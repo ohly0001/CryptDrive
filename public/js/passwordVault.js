@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             const copyOptionsBtn = document.createElement('button');
-            copyOptionsBtn.innerText = "📋";
+            copyOptionsBtn.inneHtml = "<i class='fa fa-copy'></i>";
             copyOptionsBtn.title = 'Copy';
             copyOptionsBtn.type = 'button';
             copyOptionsBtn.addEventListener('click', (event) => {
@@ -103,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             const editOptionsBtn = document.createElement('button');
-            editOptionsBtn.innerText = "✏️";
+            editOptionsBtn.inneHtml = "<i class='fa fa-edit'></i>";
             editOptionsBtn.title = 'Edit';
             editOptionsBtn.type = 'button';
             editOptionsBtn.addEventListener('click', () => {

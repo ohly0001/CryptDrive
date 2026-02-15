@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html>
     <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta charset="UTF-8">
         <meta name="author" content="Robert Ohly">
         <title>CryptDrive Account Management</title>
         <script src="/js/accountManagement.js" defer></script>
         <link rel="stylesheet" href="/css/site.css">
+        <link rel="stylesheet" href="/css/accountManagement.css">
+        <script src="https://kit.fontawesome.com/0f23db6f2c.js" crossorigin="anonymous"></script>
     </head>
     <body>
         <%- include('components/nav') %>
@@ -20,14 +23,13 @@
         </fieldset>
         <fieldset>
             <legend>Account Management</legend>
-            <button id="editAccount">✏️ Edit Account</button><br><br>
+            <button id="editAccount"><i class="fas fa-user-edit"></i> Edit Account</button><br><br>
             <a href="./passwordResetCode.html">Reset Password</a><br><br>
             <button id="deleteAccount">🚮 Delete Account</button>
         </fieldset>
         <fieldset>
             <legend>Session & Navigation</legend>
-            <button id="logout">🚪 Log Out</button><br><br>
-            <button onclick="document.location.href='/dash';">Back To Dashboard</button>
+            <button id="logout"><i class="fa fa-sign-out"></i> Log Out</button><br><br>
         </fieldset>
     </body>
 </html>

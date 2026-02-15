@@ -73,4 +73,20 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    const peekButton = document.getElementById('passwordPeek');
+    const showPassword = () => {
+        peekButton.innerHTML = '<i class="fa fa-eye"></i>';
+        newPassword.type = 'text'
+    };
+    const hidePassword = () => {
+        peekButton.innerHTML = '<i class="fa fa-eye-slash"></i>';
+        newPassword.type = 'password'
+    };
+
+    peekButton.addEventListener('mousedown', showPassword);
+    peekButton.addEventListener('mouseup', hidePassword);
+    peekButton.addEventListener('mouseleave', hidePassword);
+    peekButton.addEventListener('touchstart', showPassword);
+    peekButton.addEventListener('touchend', hidePassword);
 });

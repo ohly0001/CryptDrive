@@ -115,6 +115,17 @@ document.addEventListener('DOMContentLoaded', () => {
             childPasswordContainer.appendChild(copyOptionsBtn);
             childPasswordContainer.appendChild(editOptionsBtn);
             childPasswordContainer.appendChild(copyOptionsContainer);
+            childPasswordContainer.appendChild(document.createElement('br'));
+
+            const tagContainer = document.createElement('div');
+            e.searchTags.forEach(tagText => {
+                const tag = document.createElement('span');
+                tag.innerText = tagText;
+                tag.classList.add('searchTag');
+                tag.style.borderColor = calculateColour(tagText);
+                tagContainer.appendChild(tag);
+            });
+            childPasswordContainer.appendChild(tagContainer);
 
             passwordContainer.appendChild(childPasswordContainer);
         });
@@ -187,19 +198,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // Shortcuts
     document.addEventListener('keydown', (e) => {
         // Check if the key combination is Ctrl+ (or Cmd+ on Mac)
-        e.preventDefault();
+        //e.preventDefault();
         if (!e.ctrlKey && !e.metaKey) return;
 
         if (e.key === '/') {
+            e.preventDefault();
             searchField.focus();
         }
         else if (e.key === 'p') {
+            e.preventDefault();
             addPassword();
         }
         else if (e.key === 'a') {
+            e.preventDefault();
             selectPasswords(true);
         }
         else if (e.key === 'd') {
+            e.preventDefault();
             selectPasswords(false);
         }
     });

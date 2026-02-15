@@ -1,6 +1,7 @@
-body {
-    background-color: white;
+:root {
+    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: midnightblue;
+    background-color: white;
 }
 button {
     color: white;
@@ -15,8 +16,17 @@ button:hover {
 fieldset {
     background-color: aliceblue;
 }
-div {
+div, fieldset {
     padding: 5px;
+    border-width: 1px;
+    border-style: solid;
+    border-radius: 5px;
+}
+input[type=submit] {
+    border-radius: 50px;
+}
+input[type=text] {
+    border-radius: 5px;
 }
 .hidden {
     display: none;
@@ -36,10 +46,11 @@ div {
     display: inline;
     border-radius: 15px 0px 0px 15px;
     corner-shape: bevel;
-    border-width: 4px;
+    border-width: 2px;
     border-style: solid;
-    padding: 5px 5px 5px 10px;
+    padding: 2px 2px 2px 8px;
     background-color: white;
+    font-size: 12px;
 }
 .tagContainer {
     display: inline-flex;

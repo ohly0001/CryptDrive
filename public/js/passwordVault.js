@@ -4,15 +4,13 @@ var totalPages = 0;
 var currentPage = 0;
 
 document.addEventListener('DOMContentLoaded', () => {
+    const addPasswordButton = document.getElementById('addPasswordButton');
+    
     const passwordContainer = document.getElementById('passwordContainer');
     const currentPageNumberField = document.getElementById('currentPageNumber');
     const paginationSlice = document.getElementById('paginationSlice');
 
-    const savedTagField = document.getElementById('savedTag');
-    const savedTagsContainer = document.getElementById('savedTags');
     const searchField = document.getElementById('searchField');
-    const filterTagField = document.getElementById('filterTag');
-    const filterTagsContainer = document.getElementById('filterTags');
 
     let allPasswords = []; // store fetched passwords for filtering
 
@@ -48,6 +46,10 @@ document.addEventListener('DOMContentLoaded', () => {
         return colour
     }
 
+    function addPassword() {
+        document.location.href='/pass/viewAdd'
+    }
+
     // RENDER PASSWORDS
     function renderPasswords(list) {
         passwordContainer.innerHTML = '';
@@ -60,22 +62,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const childPasswordContainer = document.createElement('div');
             childPasswordContainer.classList.add('password');
 
-            const url = document.createElement('span');
-            url.innerText = e.url || 'No URL Provided';
+            const title = document.createElement('span');
+            title.innerText = e.title || 'No Title Found';
 
             const copyOptionsContainer = document.createElement('div');
             copyOptionsContainer.classList.add('hidden', 'copy_options');
 
-            const copyableFields = ['url', 'username', 'password', 'note'];
+            const copyableFields = ['url', 'username', 'password'];
             copyableFields.forEach(key => {
-                if (!e[key]) return;
+                //if (!e[key]) return;
 
                 const btn = document.createElement('button');
                 btn.innerText = key;
                 btn.type = 'button';
 
                 btn.addEventListener('click', async () => {
-                    const res = await fetch('/passwords/copy', {
+                    const res = await fetch('/pass/copy', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ id: e._id, category: key })
@@ -105,11 +107,11 @@ document.addEventListener('DOMContentLoaded', () => {
             editOptionsBtn.title = 'Edit';
             editOptionsBtn.type = 'button';
             editOptionsBtn.addEventListener('click', () => {
-                document.location.href = `/passwords/edit/${e._id}`;
+                document.location.href = `/pass/viewEdit/${e._id}`;
             });
 
             childPasswordContainer.appendChild(selectionBox);
-            childPasswordContainer.appendChild(url);
+            childPasswordContainer.appendChild(title);
             childPasswordContainer.appendChild(copyOptionsBtn);
             childPasswordContainer.appendChild(editOptionsBtn);
             childPasswordContainer.appendChild(copyOptionsContainer);
@@ -120,62 +122,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // FETCH PASSWORDS
     async function loadPasswords() {
-        const res = await fetch('/passwords/pull', {
+        await fetch('/pass/pull', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ limit: pageSize, offset: currentPage * pageSize })
+        })
+        .then(res => res.json())
+        .then(data => {
+            allPasswords = data.partialPasswords || [];
+            totalPasswords = data.total ?? allPasswords.length;
+            totalPages = Math.max(1, Math.ceil(totalPasswords / pageSize));
+
+            renderPasswords(allPasswords);
+            updatePaginationUI();
         });
-        const data = await res.json();
-
-        allPasswords = data.partialPasswords || [];
-        totalPasswords = data.total ?? allPasswords.length;
-        totalPages = Math.max(1, Math.ceil(totalPasswords / pageSize));
-
-        applyFilters();
-        updatePaginationUI();
     }
-
-    // FILTERING
-    function applyFilters() {
-        let filtered = allPasswords.slice();
-
-        const searchQuery = searchField.value.trim().toLowerCase();
-        const tagFilters = getSelectedTags(filterTagsContainer);
-
-        if (searchQuery) {
-            filtered = filtered.filter(p => (p.url || '').toLowerCase().includes(searchQuery));
-        }
-
-        if (tagFilters.length) {
-            filtered = filtered.filter(p => {
-                if (!p.tags || !Array.isArray(p.tags)) return false;
-                return tagFilters.every(f => p.tags.includes(f));
-            });
-        }
-
-        renderPasswords(filtered);
-    }
-
-    searchField.addEventListener('input', applyFilters);
-    filterTagField.addEventListener('keydown', e => {
-        if (e.key !== 'Enter') return;
-        e.preventDefault();
-
-        const value = e.currentTarget.value.trim();
-        if (!value) return;
-
-        const tag = document.createElement('span');
-        tag.innerText = value;
-        tag.title = 'Click to remove';
-        tag.classList.add('searchTag');
-        tag.style.backgroundColor = calculateColour(value);
-
-        tag.addEventListener('click', () => filterTagsContainer.removeChild(tag));
-        filterTagsContainer.appendChild(tag);
-
-        e.currentTarget.value = '';
-        applyFilters();
-    });
 
     // PAGINATION
     function updatePaginationSlice() {
@@ -210,17 +171,41 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // BATCH ACTIONS
-    document.getElementById('selectAll').addEventListener('click', () => {
-        document.querySelectorAll('.password-selection').forEach(c => c.checked = true);
-    });
-    document.getElementById('deselectAll').addEventListener('click', () => {
-        document.querySelectorAll('.password-selection').forEach(c => c.checked = false);
-    });
-    // Add/Remove/Delete selected would require API endpoints; placeholders:
-    document.getElementById('addTagSelected').addEventListener('click', () => { alert('Add Tag to Selected - Not implemented'); });
-    document.getElementById('removeTagSelected').addEventListener('click', () => { alert('Remove Tag from Selected - Not implemented'); });
-    document.getElementById('deleteSelected').addEventListener('click', () => { alert('Delete Selected - Not implemented'); });
+    function selectPasswords(checked) {
+        document.querySelectorAll('.password-selection').forEach(c => c.checked = checked);
+    }
+
+    function deleteSelected() {
+        
+    }
+
+    document.getElementById('selectAll').addEventListener('click', () => selectPasswords(true));
+    document.getElementById('deselectAll').addEventListener('click', () => selectPasswords(false));
+    // Delete selected would require API endpoints; placeholders:
+    document.getElementById('deleteSelected').addEventListener('click', () => deleteSelected());
     
+    // Shortcuts
+    document.addEventListener('keydown', (e) => {
+        // Check if the key combination is Ctrl+ (or Cmd+ on Mac)
+        e.preventDefault();
+        if (!e.ctrlKey && !e.metaKey) return;
+
+        if (e.key === '/') {
+            searchField.focus();
+        }
+        else if (e.key === 'p') {
+            addPassword();
+        }
+        else if (e.key === 'a') {
+            selectPasswords(true);
+        }
+        else if (e.key === 'd') {
+            selectPasswords(false);
+        }
+    });
+
+    addPasswordButton.addEventListener('click', e => addPassword());
+
     // INITIAL LOAD
     loadPasswords();
 });

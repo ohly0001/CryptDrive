@@ -7,9 +7,8 @@ const pull = async (req, res, next) => {
             return res.status(401).json({ redirect: '/auth/login' });
         }
 
-        console.log("pulling");
-
         const { limit, offset } = req.body;
+
         const limitNum = Math.max(parseInt(limit) || 10, 1);
         const offsetNum = Math.max(parseInt(offset) || 0, 0);
 

@@ -3,8 +3,8 @@ import controller from "../controllers/passController.js";
 
 const router = express.Router();
 
-router.get("/pull", controller.pull);
-router.get("/copy", controller.copy);
+router.post("/pull", controller.pull);
+router.post("/copy", controller.copy);
 router.post("/edit/:id", controller.edit);
 router.get("/viewEdit/:id", controller.viewEdit);
 router.get("/viewAdd", controller.viewAdd);

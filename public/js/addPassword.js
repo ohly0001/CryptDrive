@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const tagContainer = document.getElementById('newTags');
     const newNote = document.getElementById('newNote');
     const newPasswordForm = document.getElementById('newPasswordForm');
+    const newFavourite = document.getElementById('newFavourite');
 
     const tags = new Set();
 
@@ -27,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.key !== 'Enter') return;
         e.preventDefault();
 
-        const value = e.currentTarget.value.trim();
+        const value = e.currentTarget.value.trim().toLowerCase();
         if (!value) return;
 
         if (value in tags) return;
@@ -58,11 +59,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const username = newUser.value;
         const password = newPassword.value;
         const note = newNote.value;
+        const isFavourite = newFavourite.checked;
 
         fetch('/pass/add', {
             method: "POST",
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title, url, username, password, searchTags: [...tags], note })
+            body: JSON.stringify({ title, url, username, password, searchTags: [...tags], note, isFavourite })
         })
         .then(res => res.json())
         .then(data => {
@@ -76,17 +78,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const peekButton = document.getElementById('passwordPeek');
     const showPassword = () => {
-        peekButton.innerHTML = '<i class="fa fa-eye"></i>';
+        peekButton.innerHTML = '<i class="fa-solid fa-eye"></i>';
         newPassword.type = 'text'
     };
     const hidePassword = () => {
-        peekButton.innerHTML = '<i class="fa fa-eye-slash"></i>';
+        peekButton.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
         newPassword.type = 'password'
     };
 
-    peekButton.addEventListener('mousedown', showPassword);
-    peekButton.addEventListener('mouseup', hidePassword);
-    peekButton.addEventListener('mouseleave', hidePassword);
-    peekButton.addEventListener('touchstart', showPassword);
-    peekButton.addEventListener('touchend', hidePassword);
+    ['mousedown', 'touchstart'].forEach(evt => peekButton.addEventListener(evt, showPassword));
+    ['mouseup', 'mouseleave', 'touchend'].forEach(evt => peekButton.addEventListener(evt, hidePassword));
 });

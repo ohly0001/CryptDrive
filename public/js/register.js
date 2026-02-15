@@ -81,10 +81,16 @@ document.addEventListener('DOMContentLoaded', () => {
         passwordStrengthLabel.innerText = labels[score];
     });
 
-    const showPassword = () => password.type = 'text';
-    const hidePassword = () => password.type = 'password';
-
     const peekButton = document.getElementById('passwordPeek');
+    const showPassword = () => {
+        peekButton.innerHTML = '<i class="fa-solid fa-eye"></i>';
+        password.type = 'text'
+    };
+    const hidePassword = () => {
+        peekButton.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
+        password.type = 'password'
+    };
+
     ['mousedown', 'touchstart'].forEach(evt => peekButton.addEventListener(evt, showPassword));
     ['mouseup', 'mouseleave', 'touchend'].forEach(evt => peekButton.addEventListener(evt, hidePassword));
 });

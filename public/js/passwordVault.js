@@ -1,77 +1,132 @@
-var pageSize = 10;
-var totalPasswords = 0;
-var totalPages = 0;
-var currentPage = 0;
+let pageSize = 10;
+let totalPasswords = 0;
+let totalPages = 0;
+let currentPage = 0;
 
 document.addEventListener('DOMContentLoaded', () => {
     const addPasswordButton = document.getElementById('addPasswordButton');
-    
     const passwordContainer = document.getElementById('passwordContainer');
     const currentPageNumberField = document.getElementById('currentPageNumber');
     const paginationSlice = document.getElementById('paginationSlice');
 
     const searchField = document.getElementById('searchField');
+    const favoriteFilter = document.getElementById('favoriteFilter');
+    const titleSort = document.getElementById('titleSort');
+    const tagFilter = document.getElementById('tagFilter');
 
-    let allPasswords = []; // store fetched passwords for filtering
+    let allPasswords = [];
 
-    // UTILITY FUNCTIONS
+    // UTILITIES
     function refreshAutoHideCopyOptionContainer(container) {
         if (container._hideTimer) clearTimeout(container._hideTimer);
-
-        container._hideTimer = setTimeout(() => {
-            container.classList.add('hidden');
-        }, 5000);
+        container._hideTimer = setTimeout(() => container.classList.add('hidden'), 5000);
     }
 
     function hideAllCopyMenus() {
-        document.querySelectorAll('.copy_options').forEach(el => {
-            el.classList.add('hidden');
-        });
-    }
-
-    function getSelectedTags(container) {
-        return Array.from(container.children).map(c => c.innerText.trim());
+        document.querySelectorAll('.copy_options').forEach(el => el.classList.add('hidden'));
     }
 
     function calculateColour(str) {
         let hash = 0;
-        str.split('').forEach(char => {
-            hash = char.charCodeAt(0) + ((hash << 5) - hash)
-        })
-        let colour = '#'
+        str.split('').forEach(char => hash = char.charCodeAt(0) + ((hash << 5) - hash));
+        let colour = '#';
         for (let i = 0; i < 3; i++) {
-            const value = (hash >> (i * 8)) & 0xff
-            colour += value.toString(16).padStart(2, '0')
+            const value = (hash >> (i * 8)) & 0xff;
+            colour += value.toString(16).padStart(2, '0');
         }
-        return colour
+        return colour;
     }
 
     function addPassword() {
-        document.location.href='/pass/viewAdd'
+        document.location.href = '/pass/viewAdd';
+    }
+
+    // FILTER + SORT + PIN FAVORITES
+    function getFilteredPasswords() {
+        let filtered = [...allPasswords];
+
+        // Only favorites toggle filter
+        if (favoriteFilter.checked) filtered = filtered.filter(p => p.isFavourite);
+
+        // Tag filter
+        const tagText = tagFilter.value.trim().toLowerCase();
+        if (tagText) {
+            filtered = filtered.filter(p =>
+                p.searchTags.some(tag => tag.toLowerCase().includes(tagText))
+            );
+        }
+
+        // Search filter
+        const searchText = searchField.value.trim().toLowerCase();
+        if (searchText) {
+            filtered = filtered.filter(p =>
+                (p.title && p.title.toLowerCase().includes(searchText)) ||
+                p.searchTags.some(tag => tag.toLowerCase().includes(searchText))
+            );
+        }
+
+        // Sort function
+        const sortFn = (a, b) => {
+            if (titleSort.value === 'asc') {
+                return (a.title || '').localeCompare(b.title || '');
+            } else {
+                return (b.title || '').localeCompare(a.title || '');
+            }
+        };
+
+        // PIN FAVORITES TO TOP
+        const favorites = filtered.filter(p => p.isFavourite).sort(sortFn);
+        const nonFavourites = filtered.filter(p => !p.isFavourite).sort(sortFn);
+
+        return [...favorites, ...nonFavourites];
     }
 
     // RENDER PASSWORDS
-    function renderPasswords(list) {
+    function renderPasswords() {
+        const list = getFilteredPasswords();
+
+        const startIndex = currentPage * pageSize;
+        const paginatedList = list.slice(startIndex, startIndex + pageSize);
+
         passwordContainer.innerHTML = '';
 
-        list.forEach(e => {
+        paginatedList.forEach(e => {
             const selectionBox = document.createElement('input');
             selectionBox.classList.add('password-selection');
             selectionBox.type = 'checkbox';
 
             const childPasswordContainer = document.createElement('div');
             childPasswordContainer.classList.add('password');
+            childPasswordContainer.dataset.id = e._id;
 
+            // TITLE
             const title = document.createElement('span');
             title.innerText = e.title || 'No Title Found';
 
+            // FAVORITE BUTTON
+            const favBtn = document.createElement('button');
+            favBtn.type = 'button';
+            favBtn.innerHTML = e.isFavourite
+                ? "<i class='fa fa-star'></i>"
+                : "<i class='fa fa-star-o'></i>";
+            favBtn.title = 'Toggle Favourite';
+
+            favBtn.addEventListener('click', async () => {
+                await fetch('/pass/toggleFavourite', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: e._id })
+                });
+               
+                e.isFavourite = !e.isFavourite;
+                renderPasswords(); // re-render to reposition pinned favorite
+            });
+
+            // COPY OPTIONS
             const copyOptionsContainer = document.createElement('div');
             copyOptionsContainer.classList.add('hidden', 'copy_options');
 
-            const copyableFields = ['url', 'username', 'password'];
-            copyableFields.forEach(key => {
-                //if (!e[key]) return;
-
+            ['url', 'username', 'password'].forEach(key => {
                 const btn = document.createElement('button');
                 btn.innerText = key;
                 btn.type = 'button';
@@ -91,10 +146,10 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             const copyOptionsBtn = document.createElement('button');
-            copyOptionsBtn.inneHtml = "<i class='fa fa-copy'></i>";
+            copyOptionsBtn.innerHTML = "<i class='fa fa-copy'></i>";
             copyOptionsBtn.title = 'Copy';
             copyOptionsBtn.type = 'button';
-            copyOptionsBtn.addEventListener('click', (event) => {
+            copyOptionsBtn.addEventListener('click', event => {
                 hideAllCopyMenus();
                 copyOptionsContainer.classList.remove('hidden');
                 copyOptionsContainer.style.left = event.clientX + 'px';
@@ -102,8 +157,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 refreshAutoHideCopyOptionContainer(copyOptionsContainer);
             });
 
+            // EDIT BUTTON
             const editOptionsBtn = document.createElement('button');
-            editOptionsBtn.inneHtml = "<i class='fa fa-edit'></i>";
+            editOptionsBtn.innerHTML = "<i class='fa fa-edit'></i>";
             editOptionsBtn.title = 'Edit';
             editOptionsBtn.type = 'button';
             editOptionsBtn.addEventListener('click', () => {
@@ -111,12 +167,14 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             childPasswordContainer.appendChild(selectionBox);
+            childPasswordContainer.appendChild(favBtn);
             childPasswordContainer.appendChild(title);
             childPasswordContainer.appendChild(copyOptionsBtn);
             childPasswordContainer.appendChild(editOptionsBtn);
             childPasswordContainer.appendChild(copyOptionsContainer);
             childPasswordContainer.appendChild(document.createElement('br'));
 
+            // TAGS
             const tagContainer = document.createElement('div');
             e.searchTags.forEach(tagText => {
                 const tag = document.createElement('span');
@@ -129,98 +187,163 @@ document.addEventListener('DOMContentLoaded', () => {
 
             passwordContainer.appendChild(childPasswordContainer);
         });
+
+        updatePaginationUI(list.length);
     }
 
-    // FETCH PASSWORDS
+    // FETCH
     async function loadPasswords() {
-        await fetch('/pass/pull', {
+        const res = await fetch('/pass/pull', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ limit: pageSize, offset: currentPage * pageSize })
-        })
-        .then(res => res.json())
-        .then(data => {
-            allPasswords = data.partialPasswords || [];
-            totalPasswords = data.total ?? allPasswords.length;
-            totalPages = Math.max(1, Math.ceil(totalPasswords / pageSize));
-
-            renderPasswords(allPasswords);
-            updatePaginationUI();
+            body: JSON.stringify({ limit: 1000 })
         });
+
+        const data = await res.json();
+        allPasswords = data.partialPasswords || [];
+        totalPasswords = allPasswords.length;
+        renderPasswords();
     }
 
     // PAGINATION
-    function updatePaginationSlice() {
-        const sliceStart = Math.min(currentPage * pageSize + 1, totalPasswords);
-        const sliceEnd = Math.min((currentPage + 1) * pageSize, totalPasswords);
-        paginationSlice.innerText = `${sliceStart}-${sliceEnd} of ${totalPasswords}`;
+    function updatePaginationSlice(filteredCount) {
+        const sliceStart = Math.min(currentPage * pageSize + 1, filteredCount);
+        const sliceEnd = Math.min((currentPage + 1) * pageSize, filteredCount);
+        paginationSlice.innerText = `${sliceStart}-${sliceEnd} of ${filteredCount}`;
     }
 
-    function updatePaginationUI() {
+    function updatePaginationUI(filteredCount) {
+        totalPages = Math.max(1, Math.ceil(filteredCount / pageSize));
         document.getElementById('totalPages').innerText = totalPages;
         currentPageNumberField.max = totalPages;
-        currentPageNumberField.value = currentPage + 1;
-        updatePaginationSlice();
+        currentPageNumberField.value = Math.min(currentPage + 1, totalPages);
+        updatePaginationSlice(filteredCount);
     }
-
-    document.getElementById('paginationSize').addEventListener('change', async e => {
-        pageSize = parseInt(e.target.value);
-        currentPage = 0;
-        await loadPasswords();
-    });
-
-    document.getElementById('firstPage').addEventListener('click', async () => { currentPage = 0; await loadPasswords(); });
-    document.getElementById('prevPage').addEventListener('click', async () => { currentPage = Math.max(currentPage - 1, 0); await loadPasswords(); });
-    document.getElementById('nextPage').addEventListener('click', async () => { currentPage = Math.min(currentPage + 1, totalPages - 1); await loadPasswords(); });
-    document.getElementById('lastPage').addEventListener('click', async () => { currentPage = totalPages - 1; await loadPasswords(); });
-
-    currentPageNumberField.addEventListener('change', async e => {
-        let val = parseInt(e.target.value);
-        if (isNaN(val)) return;
-        currentPage = Math.max(0, Math.min(val - 1, totalPages - 1));
-        await loadPasswords();
-    });
 
     // BATCH ACTIONS
     function selectPasswords(checked) {
         document.querySelectorAll('.password-selection').forEach(c => c.checked = checked);
     }
 
-    function deleteSelected() {
-        
+    async function deleteSelected() {
+        const selectedIds = Array.from(document.querySelectorAll('.password-selection:checked'))
+            .map(cb => cb.closest('.password').dataset.id);
+
+        if (!selectedIds.length) return alert("No passwords selected.");
+        if (!confirm(`Delete ${selectedIds.length} password(s)?`)) return;
+
+        try {
+            const res = await fetch('/pass/deleteMany', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids: selectedIds })
+            });
+
+            const result = await res.json();
+            if (result.success) loadPasswords();
+            else alert("Failed to delete selected passwords.");
+        } catch (err) {
+            console.error(err);
+            alert("Error deleting passwords.");
+        }
     }
 
+    //set all to favourite if only some in the list is favourited, otherwise unfavourite if all in selection is favourited
+    async function favouriteSelected() {
+        const selected = Array.from(document.querySelectorAll('.password-selection:checked'))
+            .map(cb => cb.closest('.password').dataset.id);
+
+        if (!selected.length) {
+            alert("No passwords selected.");
+            return;
+        }
+
+        // Find selected password objects
+        const selectedObjects = allPasswords.filter(p => selected.includes(p._id));
+
+        // Check if ALL are already favorite
+        const allAreFav = selectedObjects.every(p => p.isFavourite === true);
+
+        // If all are fav → unfav them
+        // If some not fav → fav them all
+        const newState = !allAreFav;
+
+        try {
+            const res = await fetch('/pass/favouriteMany', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ids: selected,
+                    state: newState
+                })
+            });
+
+            const result = await res.json();
+
+            if (!result.success) {
+                alert("Failed updating favorites");
+                return;
+            }
+
+            // Update local cache
+            allPasswords.forEach(p => {
+                if (selected.includes(p._id)) {
+                    p.isFavourite = newState;
+                }
+            });
+
+            renderPasswords();
+
+        } catch (err) {
+            console.error(err);
+            alert("Error updating favorites");
+        }
+    }
+
+    // EVENTS
+    addPasswordButton.addEventListener('click', addPassword);
     document.getElementById('selectAll').addEventListener('click', () => selectPasswords(true));
     document.getElementById('deselectAll').addEventListener('click', () => selectPasswords(false));
-    // Delete selected would require API endpoints; placeholders:
-    document.getElementById('deleteSelected').addEventListener('click', () => deleteSelected());
-    
-    // Shortcuts
-    document.addEventListener('keydown', (e) => {
-        // Check if the key combination is Ctrl+ (or Cmd+ on Mac)
-        //e.preventDefault();
-        if (!e.ctrlKey && !e.metaKey) return;
+    document.getElementById('deleteSelected').addEventListener('click', deleteSelected);
+    document.getElementById('favouriteSelected').addEventListener('click', favouriteSelected);
 
-        if (e.key === '/') {
-            e.preventDefault();
-            searchField.focus();
-        }
-        else if (e.key === 'p') {
-            e.preventDefault();
-            addPassword();
-        }
-        else if (e.key === 'a') {
-            e.preventDefault();
-            selectPasswords(true);
-        }
-        else if (e.key === 'd') {
-            e.preventDefault();
-            selectPasswords(false);
-        }
+    // PAGINATION
+    document.getElementById('paginationSize').addEventListener('change', e => {
+        pageSize = parseInt(e.target.value);
+        currentPage = 0;
+        renderPasswords();
     });
 
-    addPasswordButton.addEventListener('click', e => addPassword());
+    document.getElementById('firstPage').addEventListener('click', () => { currentPage = 0; renderPasswords(); });
+    document.getElementById('prevPage').addEventListener('click', () => { currentPage = Math.max(currentPage - 1, 0); renderPasswords(); });
+    document.getElementById('nextPage').addEventListener('click', () => { currentPage = Math.min(currentPage + 1, totalPages - 1); renderPasswords(); });
+    document.getElementById('lastPage').addEventListener('click', () => { currentPage = totalPages - 1; renderPasswords(); });
 
-    // INITIAL LOAD
+    currentPageNumberField.addEventListener('change', e => {
+        const val = parseInt(e.target.value);
+        if (isNaN(val)) return;
+        currentPage = Math.max(0, Math.min(val - 1, totalPages - 1));
+        renderPasswords();
+    });
+
+    // FILTER EVENTS
+    [searchField, favoriteFilter, titleSort, tagFilter].forEach(el =>
+        el.addEventListener('input', () => {
+            currentPage = 0;
+            renderPasswords();
+        })
+    );
+
+    // SHORTCUTS
+    document.addEventListener('keydown', e => {
+        if (!e.ctrlKey && !e.metaKey) return;
+
+        if (e.key === '/') { e.preventDefault(); searchField.focus(); }
+        else if (e.key === 'p') { e.preventDefault(); addPassword(); }
+        else if (e.key === 'a') { e.preventDefault(); selectPasswords(true); }
+        else if (e.key === 'd') { e.preventDefault(); selectPasswords(false); }
+    });
+
+    // INIT
     loadPasswords();
 });

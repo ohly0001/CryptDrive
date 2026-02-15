@@ -17,7 +17,8 @@ const PasswordSchema = new mongoose.Schema({
     username: { type: EncryptedFieldSchema, required: true },
     password: { type: EncryptedFieldSchema, required: true },
     note: { type: EncryptedFieldSchema },
-    searchTags: { type: [String], index: true }
+    searchTags: { type: [String], index: true },
+    isFavourite: { type: Boolean, default: false }
 }, { timestamps: true });
 
 PasswordSchema.set('toJSON', {

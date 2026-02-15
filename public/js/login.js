@@ -28,13 +28,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const password = document.getElementById('password');
-    const showPassword = () => password.type = 'text';
-    const hidePassword = () => password.type = 'password';
-
     const peekButton = document.getElementById('passwordPeek');
-    peekButton.addEventListener('mousedown', showPassword);
-    peekButton.addEventListener('mouseup', hidePassword);
-    peekButton.addEventListener('mouseleave', hidePassword);
-    peekButton.addEventListener('touchstart', showPassword);
-    peekButton.addEventListener('touchend', hidePassword);
+    const showPassword = () => {
+        peekButton.innerHTML = '<i class="fa-solid fa-eye"></i>';
+        password.type = 'text'
+    };
+    const hidePassword = () => {
+        peekButton.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
+        password.type = 'password'
+    };
+
+    ['mousedown', 'touchstart'].forEach(evt => peekButton.addEventListener(evt, showPassword));
+    ['mouseup', 'mouseleave', 'touchend'].forEach(evt => peekButton.addEventListener(evt, hidePassword));
 });

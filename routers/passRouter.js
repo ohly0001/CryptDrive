@@ -10,4 +10,8 @@ router.get("/viewEdit/:id", controller.viewEdit);
 router.get("/viewAdd", controller.viewAdd);
 router.post("/add", controller.add);
 
+router.post("/deleteMany", controller.deleteMany);
+router.post("/favouriteMany", controller.favouriteMany);
+router.post("/toggleFavourite", controller.toggleFavourite);
+
 export default router;

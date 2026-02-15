@@ -15,6 +15,7 @@ const pull = async (req, res, next) => {
         const passwords = await Password.find({ account: req.user._id })
             .skip(offsetNum)
             .limit(limitNum)
+            .sort({ favourite: -1, title: 1 })
             .select('-__v -url -password -username -note');
 
         const total = await Password.countDocuments({ account: req.user._id });
@@ -88,7 +89,8 @@ const viewEdit = async (req, res, next) => {
             searchTags: password.searchTags,
             username: decrypt(password.username, secretKey),
             password: decrypt(password.password, secretKey),
-            note: decrypt(password.note, secretKey)
+            note: decrypt(password.note, secretKey),
+            isFavourite: password.isFavourite
         };
 
         res.render('editPassword', {
@@ -112,7 +114,7 @@ const edit = async (req, res, next) => {
         }
 
         const id = req.params.id;
-        const { title, url, searchTags, username, password, note } = req.body;
+        const { title, url, searchTags, username, password, note, isFavourite } = req.body;
 
         const passwordObj = await Password.findOne({
             _id: id,
@@ -131,6 +133,7 @@ const edit = async (req, res, next) => {
         passwordObj.username = encrypt(username, secretKey);
         passwordObj.password = encrypt(password, secretKey);
         passwordObj.note = encrypt(note, secretKey);
+        passwordObj.isFavourite = isFavourite;
 
         await passwordObj.save();
 
@@ -155,7 +158,7 @@ const add = async (req, res, next) => {
             return res.status(401).json({message: 'Vault locked'});
         }
 
-        const { title, url, searchTags, username, password, note } = req.body;
+        const { title, url, searchTags, username, password, note, isFavourite } = req.body;
 
         console.log(req.user);
         const secretKey = decrypt(req.user.secretKey, req.session.kek);
@@ -164,10 +167,11 @@ const add = async (req, res, next) => {
             account: req.user._id,
             title,
             url: encrypt(url || "", secretKey), 
-            searchTags, 
+            searchTags: searchTags || [], 
             username: encrypt(username || "", secretKey),
             password: encrypt(password || "", secretKey),
-            note: encrypt(note || "", secretKey)
+            note: encrypt(note || "", secretKey),
+            isFavourite: isFavourite || false
         });
         await passwordObj.save();
 
@@ -178,11 +182,59 @@ const add = async (req, res, next) => {
     }
 }
 
+const deleteMany = async (req, res, next) => {
+    try {
+        if (!req.isAuthenticated?.() || !req.user) {
+            return res.status(401).json({ redirect: '/auth/login' });
+        }
+        await Password.deleteMany({ _id: { $in: req.body.ids }})
+        
+    } catch (err) {
+        res.json({ message: 'Something went wrong when deleting your passwords' });
+        next(err);
+    }
+}
+
+const favouriteMany = async (req, res, next) => {
+    try {
+        if (!req.isAuthenticated?.() || !req.user) {
+            return res.status(401).json({ redirect: '/auth/login' });
+        }
+        const { ids, state } = req.body;
+        await Password.updateMany(
+            { _id: { $in: ids } },
+            { $set: { isFavourite: state } } 
+        );
+    } catch (err) {
+        res.json({ message: 'Something went wrong when favouriting/unfavouriting your passwords' });
+        next(err);
+    }
+}
+
+const toggleFavourite = async (req, res, next) => {
+    try {
+        if (!req.isAuthenticated?.() || !req.user) {
+            return res.status(401).json({ redirect: '/auth/login' });
+        }
+        await Password.findByIdAndUpdate(
+            req.body.id,
+            [{ $set: { isFavourite: { $not: "$isFavourite" }}}],
+            { updatePipeline: true }
+        );
+    } catch (err) {
+        res.json({ message: 'Something went wrong when favouriting/unfavouriting your password' });
+        next(err);
+    }
+}
+
 export default {
     pull,
     copy,
     viewEdit,
     edit,
     viewAdd,
-    add
+    add,
+    deleteMany,
+    favouriteMany,
+    toggleFavourite
 };

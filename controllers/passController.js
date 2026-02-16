@@ -228,6 +228,19 @@ const add = async (req, res, next) => {
     }
 }
 
+const deleteOne = async (req, res, next) => {
+    try {
+        if (!req.isAuthenticated?.() || !req.user) {
+            return res.status(401).json({ redirect: '/auth/login' });
+        }
+        await Password.findByIdAndDelete(req.body.id);
+        
+    } catch (err) {
+        res.json({ message: 'Something went wrong when deleting your password' });
+        next(err);
+    }
+}
+
 const deleteMany = async (req, res, next) => {
     try {
         if (!req.isAuthenticated?.() || !req.user) {
@@ -280,6 +293,7 @@ export default {
     edit,
     viewAdd,
     add,
+    deleteOne,
     deleteMany,
     favouriteMany,
     toggleFavourite

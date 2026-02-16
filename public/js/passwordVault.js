@@ -1,3 +1,11 @@
+/**
+ * Arrows for nav
+ * Ctrl+/ for search selection
+ * Ctrl+p for new password
+ * Ctrl+t for top
+ * Ctrl+k for pallete (maybe?)
+ */
+
 /* =========================
    STATE
 ========================= */
@@ -296,6 +304,11 @@ document.addEventListener("DOMContentLoaded", () => {
         if((e.ctrlKey||e.metaKey) && e.key==="/"){
             e.preventDefault();
             searchField.focus();
+        }
+        if((e.ctrlKey||e.metaKey) && e.key==="t"){
+            e.preventDefault();
+            //scroll to top
+            //add button link as well
         }
     });
 

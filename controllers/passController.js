@@ -27,7 +27,7 @@ const search = async (req, res, next) => {
 
         // Filter favourites
         if (favouritesOnly) {
-            query.favourite = true;
+            query.isFavourite = true;
         }
 
         // Filter by search term

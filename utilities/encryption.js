@@ -23,11 +23,33 @@ export function generateAESKey() {
     return crypto.randomBytes(32).toString('base64'); // 256-bit AES
 }
 
+export function encryptBuffer(buffer, secretKeyBase64) {
+    // decode base64 key
+    const key = Buffer.from(secretKeyBase64, 'base64');
+    if (key.length !== 32) throw new Error('AES key must be 32 bytes');
+
+    const iv = crypto.randomBytes(12);
+    const cipher = crypto.createCipheriv(algorithm, key, iv);
+
+    const encryptedData = Buffer.concat([
+        cipher.update(buffer),
+        cipher.final()
+    ]);
+
+    const authTag = cipher.getAuthTag();
+
+    return {
+        encryptedData,                  // raw Buffer to write to disk
+        iv: iv.toString('base64'),      // store in JSON metadata
+        authTag: authTag.toString('base64')
+    };
+}
+
 export function encrypt(text="", secretKey) {
     const key = Buffer.from(secretKey, 'base64');
     if (key.length !== 32) throw new Error('AES key must be 32 bytes');
 
-    const iv = crypto.randomBytes(16);
+    const iv = crypto.randomBytes(12);
     const cipher = crypto.createCipheriv(algorithm, key, iv);
 
     const encryptedData = cipher.update(text, 'utf8', 'base64') + cipher.final('base64');
@@ -39,6 +61,23 @@ export function encrypt(text="", secretKey) {
         authTag: authTag.toString('base64')
     };
 }
+
+export function decryptBuffer(encryptedData, ivBase64, authTagBase64, secretKeyBase64) {
+    const key = Buffer.from(secretKeyBase64, 'base64');
+    if (key.length !== 32) throw new Error('AES key must be 32 bytes');
+
+    const iv = Buffer.from(ivBase64, 'base64');
+    const authTag = Buffer.from(authTagBase64, 'base64');
+
+    const decipher = crypto.createDecipheriv(algorithm, key, iv);
+    decipher.setAuthTag(authTag);
+
+    const decrypted = Buffer.concat([
+        decipher.update(encryptedData),
+        decipher.final()
+    ]);
+
+    return decrypted
 
 export function decrypt(encryptedObject, secretKey) {
     const key = Buffer.from(secretKey, 'base64');

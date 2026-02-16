@@ -160,7 +160,6 @@ const add = async (req, res, next) => {
 
         const { title, url, searchTags, username, password, note, isFavourite } = req.body;
 
-        console.log(req.user);
         const secretKey = decrypt(req.user.secretKey, req.session.kek);
 
         const passwordObj = new Password({

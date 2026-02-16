@@ -171,8 +171,14 @@ const uploadMany = async (req, res) => {
   }
 };
 
+const search = async (req, res) => {
+
+
+}
+
 export default {
   view,
+  search,
   upload,
   uploadMany
 };

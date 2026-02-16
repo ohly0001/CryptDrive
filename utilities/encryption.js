@@ -77,7 +77,8 @@ export function decryptBuffer(encryptedData, ivBase64, authTagBase64, secretKeyB
         decipher.final()
     ]);
 
-    return decrypted
+    return decrypted;
+}
 
 export function decrypt(encryptedObject, secretKey) {
     const key = Buffer.from(secretKey, 'base64');

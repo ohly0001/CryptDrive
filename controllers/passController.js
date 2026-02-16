@@ -1,27 +1,74 @@
 import Password from '../models/password.js';
 import { decrypt, encrypt } from '../utilities/encryption.js';
 
-const pull = async (req, res, next) => {
+const search = async (req, res, next) => {
     try {
         if (!req.isAuthenticated?.() || !req.user) {
             return res.status(401).json({ redirect: '/auth/login' });
         }
 
-        const { limit, offset } = req.body;
+        const {
+            limit,
+            offset,
+            favouritesOnly,
+            searchTerm,
+            matchCase,
+            matchEntire,
+            useRegex,
+            searchTags,
+            blacklistTags
+        } = req.body;
 
         const limitNum = Math.max(parseInt(limit) || 10, 1);
         const offsetNum = Math.max(parseInt(offset) || 0, 0);
 
-        const passwords = await Password.find({ account: req.user._id })
+        // Build query
+        const query = { account: req.user._id };
+
+        // Filter favourites
+        if (favouritesOnly) {
+            query.favourite = true;
+        }
+
+        // Filter by search term
+        if (searchTerm) {
+            let pattern;
+            if (useRegex) {
+                pattern = searchTerm;
+            } else {
+                const escaped = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // escape regex chars
+                pattern = matchEntire ? `^${escaped}$` : escaped;
+            }
+
+            query.$or = [
+                { title: { $regex: pattern, $options: matchCase ? '' : 'i' } },
+                { tags: { $regex: pattern, $options: matchCase ? '' : 'i' } }
+            ];
+        }
+
+        // Filter by tags
+        if (Array.isArray(searchTags) && searchTags.length > 0) {
+            if (blacklistTags) {
+                query.tags = { $nin: searchTags };
+            } else {
+                query.tags = { $in: searchTags };
+            }
+        }
+
+        // Get total after filtering
+        const total = await Password.countDocuments(query);
+
+        // Apply pagination
+        const passwords = await Password.find(query)
             .skip(offsetNum)
             .limit(limitNum)
             .sort({ favourite: -1, title: 1 })
             .select('-__v -url -password -username -note');
 
-        const total = await Password.countDocuments({ account: req.user._id });
-        const partialPasswords = passwords.map(p => p.toJSON());
-
-        res.json({ partialPasswords, total });
+        res.json({
+            partialPasswords: passwords.map(p => p.toJSON()),
+            total
+        });
     } catch (err) {
         next(err);
     }
@@ -227,7 +274,7 @@ const toggleFavourite = async (req, res, next) => {
 }
 
 export default {
-    pull,
+    search,
     copy,
     viewEdit,
     edit,

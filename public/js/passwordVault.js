@@ -3,6 +3,12 @@ let totalPasswords = 0;
 let totalPages = 0;
 let currentPage = 0;
 
+let blacklistTagsMode = false;
+let matchCaseMode = false;
+let matchEntireMode = false;
+let favouritesMode = false;
+let useRegexMode = false;
+
 document.addEventListener('DOMContentLoaded', () => {
     const addPasswordButton = document.getElementById('addPasswordButton');
     const passwordContainer = document.getElementById('passwordContainer');
@@ -10,11 +16,57 @@ document.addEventListener('DOMContentLoaded', () => {
     const paginationSlice = document.getElementById('paginationSlice');
 
     const searchField = document.getElementById('searchField');
-    const favoriteFilter = document.getElementById('favoriteFilter');
     const titleSort = document.getElementById('titleSort');
     const tagFilter = document.getElementById('tagFilter');
 
+    const favorites = document.getElementById('favorite');
+    favorites.addEventListener('click', (e) => {
+        favouritesMode = !favouritesMode;
+        if (favouritesMode)
+            favorites.classList.add('toggled');
+        else
+            favorites.classList.remove('toggled');
+    });
+
+    const blacklistTags = document.getElementById('blacklistTags');
+    blacklistTags.addEventListener('click', (e) => {
+        blacklistTagsMode = !blacklistTagsMode;
+        if (blacklistTagsMode)
+            blacklistTags.classList.add('toggled');
+        else
+            blacklistTags.classList.remove('toggled');
+    });
+
+    const matchCase = document.getElementById('matchCase');
+    matchCase.addEventListener('click', (e) => {
+        matchCaseMode = !matchCaseMode;
+        if (matchCaseMode)
+            matchCase.classList.add('toggled');
+        else
+            matchCase.classList.remove('toggled');
+    });
+
+    const matchEntire = document.getElementById('matchEntire');
+    matchEntire.addEventListener('click', (e) => {
+        matchEntireMode = !matchEntireMode;
+        if (matchEntireMode)
+            matchEntire.classList.add('toggled');
+        else
+            matchEntire.classList.remove('toggled');
+    });
+
+    const useRegex = document.getElementById('useRegex');
+    useRegex.addEventListener('click', (e) => {
+        useRegexMode = !useRegexMode;
+        if (useRegexMode)
+            useRegex.classList.add('toggled');
+        else
+           useRegex.classList.remove('toggled');
+    });
+
     let allPasswords = [];
+
+    
 
     // UTILITIES
     function refreshAutoHideCopyOptionContainer(container) {
@@ -42,6 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // FILTER + SORT + PIN FAVORITES
+    /*
     function getFilteredPasswords() {
         let filtered = [...allPasswords];
 
@@ -190,6 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         updatePaginationUI(list.length);
     }
+    */
 
     // FETCH
     async function loadPasswords() {

@@ -171,14 +171,83 @@ const uploadMany = async (req, res) => {
   }
 };
 
+const listFiles = async (req, res) => {
+  const { path = 'root' } = req.query;
+  // TODO: implement real DB query with Directory/File models
+  // Here is a mock:
+  res.json({
+    directories: [{ name: 'Projects' }, { name: 'Photos' }],
+    files: [{ _id: '123', name: 'example.txt' }]
+  });
+};
+
+// ===== CREATE DIRECTORY =====
+const createDirectory = async (req, res) => {
+  const { name, parentPath } = req.body;
+  // TODO: implement DB creation
+  res.json({ success: true, message: `Directory "${name}" created under "${parentPath}"` });
+};
+
+// ===== DOWNLOAD FILE =====
+const downloadFile = async (req, res) => {
+  const { id } = req.params;
+  // TODO: implement file fetch from DB & decryption
+  res.status(501).json({ message: 'Download not yet implemented' });
+};
+
+// ===== SEARCH FILES =====
 const search = async (req, res) => {
+  try {
+    if (!req.isAuthenticated?.() || !req.user) {
+      return res.status(401).json({ redirect: '/auth/login' });
+    }
 
+    const { query, path = 'root', recursive = true } = req.query;
+    if (!query || query.trim() === '') {
+      return res.status(400).json({ message: 'Search query is required' });
+    }
 
-}
+    // 1. Find the directory to start from
+    let startDir = await Directory.findOne({ account: req.user._id, name: path === 'root' ? 'root' : path });
+    if (!startDir) {
+      return res.status(404).json({ message: 'Directory not found' });
+    }
+
+    // 2. Build a list of directory IDs to search in
+    let dirIds = [startDir._id];
+    if (recursive) {
+      // Recursive fetch of all nested directories
+      const getNestedDirs = async (parentId) => {
+        const children = await Directory.find({ account: req.user._id, parent: parentId });
+        for (const child of children) {
+          dirIds.push(child._id);
+          await getNestedDirs(child._id);
+        }
+      };
+      await getNestedDirs(startDir._id);
+    }
+
+    // 3. Search files in those directories
+    const regex = new RegExp(query, 'i'); // case-insensitive
+    const files = await File.find({
+      account: req.user._id,
+      directory: { $in: dirIds },
+      name: regex
+    }).select('name directory storedAs size mime');
+
+    res.status(200).json({ files });
+  } catch (err) {
+    console.error('Search error:', err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
 
 export default {
   view,
   search,
   upload,
-  uploadMany
+  uploadMany,
+  listFiles,
+  createDirectory,
+  downloadFile
 };

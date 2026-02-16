@@ -1,23 +1,34 @@
+<!--todo drag and drop file manipulation and directory management-->
+<!--todo download button-->
+<!--sub directory navigation and dir creation/deletion-->
+<!--file sharing management-->
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta charset="UTF-8">
-        <meta name="author" content="Robert Ohly">
-        <title>CyptDrive File Repository</title>
-        <script src="/js/fileRepository.js" defer></script>
-        <script src="https://kit.fontawesome.com/0f23db6f2c.js" crossorigin="anonymous"></script>
-        <link rel="stylesheet" href="/css/site.css">
-    </head>
-    <body>
-        <h1>CyptDrive File Repository</h1>
-        <!--todo drag and drop file manipulation and directory management-->
-        <!--todo download button-->
-        <!--sub directory navigation and dir creation/deletion-->
-        <!--file sharing management-->
-        <div id="dropZone">
-            <i class="fa-solid fa-file-arrow-up"></i><br>
-            <p><b id="chooseFileText">Choose a file</b> or drag it here</p>
-        </div>
-    </form>
-    </body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="author" content="Robert Ohly">
+    <title>CyptDrive File Repository</title>
+    <script src="/js/fileRepository.js" defer></script>
+    <script src="https://kit.fontawesome.com/0f23db6f2c.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="/css/site.css">
+    <link rel="stylesheet" href="/css/fileRepository.css">
+</head>
+<body>
+    <h1>CyptDrive File Repository</h1>
+
+    <!-- Drag & drop / file select -->
+    <div id="dropZone">
+        <i class="fa-solid fa-file-arrow-up fa-2x"></i><br>
+        <p><b id="chooseFileText">Choose a file</b> or drag files here</p>
+    </div>
+
+    <!-- Subdirectory navigation -->
+    <div>
+        Current Path: <span id="currentPath">root</span>
+        <button id="createDirBtn">New Folder</button>
+    </div>
+
+    <!-- File list -->
+    <div id="fileList" class="file-list"></div>
+</body>
 </html>

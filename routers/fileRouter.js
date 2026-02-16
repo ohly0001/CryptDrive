@@ -4,5 +4,11 @@ import controller from "../controllers/fileController.js";
 const router = express.Router();
 
 router.get("/", controller.view);
+router.post("/upload", controller.upload);
+router.post("/uploadMany", controller.uploadMany);
+router.get("/list", controller.listFiles);
+router.post("/directory/create", controller.createDirectory);
+router.get("/download/:id", controller.downloadFile);
+router.get("/search", controller.search);
 
 export default router;

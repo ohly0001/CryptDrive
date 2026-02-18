@@ -27,6 +27,8 @@ let visibleEnd = 0;
 let selectedIndex = -1;
 let tagSuggestions = new Set();
 
+let currentSortMode = 0;
+
 /* =========================
    INIT
 ========================= */
@@ -35,6 +37,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const container = document.getElementById("passwordContainer");
     const searchField = document.getElementById("searchField");
     const tagFilter = document.getElementById("tagFilter");
+    const sortMode = document.getElementById("sortMode");
 
     /* =========================
        UTIL
@@ -338,6 +341,27 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("matchEntire").onclick=()=>toggle(matchEntire,'matchEntireMode');
     document.getElementById("useRegex").onclick=()=>toggle(useRegex,'useRegexMode');
     document.getElementById("blacklistTags").onclick=()=>toggle(blacklistTags,'blacklistTagsMode');
+
+    /* =========================
+       SORT MODE SELECTION
+    ========================= */
+    sortMode.addEventListener("click", () => {
+        currentSortMode = (currentSortMode + 1) % 4;
+        switch (currentSortMode) {
+            case 0:
+                sortMode.innerHTML = 'Sort By: <i class="fa-solid fa-arrow-up-a-z"></i>';
+                break;
+            case 1:
+                sortMode.innerHTML = 'Sort By: <i class="fa-solid fa-arrow-down-a-z"></i>';
+                break;
+            case 2:
+                sortMode.innerHTML = 'Sort By: <i class="fa-solid fa-arrow-up-1-9"></i>';
+                break;
+            case 3:
+                sortMode.innerHTML = 'Sort By: <i class="fa-solid fa-arrow-down-1-9"></i>';
+                break;
+        }
+    });
 
     /* =========================
        SCROLL

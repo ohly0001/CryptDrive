@@ -114,7 +114,11 @@ async function loadFiles(path) {
 // ===== File Search =====
 async function searchFiles(query) {
     try {
-        const res = await fetch(`/file/search?query=${encodeURIComponent(query)}&path=${encodeURIComponent(currentPath)}`);
+        const res = await fetch('/file/search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query, filePath: currentPath })
+        });
         const data = await res.json();
         const fileList = document.getElementById('fileList');
         fileList.innerHTML = '';
@@ -148,6 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const dropZone = document.getElementById('dropZone');
     const chooseFileText = document.getElementById('chooseFileText');
     const createDirBtn = document.getElementById('createDirBtn');
+    const navToParent = document.getElementById('navToParent');
 
     chooseFileText.addEventListener('click', selectFile);
     createDirBtn.addEventListener('click', createDirectory);
@@ -179,6 +184,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const query = e.target.value.trim();
         if (query) searchFiles(query);
         else loadFiles(currentPath);
+    });
+
+    navToParent.addEventListener('click', (e) => {
+        
     });
 
     loadFiles(currentPath);

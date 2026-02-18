@@ -9,6 +9,6 @@ router.post("/uploadMany", controller.uploadMany);
 router.get("/list", controller.listFiles);
 router.post("/directory/create", controller.createDirectory);
 router.get("/download/:id", controller.downloadFile);
-router.get("/search", controller.search);
+router.post("/search", controller.search);
 
 export default router;

@@ -55,7 +55,9 @@ button:hover {
     margin: 2px;
     gap: 4px;
 }
-
 .fa-star {
     color: gold;
+}
+.toggled {
+    background-color: #224FBB;
 }

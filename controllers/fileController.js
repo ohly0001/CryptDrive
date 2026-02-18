@@ -40,10 +40,11 @@ const uploader = multer({
 });
 
 // ===== middleware runner =====
-const runMiddleware = (req, res, fn) =>
+const runMiddleware = (req, res, fn) => {
   new Promise((resolve, reject) => {
     fn(req, res, err => (err ? reject(err) : resolve()));
   });
+}  
 
 // ===== ensure base uploads dir =====
 const baseUploadDir = path.join(__dirname, '../uploads');
@@ -202,13 +203,15 @@ const search = async (req, res) => {
       return res.status(401).json({ redirect: '/auth/login' });
     }
 
-    const { query, path = 'root', recursive = true } = req.query;
+    const { query, filePath = 'root', recursive = true } = req.body;
     if (!query || query.trim() === '') {
       return res.status(400).json({ message: 'Search query is required' });
     }
 
+    //const pathSegments = filePath.split(path.sep);
+
     // 1. Find the directory to start from
-    let startDir = await Directory.findOne({ account: req.user._id, name: path === 'root' ? 'root' : path });
+    let startDir = await Directory.findOne({ account: req.user._id, name: path });
     if (!startDir) {
       return res.status(404).json({ message: 'Directory not found' });
     }

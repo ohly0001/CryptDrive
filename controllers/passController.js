@@ -22,53 +22,66 @@ const search = async (req, res, next) => {
         const limitNum = Math.max(parseInt(limit) || 10, 1);
         const offsetNum = Math.max(parseInt(offset) || 0, 0);
 
-        // Build query
+        // =========================
+        // Build base query
+        // =========================
         const query = { account: req.user._id };
 
-        // Filter favourites
-        if (favouritesOnly) {
-            query.isFavourite = true;
-        }
+        if (favouritesOnly) query.isFavourite = true;
 
+        // =========================
         // Filter by search term
+        // =========================
         if (searchTerm) {
             let pattern;
             if (useRegex) {
                 pattern = searchTerm;
             } else {
-                const escaped = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // escape regex chars
+                const escaped = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                 pattern = matchEntire ? `^${escaped}$` : escaped;
             }
 
             query.$or = [
                 { title: { $regex: pattern, $options: matchCase ? '' : 'i' } },
-                { tags: { $regex: pattern, $options: matchCase ? '' : 'i' } }
+                { searchTags: { $regex: pattern, $options: matchCase ? '' : 'i' } }
             ];
         }
 
-        // Filter by tags
+        // =========================
+        // Filter by tags (case-insensitive)
+        // =========================
         if (Array.isArray(searchTags) && searchTags.length > 0) {
+            const normalizedTags = searchTags.map(t => t.toLowerCase());
+
             if (blacklistTags) {
-                query.tags = { $nin: searchTags };
+                query.searchTags = { $nin: normalizedTags };
             } else {
-                query.tags = { $in: searchTags };
+                query.searchTags = { $in: normalizedTags };
             }
         }
 
-        // Get total after filtering
+        // =========================
+        // Total count for pagination
+        // =========================
         const total = await Password.countDocuments(query);
 
-        // Apply pagination
+        // =========================
+        // Fetch data
+        // =========================
         const passwords = await Password.find(query)
             .skip(offsetNum)
             .limit(limitNum)
-            .sort({ favourite: -1, title: 1 })
-            .select('-__v -url -password -username -note');
+            .sort({ isFavourite: -1, title: 1 }) // favourites first, then title
+            .select('-__v -url -password -username -note'); // minimal fields
 
+        // =========================
+        // Return JSON
+        // =========================
         res.json({
             partialPasswords: passwords.map(p => p.toJSON()),
             total
         });
+
     } catch (err) {
         next(err);
     }
@@ -176,7 +189,7 @@ const edit = async (req, res, next) => {
 
         passwordObj.title = title;
         passwordObj.url = encrypt(url, secretKey);
-        passwordObj.searchTags = searchTags;
+        passwordObj.searchTags = (searchTags || []).map(t => t.toLowerCase());
         passwordObj.username = encrypt(username, secretKey);
         passwordObj.password = encrypt(password, secretKey);
         passwordObj.note = encrypt(note, secretKey);
@@ -213,7 +226,7 @@ const add = async (req, res, next) => {
             account: req.user._id,
             title,
             url: encrypt(url || "", secretKey), 
-            searchTags: searchTags || [], 
+            searchTags: (searchTags || []).map(t => t.toLowerCase()), 
             username: encrypt(username || "", secretKey),
             password: encrypt(password || "", secretKey),
             note: encrypt(note || "", secretKey),

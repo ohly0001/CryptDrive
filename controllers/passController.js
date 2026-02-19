@@ -43,7 +43,7 @@ const search = async (req, res, next) => {
 
             query.$or = [
                 { title: { $regex: pattern, $options: matchCase ? '' : 'i' } },
-                { searchTags: { $regex: pattern, $options: matchCase ? '' : 'i' } }
+                { searchTags: { $regex: pattern, $options: 'i' } }
             ];
         }
 

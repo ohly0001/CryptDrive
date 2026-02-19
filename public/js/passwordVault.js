@@ -241,6 +241,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id: e._id })
             });
+            
+            sortAllPasswords();
+            renderVirtual();
         };
 
         // copy menu

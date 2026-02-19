@@ -37,7 +37,7 @@ const search = async (req, res, next) => {
             if (useRegex) {
                 pattern = searchTerm;
             } else {
-                const escaped = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const escaped = (searchTerm || "").trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                 pattern = matchEntire ? `^${escaped}$` : escaped;
             }
 
@@ -51,12 +51,10 @@ const search = async (req, res, next) => {
         // Filter by tags (case-insensitive)
         // =========================
         if (Array.isArray(searchTags) && searchTags.length > 0) {
-            const normalizedTags = searchTags.map(t => t.toLowerCase());
-
             if (blacklistTags) {
-                query.searchTags = { $nin: normalizedTags };
+                query.searchTags = { $nin: searchTags };
             } else {
-                query.searchTags = { $in: normalizedTags };
+                query.searchTags = { $in: searchTags };
             }
         }
 

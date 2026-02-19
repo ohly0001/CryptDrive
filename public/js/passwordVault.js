@@ -3,31 +3,32 @@
  * Ctrl+/ for search selection
  * Ctrl+p for new password
  * Ctrl+t for top
- * Ctrl+k for pallete (maybe?)
  */
 
 /* =========================
    STATE
 ========================= */
-let pageSize = 50;
-let offset = 0;
-let loading = false;
-let reachedEnd = false;
+const state = {
+    pageSize: 50,
+    offset: 0,
+    loading: false,
+    reachedEnd: false,
 
-let matchCaseMode = false;
-let matchEntireMode = false;
-let useRegexMode = false;
-let blacklistTagsMode = false;
-let favouritesMode = false;
+    matchCase: false,
+    matchEntire: false,
+    useRegex: false,
+    blacklistTags: false,
+    favouritesOnly: false,
 
-let allPasswords = [];
+    allPasswords: [],
+    selectedIndex: -1,
+    tagSuggestions: new Set(),
+
+    sortMode: 0 // 0 title asc, 1 title desc, 2 date asc, 3 date desc
+};
+
 let visibleStart = 0;
 let visibleEnd = 0;
-
-let selectedIndex = -1;
-let tagSuggestions = new Set();
-
-let currentSortMode = 0;
 
 /* =========================
    INIT
@@ -37,7 +38,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const container = document.getElementById("passwordContainer");
     const searchField = document.getElementById("searchField");
     const tagFilter = document.getElementById("tagFilter");
-    const sortMode = document.getElementById("sortMode");
+    const sortModeBtn = document.getElementById("sortMode");
+
+    document.getElementById("addPasswordButton")
+        .addEventListener('click', () => location.href = '/pass/viewAdd');
 
     /* =========================
        UTIL
@@ -52,7 +56,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function calculateColour(str) {
         let hash = 0;
-        str.split('').forEach(c => hash = c.charCodeAt(0) + ((hash << 5) - hash));
+        for (const c of str) hash = c.charCodeAt(0) + ((hash << 5) - hash);
         let colour = '#';
         for (let i = 0; i < 3; i++) {
             const value = (hash >> (i * 8)) & 0xff;
@@ -61,71 +65,127 @@ document.addEventListener("DOMContentLoaded", () => {
         return colour;
     }
 
-    function hideAllCopyMenus(){
-        document.querySelectorAll('.copy_options').forEach(el=>el.classList.add('hidden'));
+    function hideAllCopyMenus() {
+        document.querySelectorAll('.copy_options')
+            .forEach(el => el.classList.add('hidden'));
     }
 
-    function refreshAutoHideCopyOptionContainer(container){
-        if(container._hideTimer) clearTimeout(container._hideTimer);
-        container._hideTimer = setTimeout(()=>container.classList.add('hidden'),5000);
+    function refreshAutoHideCopyOptionContainer(container) {
+        if (container._hideTimer) clearTimeout(container._hideTimer);
+        container._hideTimer = setTimeout(() => container.classList.add('hidden'), 5000);
+    }
+
+    /* =========================
+       SORTING
+    ========================= */
+    function sortAllPasswords() {
+        const arr = state.allPasswords;
+
+        arr.sort((a, b) => {
+
+            // ===== Tier 1: favourites to top
+            const favA = !!a.isFavourite;
+            const favB = !!b.isFavourite;
+
+            if (favA !== favB) {
+                return favA ? -1 : 1; // favourites first
+            }
+
+            // ===== Tier 2: internal sorting
+            switch (state.sortMode) {
+
+                case 0: // title asc
+                    return (a.title || "").localeCompare(
+                        b.title || "",
+                        undefined,
+                        { sensitivity: "base" }
+                    );
+
+                case 1: // title desc
+                    return (b.title || "").localeCompare(
+                        a.title || "",
+                        undefined,
+                        { sensitivity: "base" }
+                    );
+
+                case 2: // date asc
+                    return (a.createdAt?.getTime() || 0) -
+                        (b.createdAt?.getTime() || 0);
+
+                case 3: // date desc
+                    return (b.createdAt?.getTime() || 0) -
+                        (a.createdAt?.getTime() || 0);
+            }
+
+            return 0;
+        });
+    }
+
+    function normalizePassword(p) {
+        if (p.createdAt && !(p.createdAt instanceof Date)) {
+            p.createdAt = new Date(p.createdAt);
+        }
+        return p;
     }
 
     /* =========================
        FETCH
     ========================= */
-    async function fetchPasswords(){
-        if(loading || reachedEnd) return;
-        loading = true;
+    async function fetchPasswords() {
+        if (state.loading || state.reachedEnd) return;
+        state.loading = true;
 
-        const res = await fetch("/pass/search",{
-            method:"POST",
-            headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({
-                limit:pageSize,
-                offset:offset,
-                favouritesOnly:favouritesMode,
-                searchTerm:searchField.value.trim(),
-                matchCase:matchCaseMode,
-                matchEntire:matchEntireMode,
-                useRegex:useRegexMode,
+        const res = await fetch("/pass/search", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                limit: state.pageSize,
+                offset: state.offset,
+                favouritesOnly: state.favouritesOnly,
+                searchTerm: searchField.value.trim(),
+                matchCase: state.matchCase,
+                matchEntire: state.matchEntire,
+                useRegex: state.useRegex,
                 searchTags: tagFilter.value.trim()
-                    ? tagFilter.value.split(",").map(t=>t.trim()).filter(Boolean)
+                    ? tagFilter.value.split(",").map(t => t.trim()).filter(Boolean)
                     : [],
-                blacklistTags:blacklistTagsMode
+                blacklistTags: state.blacklistTags
             })
         });
 
         const data = await res.json();
-        const list = data.partialPasswords || [];
+        const list = (data.partialPasswords || []).map(normalizePassword);
 
-        if(offset===0){
-            allPasswords=[];
-            container.innerHTML="";
+        if (state.offset === 0) {
+            state.allPasswords = [];
+            container.innerHTML = "";
         }
 
-        list.forEach(p=>{
-            allPasswords.push(p);
-            (p.searchTags||[]).forEach(t=>tagSuggestions.add(t));
+        list.forEach(p => {
+            state.allPasswords.push(p);
+            (p.searchTags || []).forEach(t => state.tagSuggestions.add(t));
         });
 
-        offset += list.length;
-        if(allPasswords.length >= data.total) reachedEnd=true;
+        sortAllPasswords();
+
+        state.offset += list.length;
+        if (state.allPasswords.length >= data.total) state.reachedEnd = true;
 
         renderVirtual();
-        loading=false;
+        state.loading = false;
     }
 
-    function resetSearch(){
-        offset=0;
-        reachedEnd=false;
-        selectedIndex=-1;
+    function resetSearch() {
+        state.offset = 0;
+        state.reachedEnd = false;
+        state.selectedIndex = -1;
         fetchPasswords();
     }
 
     /* =========================
        VIRTUAL RENDER
     ========================= */
-    function renderVirtual(){
+    function renderVirtual() {
         const rowHeight = 64;
         const viewportHeight = window.innerHeight;
         const scrollTop = window.scrollY;
@@ -134,20 +194,19 @@ document.addEventListener("DOMContentLoaded", () => {
         visibleEnd = Math.ceil((scrollTop + viewportHeight) / rowHeight) + 10;
 
         visibleStart = Math.max(0, visibleStart);
-        visibleEnd = Math.min(allPasswords.length, visibleEnd);
+        visibleEnd = Math.min(state.allPasswords.length, visibleEnd);
 
-        container.innerHTML="";
+        container.innerHTML = "";
 
-        for(let i=visibleStart;i<visibleEnd;i++){
-            const el = renderRow(allPasswords[i], i);
-            container.appendChild(el);
+        for (let i = visibleStart; i < visibleEnd; i++) {
+            container.appendChild(renderRow(state.allPasswords[i], i));
         }
 
         const spacerTop = document.createElement("div");
-        spacerTop.style.height = (visibleStart*rowHeight)+"px";
+        spacerTop.style.height = (visibleStart * rowHeight) + "px";
 
         const spacerBottom = document.createElement("div");
-        spacerBottom.style.height = ((allPasswords.length-visibleEnd)*rowHeight)+"px";
+        spacerBottom.style.height = ((state.allPasswords.length - visibleEnd) * rowHeight) + "px";
 
         container.prepend(spacerTop);
         container.appendChild(spacerBottom);
@@ -156,51 +215,49 @@ document.addEventListener("DOMContentLoaded", () => {
     /* =========================
        ROW RENDER
     ========================= */
-    function renderRow(e, index){
+    function renderRow(e, index) {
         const row = document.createElement("div");
-        row.className="password";
-        row.dataset.id=e._id;
-        if(index===selectedIndex) row.classList.add("keyboardSelected");
+        row.className = "password";
+        row.dataset.id = e._id;
+        if (index === state.selectedIndex) row.classList.add("keyboardSelected");
 
         const title = document.createElement("span");
         title.innerText = e.title || "No Title";
 
-        // ===== Favourite instant toggle
+        // favourite
         const favBtn = document.createElement("button");
-        favBtn.type="button";
         favBtn.innerHTML = e.isFavourite
             ? "<i class='fa fa-star'></i>"
             : "<i class='fa fa-star-o'></i>";
 
-        favBtn.onclick = async ()=>{
+        favBtn.onclick = async () => {
             e.isFavourite = !e.isFavourite;
             favBtn.innerHTML = e.isFavourite
                 ? "<i class='fa fa-star'></i>"
                 : "<i class='fa fa-star-o'></i>";
 
-            fetch('/pass/toggleFavourite',{
-                method:'POST',
-                headers:{'Content-Type':'application/json'},
-                body:JSON.stringify({id:e._id})
+            fetch('/pass/toggleFavourite', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: e._id })
             });
         };
 
-        // ===== Copy menu
+        // copy menu
         const copyMenu = document.createElement("div");
-        copyMenu.classList.add("hidden","copy_options");
+        copyMenu.classList.add("hidden", "copy_options");
 
-        ["url","username","password","note"].forEach(key=>{
-            const b=document.createElement("button");
-            b.type="button";
-            b.innerText=key;
+        ["url", "username", "password", "note"].forEach(key => {
+            const b = document.createElement("button");
+            b.innerText = key;
 
-            b.onclick=async()=>{
-                const res = await fetch('/pass/copy',{
-                    method:'POST',
-                    headers:{'Content-Type':'application/json'},
-                    body:JSON.stringify({id:e._id,category:key})
+            b.onclick = async () => {
+                const res = await fetch('/pass/copy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: e._id, category: key })
                 });
-                const data=await res.json();
+                const data = await res.json();
                 await navigator.clipboard.writeText(data.decryptedValue);
                 refreshAutoHideCopyOptionContainer(copyMenu);
             };
@@ -209,29 +266,28 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         const copyBtn = document.createElement("button");
-        copyBtn.innerHTML="<i class='fa fa-copy'></i>";
-        copyBtn.onclick=(ev)=>{
+        copyBtn.innerHTML = "<i class='fa fa-copy'></i>";
+        copyBtn.onclick = ev => {
             hideAllCopyMenus();
             copyMenu.classList.remove("hidden");
-            copyMenu.style.left=ev.clientX+"px";
-            copyMenu.style.top=ev.clientY+"px";
+            copyMenu.style.left = ev.clientX + "px";
+            copyMenu.style.top = ev.clientY + "px";
             refreshAutoHideCopyOptionContainer(copyMenu);
         };
 
-        // edit
         const editBtn = document.createElement("button");
-        editBtn.innerHTML="<i class='fa fa-edit'></i>";
-        editBtn.onclick=()=>location.href=`/pass/viewEdit/${e._id}`;
+        editBtn.innerHTML = "<i class='fa fa-edit'></i>";
+        editBtn.onclick = () => location.href = `/pass/viewEdit/${e._id}`;
 
-        row.append(title,favBtn,copyBtn,editBtn,copyMenu);
+        row.append(title, favBtn, copyBtn, editBtn, copyMenu);
 
         // tags
         const tagWrap = document.createElement("div");
-        (e.searchTags||[]).forEach(t=>{
-            const tag=document.createElement("span");
-            tag.innerText=t;
+        (e.searchTags || []).forEach(t => {
+            const tag = document.createElement("span");
+            tag.innerText = t;
             tag.classList.add("searchTag");
-            tag.style.borderColor=calculateColour(t);
+            tag.style.borderColor = calculateColour(t);
             tagWrap.appendChild(tag);
         });
 
@@ -243,23 +299,25 @@ document.addEventListener("DOMContentLoaded", () => {
        TAG AUTOCOMPLETE
     ========================= */
     const tagBox = document.createElement("div");
-    tagBox.className="tagAutocomplete";
+    tagBox.classList.add("tagAutocomplete", "hidden");
     tagFilter.parentNode.appendChild(tagBox);
 
-    tagFilter.addEventListener("input",()=>{
+    tagFilter.addEventListener("input", () => {
         const val = tagFilter.value.toLowerCase();
-        tagBox.innerHTML="";
-        if(!val) return;
+        tagBox.innerHTML = "";
+        tagBox.classList.remove("hidden");
+        if (!val) return;
 
-        [...tagSuggestions]
-            .filter(t=>t.toLowerCase().includes(val))
-            .slice(0,8)
-            .forEach(tag=>{
-                const item=document.createElement("div");
-                item.innerText=tag;
-                item.onclick=()=>{
-                    tagFilter.value=tag;
-                    tagBox.innerHTML="";
+        [...state.tagSuggestions]
+            .filter(t => t.toLowerCase().includes(val))
+            .slice(0, 8)
+            .forEach(tag => {
+                const item = document.createElement("div");
+                item.innerText = tag;
+                item.onclick = () => {
+                    tagFilter.value = tag;
+                    tagBox.innerHTML = "";
+                    tagBox.classList.add("hidden");
                     resetSearch();
                 };
                 tagBox.appendChild(item);
@@ -269,60 +327,37 @@ document.addEventListener("DOMContentLoaded", () => {
     /* =========================
        KEYBOARD NAV
     ========================= */
-    document.addEventListener("keydown",e=>{
-        if(e.target.tagName==="INPUT") return;
+    document.addEventListener("keydown", e => {
+        if (e.target.tagName === "INPUT") return;
 
-        if(e.key==="ArrowDown"){
-            selectedIndex=Math.min(selectedIndex+1, allPasswords.length-1);
+        if (e.key === "ArrowDown") {
+            state.selectedIndex = Math.min(state.selectedIndex + 1, state.allPasswords.length - 1);
             renderVirtual();
         }
 
-        if(e.key==="ArrowUp"){
-            selectedIndex=Math.max(selectedIndex-1,0);
+        if (e.key === "ArrowUp") {
+            state.selectedIndex = Math.max(state.selectedIndex - 1, 0);
             renderVirtual();
         }
 
-        if(e.key==="Enter"){
-            if(selectedIndex>=0){
-                const id = allPasswords[selectedIndex]._id;
-                location.href=`/pass/viewEdit/${id}`;
-            }
+        if (e.key === "Enter" && state.selectedIndex >= 0) {
+            location.href = `/pass/viewEdit/${state.allPasswords[state.selectedIndex]._id}`;
         }
 
-        if(e.key===" "){
-            if(selectedIndex>=0){
-                e.preventDefault();
-                const p = allPasswords[selectedIndex];
-                p.isFavourite=!p.isFavourite;
-                renderVirtual();
-
-                fetch('/pass/toggleFavourite',{
-                    method:'POST',
-                    headers:{'Content-Type':'application/json'},
-                    body:JSON.stringify({id:p._id})
-                });
-            }
-        }
-
-        if((e.ctrlKey||e.metaKey) && e.key==="/"){
+        if ((e.ctrlKey || e.metaKey) && e.key === "/") {
             e.preventDefault();
             searchField.focus();
-        }
-        if((e.ctrlKey||e.metaKey) && e.key==="t"){
-            e.preventDefault();
-            //scroll to top
-            //add button link as well
         }
     });
 
     /* =========================
        LIVE SEARCH
     ========================= */
-    const live = debounce(resetSearch,300);
+    const live = debounce(resetSearch, 300);
     searchField.addEventListener("input", live);
     tagFilter.addEventListener("input", live);
 
-    document.getElementById("searchForm").addEventListener("submit",e=>{
+    document.getElementById("searchForm").addEventListener("submit", e => {
         e.preventDefault();
         resetSearch();
     });
@@ -330,46 +365,57 @@ document.addEventListener("DOMContentLoaded", () => {
     /* =========================
        TOGGLES
     ========================= */
-    function toggle(btn, ref){
-        window[ref]=!window[ref];
-        btn.classList.toggle("toggled", window[ref]);
-        resetSearch();
+    function bindToggle(id, key) {
+        const el = document.getElementById(id);
+        el.onclick = () => {
+            state[key] = !state[key];
+            el.classList.toggle("toggled", state[key]);
+            resetSearch();
+        };
     }
 
-    document.getElementById("favorite").onclick=()=>toggle(favorite,'favouritesMode');
-    document.getElementById("matchCase").onclick=()=>toggle(matchCase,'matchCaseMode');
-    document.getElementById("matchEntire").onclick=()=>toggle(matchEntire,'matchEntireMode');
-    document.getElementById("useRegex").onclick=()=>toggle(useRegex,'useRegexMode');
-    document.getElementById("blacklistTags").onclick=()=>toggle(blacklistTags,'blacklistTagsMode');
+    bindToggle("favorite", "favouritesOnly");
+    bindToggle("matchCase", "matchCase");
+    bindToggle("matchEntire", "matchEntire");
+    bindToggle("useRegex", "useRegex");
+    bindToggle("blacklistTags", "blacklistTags");
 
     /* =========================
-       SORT MODE SELECTION
+       SORT MODE
     ========================= */
-    sortMode.addEventListener("click", () => {
-        currentSortMode = (currentSortMode + 1) % 4;
-        switch (currentSortMode) {
+    sortModeBtn.addEventListener("click", () => {
+        state.sortMode = (state.sortMode + 1) % 4;
+
+        switch (state.sortMode) {
             case 0:
                 sortMode.innerHTML = 'Sort By: <i class="fa-solid fa-arrow-up-a-z"></i>';
+                sortMode.title = 'Title Ascending (A-Z)';
                 break;
             case 1:
                 sortMode.innerHTML = 'Sort By: <i class="fa-solid fa-arrow-down-a-z"></i>';
+                sortMode.title = 'Title Descending (Z-A)';
                 break;
             case 2:
                 sortMode.innerHTML = 'Sort By: <i class="fa-solid fa-arrow-up-1-9"></i>';
+                sortMode.title = 'Date Added Ascending (Oldest-Newest)';
                 break;
             case 3:
                 sortMode.innerHTML = 'Sort By: <i class="fa-solid fa-arrow-down-1-9"></i>';
+                sortMode.title = 'Date Added Decending (Newest-Oldest)';
                 break;
         }
+
+        sortAllPasswords();
+        renderVirtual();
     });
 
     /* =========================
        SCROLL
     ========================= */
-    window.addEventListener("scroll",()=>{
+    window.addEventListener("scroll", () => {
         renderVirtual();
 
-        if(window.innerHeight + window.scrollY >= document.body.offsetHeight-400){
+        if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 400) {
             fetchPasswords();
         }
     });

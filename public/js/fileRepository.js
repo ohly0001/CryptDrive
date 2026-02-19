@@ -147,6 +147,8 @@ async function searchFiles(query) {
     }
 }
 
+//TODO delete file, disble navToParent if in root, imp delete dire, imp move file between dir, imp change ownership, imp deletion gating if not owner, imp ownerhip indicator, imp file & directory selection / favouriting
+
 // ===== Event Listeners =====
 document.addEventListener('DOMContentLoaded', () => {
     const dropZone = document.getElementById('dropZone');

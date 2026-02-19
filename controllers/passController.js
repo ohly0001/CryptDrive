@@ -23,15 +23,16 @@ const search = async (req, res, next) => {
         const offsetNum = Math.max(parseInt(offset) || 0, 0);
 
         // =========================
-        // Build base query
+        // Build query conditions
         // =========================
-        const query = { account: req.user._id };
+        const conditions = [{ account: req.user._id }];
 
-        if (favouritesOnly) query.isFavourite = true;
+        // Filter favourites
+        if (favouritesOnly) {
+            conditions.push({ isFavourite: true });
+        }
 
-        // =========================
-        // Filter by search term
-        // =========================
+        // Filter by search term (partial match for tags)
         if (searchTerm) {
             let pattern;
             if (useRegex) {
@@ -41,22 +42,27 @@ const search = async (req, res, next) => {
                 pattern = matchEntire ? `^${escaped}$` : escaped;
             }
 
-            query.$or = [
-                { title: { $regex: pattern, $options: matchCase ? '' : 'i' } },
-                { searchTags: { $regex: pattern, $options: 'i' } }
-            ];
+            conditions.push({
+                $or: [
+                    { title: { $regex: pattern, $options: matchCase ? '' : 'i' } },
+                    { searchTags: { $regex: pattern, $options: 'i' } } // always case-insensitive for tags
+                ]
+            });
         }
 
-        // =========================
-        // Filter by tags (case-insensitive)
-        // =========================
+        // Filter by tags (normalized to lowercase)
         if (Array.isArray(searchTags) && searchTags.length > 0) {
+            const normalizedTags = searchTags.map(t => t.toLowerCase());
+
             if (blacklistTags) {
-                query.searchTags = { $nin: searchTags };
+                conditions.push({ searchTags: { $nin: normalizedTags } });
             } else {
-                query.searchTags = { $in: searchTags };
+                conditions.push({ searchTags: { $in: normalizedTags } });
             }
         }
+
+        // Combine all conditions
+        const query = conditions.length > 1 ? { $and: conditions } : conditions[0];
 
         // =========================
         // Total count for pagination
@@ -64,7 +70,7 @@ const search = async (req, res, next) => {
         const total = await Password.countDocuments(query);
 
         // =========================
-        // Fetch data
+        // Fetch data with pagination & sorting
         // =========================
         const passwords = await Password.find(query)
             .skip(offsetNum)

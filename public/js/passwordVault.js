@@ -22,6 +22,7 @@ const state = {
 
     allPasswords: [],
     selectedIndex: -1,
+    selectedPasswords: new Set(),
     tagSuggestions: new Set(),
 
     sortMode: 0 // 0 title asc, 1 title desc, 2 date asc, 3 date desc
@@ -39,9 +40,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const searchField = document.getElementById("searchField");
     const tagFilter = document.getElementById("tagFilter");
     const sortModeBtn = document.getElementById("sortMode");
+    const deleteSelectedBtn = document.getElementById("deleteSelected");
+    const favouriteSelectedBtn = document.getElementById("favouriteSelected");
 
-    document.getElementById("addPasswordButton")
-        .addEventListener('click', () => location.href = '/pass/viewAdd');
+    document.getElementById("addPasswordButton").addEventListener('click', () => location.href = '/pass/viewAdd');
+    
+    document.getElementById("deselectAll").addEventListener('click', () => {
+        state.selectedPasswords.clear();
+        renderVirtual();
+    });
 
     /* =========================
        UTIL
@@ -131,6 +138,40 @@ document.addEventListener("DOMContentLoaded", () => {
     /* =========================
        FETCH
     ========================= */
+    async function favouriteSelectedPasswords() {
+        const ids = [...state.selectedPasswords].map(i => state.allPasswords[i]._id);
+        const allFavourited = [...state.selectedPasswords].every(i => state.allPasswords[i].isFavourite)
+
+        const res = await fetch("/pass/favouriteMany", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ids, state: !allFavourited })
+        });
+    }
+    favouriteSelectedBtn.addEventListener('click', async () => await favouriteSelectedPasswords());
+
+    async function deleteSelectedPasswords() {
+        if (state.selectedPasswords.size === 0) return;
+        if (!confirm(`Are you sure you want to delete ${state.selectedPasswords.size} password(s)?`)) return
+
+        const ids = [...state.selectedPasswords].map(i => state.allPasswords[i]._id);
+
+        const res = await fetch("/pass/deleteMany", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ids })
+        });
+
+        const data = await res.json();
+        if ('message' in data) {
+            alert(data.message);
+        }
+
+        sortAllPasswords();
+        renderVirtual();
+    }
+    deleteSelectedBtn.addEventListener('click', async () => await deleteSelectedPasswords());
+
     async function fetchPasswords() {
         if (state.loading || state.reachedEnd) return;
         state.loading = true;
@@ -220,6 +261,19 @@ document.addEventListener("DOMContentLoaded", () => {
         row.className = "password";
         row.dataset.id = e._id;
         if (index === state.selectedIndex) row.classList.add("keyboardSelected");
+
+        const checkbox = document.createElement('button');
+        checkbox.innerHTML = '<i class="fa-regular fa-square"></i>';
+        checkbox.addEventListener('click', (e) => {
+            if (state.selectedPasswords.has(index)) {
+                state.selectedPasswords.delete(index)
+                checkbox.innerHTML = '<i class="fa-regular fa-square"></i>';
+            } else {
+                state.selectedPasswords.add(index);
+                checkbox.innerHTML = '<i class="fa-regular fa-square-check"></i>';
+            }
+        });
+        row.appendChild(checkbox);
 
         const title = document.createElement("span");
         title.innerText = e.title || "No Title";

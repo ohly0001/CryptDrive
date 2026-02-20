@@ -147,6 +147,14 @@ document.addEventListener("DOMContentLoaded", () => {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ ids, state: !allFavourited })
         });
+
+        const data = await res.json();
+        if ('message' in data) {
+            alert(data.message);
+        }
+
+        sortAllPasswords();
+        renderVirtual();
     }
     favouriteSelectedBtn.addEventListener('click', async () => await favouriteSelectedPasswords());
 

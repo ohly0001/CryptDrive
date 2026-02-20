@@ -45,6 +45,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.getElementById("addPasswordButton").addEventListener('click', () => location.href = '/pass/viewAdd');
     
+    document.getElementById("selectAll").addEventListener('click', () => {
+        const count = state.allPasswords.length;
+        const newSelection = new Set();
+        
+        for (let i = 0; i < count; i++) {
+            newSelection.add(i);
+        }
+        
+        state.selectedPasswords = newSelection;
+        renderVirtual();
+    });
+
     document.getElementById("deselectAll").addEventListener('click', () => {
         state.selectedPasswords.clear();
         renderVirtual();

@@ -62,35 +62,49 @@ async function resetDemoAccount() {
             process.exit(1);
         }
 
-        const demoAccount = new Account({
-            email: DEMO_ACCOUNT_EMAIL,
-            password: DEMO_ACCOUNT_PASSWORD,
-            type: "demo",
-            isActive: true
-        });
-        const kek = await derivekek(DEMO_ACCOUNT_PASSWORD, rootAccount.kekSalt);
-        await demoAccount.secure(kek);
-        await demoAccount.save();
+        let demoAccount = await Account.findOne({ email: DEMO_ACCOUNT_EMAIL });
+        const isNew = !demoAccount;
 
+        if (isNew) {
+            demoAccount = new Account({ email: DEMO_ACCOUNT_EMAIL, type: "demo" });
+        }
+
+        demoAccount.password = DEMO_ACCOUNT_PASSWORD;
+        demoAccount.type = "demo";
+        demoAccount.isActive = true;
+
+        const kek = await derivekek(DEMO_ACCOUNT_PASSWORD, demoAccount.kekSalt);
+
+        if (isNew) {
+            await demoAccount.secure(kek);
+            await demoAccount.save();
+            console.log('[Setup] Created new demo account.');
+        } else {
+            // TEST if this breaks when the .env changes
+            await demoAccount.resecure(kek, DEMO_ACCOUNT_PASSWORD);
+            console.log('[Setup] Reset existing demo account.');
+        }
         console.log('[Setup] Demo account synchronized successfully.');
     } catch (err) {
         console.error('[Setup] Error synchronizing demo account:', err);
         process.exit(1);
     }
-};
+}
 
 async function resetDemoPasswords() {
     try {
         const { DEMO_ACCOUNT_EMAIL, DEMO_ACCOUNT_PASSWORD } = process.env;
 
-        const rootAccount = await Account.findOne(
+        const demoAccount = await Account.findOne(
             { email: DEMO_ACCOUNT_EMAIL },
             { _id: 1, kekSalt: 1, secretKey: 1 }
         ).lean();
 
-        if (!rootAccount) {
+        if (!demoAccount) {
             throw new Error(`Demo account with email ${DEMO_ACCOUNT_EMAIL} not found.`);
         }
+
+        const accountId = demoAccount._id;
 
         const allowedTitles = demo_passwords.map(p => p.title);
 
@@ -100,10 +114,8 @@ async function resetDemoPasswords() {
         });
 
         // Derive + decrypt once
-        const kek = await derivekek(DEMO_ACCOUNT_PASSWORD, rootAccount.kekSalt);
-        const secretKey = decrypt(rootAccount.secretKey, kek);
-
-        const accountId = rootAccount._id;
+        const kek = await derivekek(DEMO_ACCOUNT_PASSWORD, demoAccount.kekSalt);
+        const secretKey = decrypt(demoAccount.secretKey, kek);
 
         const ops = demo_passwords.map(json => {
             const normalizedTags = (json.searchTags || []).map(t => t.toLowerCase());

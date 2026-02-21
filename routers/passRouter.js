@@ -9,7 +9,6 @@ router.post("/edit/:id", controller.edit);
 router.get("/viewEdit/:id", controller.viewEdit);
 router.get("/viewAdd", controller.viewAdd);
 router.post("/add", controller.add);
-//router.post("/load", controller.load);
 router.post("/delete", controller.deleteOne);
 router.post("/deleteMany", controller.deleteMany);
 router.post("/favouriteMany", controller.favouriteMany);

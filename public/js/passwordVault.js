@@ -461,7 +461,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         if (e.key === "Enter" && state.selectedIndex >= 0) {
-            location.href = `/pass/viewEdit/${state.allPasswords[state.selectedIndex]._id}`;
+            location.href = '/pass/viewEdit/' + state.allPasswords[state.selectedIndex]._id;
         }
 
         if ((e.ctrlKey || e.metaKey) && e.key === "/") {

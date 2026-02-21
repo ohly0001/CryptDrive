@@ -1,21 +1,57 @@
-import passport from "passport";
+// accountController.js
 import Account from "../models/account.js";
+import { derivekek } from "../utilities/encryption.js";
 
-const update = async (req, res, next) => {
-    passport.authenticate('local', async (err, account, info) => {
-        if (err) return next(err);
-        if (!account) return res.status(401).json({ message: info?.message || 'Updated failed.' });
+// Pull current user account details
+const pull = async (req, res) => {
+    if (!req.isAuthenticated?.() || !req.user) {
+        return res.status(401).json({ redirect: '/auth/login' });
+    }
 
-        await Account.updateOne({ email: req.body.email });
-        return res.status(200).json({ message: 'Account updated!' });
-    })(req, res, next);
+    try {
+        const account = await Account.findById(req.user._id).lean();
+        if (!account) return res.status(404).json({ message: 'Account not found' });
+
+        // Remove sensitive fields
+        delete account.password;
+        delete account.secretKey;
+        delete account.kekSalt;
+
+        res.status(200).json(account);
+    } catch (err) {
+        res.status(500).json({ message: `Failed to fetch account: ${err}` });
+    }
 };
 
-const view = async (req, res) => {
-    res.render('/accountManagement', {});
-}
+// Update current user account details
+const update = async (req, res) => {
+    if (!req.isAuthenticated?.() || !req.user) {
+        return res.status(401).json({ redirect: '/auth/login' });
+    }
 
-export default {
-    update,
-    view
+    const { email, password, oldPassword } = req.body;
+
+    try {
+        const account = await Account.findById(req.user._id);
+        if (!account) return res.status(404).json({ message: 'Account not found' });
+
+        if (email) {
+            account.email = email.trim().toLowerCase();
+        }
+
+        if (password) {
+            // Re-secure account if password changes
+            account.password = password.trim();
+            const kek = await derivekek(password, account.kekSalt);
+            await account.resecure(kek, oldPassword);
+        } else {
+            await account.save(); // Save email or other changes that don't alter the KeK
+        }
+
+        res.status(200).json({ message: 'Account updated!' });
+    } catch (err) {
+        res.status(400).json({ message: `Failed to update account: ${err}` });
+    }
 };
+
+export default { pull, update };

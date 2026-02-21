@@ -25,7 +25,9 @@ const state = {
     selectedPasswords: new Set(),
     tagSuggestions: new Set(),
 
-    sortMode: 0 // 0 title asc, 1 title desc, 2 date asc, 3 date desc
+    sortMode: 0, // 0 title asc, 1 title desc, 2 date asc, 3 date desc
+
+    searchTags: new Set()
 };
 
 let visibleStart = 0;
@@ -39,9 +41,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const container = document.getElementById("passwordContainer");
     const searchField = document.getElementById("searchField");
     const tagFilter = document.getElementById("tagFilter");
+    const tagContainer = document.getElementById('newTags');
     const sortModeBtn = document.getElementById("sortMode");
     const deleteSelectedBtn = document.getElementById("deleteSelected");
     const favouriteSelectedBtn = document.getElementById("favouriteSelected");
+    const tagBox = document.createElement("div");
 
     document.getElementById("addPasswordButton").addEventListener('click', () => location.href = '/pass/viewAdd');
     
@@ -62,9 +66,49 @@ document.addEventListener("DOMContentLoaded", () => {
         renderVirtual();
     });
 
+    document.getElementById("clearTags").addEventListener('click', () => {
+        if (!state.searchTags) return;
+        state.searchTags.clear();
+        tagBox.classList.add("hidden");
+        tagFilter.value = "";
+        tagContainer.innerHTML = "";
+        resetSearch();
+    });
+
+    tagFilter.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+
+        const value = e.currentTarget.value.trim().toLowerCase();
+        if (!value) return;
+
+        addSearchTag(value);
+
+        e.currentTarget.value = '';
+        tagBox.classList.add('hidden');
+    });
+
     /* =========================
        UTIL
     ========================= */
+    function addSearchTag(value) {
+        if (state.searchTags.has(value)) return;
+        state.searchTags.add(value);
+
+        const tag = document.createElement('span');
+        tag.innerText = value;
+        tag.title = 'Click to remove';
+        tag.classList.add('searchTag');
+        tag.style.borderColor = calculateColour(value);
+
+        tag.addEventListener('click', () => {
+            state.searchTags.delete(value);
+            tagContainer.removeChild(tag);
+            resetSearch();
+        });
+        tagContainer.appendChild(tag);
+    }
+
     const debounce = (fn, delay = 250) => {
         let t;
         return (...args) => {
@@ -207,9 +251,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 matchCase: state.matchCase,
                 matchEntire: state.matchEntire,
                 useRegex: state.useRegex,
-                searchTags: tagFilter.value.trim()
-                    ? tagFilter.value.split(",").map(t => t.trim()).filter(Boolean)
-                    : [],
+                searchTags: [...state.searchTags],
                 blacklistTags: state.blacklistTags
             })
         });
@@ -313,7 +355,7 @@ document.addEventListener("DOMContentLoaded", () => {
             fetch('/pass/toggleFavourite', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: e._id })
+                body: JSON.stringify({ id: e._id, state: e.isFavourite })
             });
             
             sortAllPasswords();
@@ -375,7 +417,6 @@ document.addEventListener("DOMContentLoaded", () => {
     /* =========================
        TAG AUTOCOMPLETE
     ========================= */
-    const tagBox = document.createElement("div");
     tagBox.classList.add("tagAutocomplete", "hidden");
     tagFilter.parentNode.appendChild(tagBox);
 
@@ -392,7 +433,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 const item = document.createElement("div");
                 item.innerText = tag;
                 item.onclick = () => {
-                    tagFilter.value = tag;
+                    //tagFilter.value = tag;
+                    addSearchTag(tag);
+                    tagFilter.value = "";
                     tagBox.innerHTML = "";
                     tagBox.classList.add("hidden");
                     resetSearch();
@@ -456,6 +499,16 @@ document.addEventListener("DOMContentLoaded", () => {
     bindToggle("matchEntire", "matchEntire");
     bindToggle("useRegex", "useRegex");
     bindToggle("blacklistTags", "blacklistTags");
+    /*
+    //Requires higher font sub tier?
+    const blackListButton = document.getElementById("blacklistTags");
+    blackListButton.addEventListener('click', () => {
+        state["blacklistTags"] = !state["blacklistTags"];
+        blackListButton.classList.toggle("toggled", state["blacklistTags"]);
+        blackListButton.innerHTML = `<i class="fa-${state["blacklistTags"] ? "solid" : "regular"} fa-filter"></i>`; 
+        resetSearch();
+    });
+    */
 
     /* =========================
        SORT MODE

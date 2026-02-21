@@ -32,7 +32,7 @@ const search = async (req, res, next) => {
             conditions.push({ isFavourite: true });
         }
 
-        // Filter by search term (partial match for tags)
+        // Filter by search term (require all tags to be present, but allows for partial set overlap)
         if (searchTerm) {
             let pattern;
             if (useRegex) {
@@ -55,9 +55,11 @@ const search = async (req, res, next) => {
             const normalizedTags = searchTags.map(t => t.toLowerCase());
 
             if (blacklistTags) {
+                // Exclude any document containing ANY of these tags
                 conditions.push({ searchTags: { $nin: normalizedTags } });
             } else {
-                conditions.push({ searchTags: { $in: normalizedTags } });
+                // Require ALL provided tags to exist in the document
+                conditions.push({ searchTags: { $all: normalizedTags } });
             }
         }
 
@@ -292,11 +294,7 @@ const toggleFavourite = async (req, res, next) => {
         if (!req.isAuthenticated?.() || !req.user) {
             return res.status(401).json({ redirect: '/auth/login' });
         }
-        await Password.findByIdAndUpdate(
-            req.body.id,
-            [{ $set: { isFavourite: { $not: "$isFavourite" }}}],
-            { updatePipeline: true }
-        );
+        await Password.findByIdAndUpdate(req.body.id, { $set: { isFavourite: req.body.state } })
     } catch (err) {
         res.json({ message: 'Something went wrong when favouriting/unfavouriting your password' });
         next(err);

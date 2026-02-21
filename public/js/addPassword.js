@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const value = e.currentTarget.value.trim().toLowerCase();
         if (!value) return;
 
-        if (value in tags) return;
+        if (tags.has(value)) return;
         tags.add(value);
 
         const tag = document.createElement('span');

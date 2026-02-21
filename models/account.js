@@ -15,7 +15,8 @@ const AccountSchema = new mongoose.Schema({
     secretKey: { type: EncryptedFieldSchema }, // store as AES object
     kekSalt: { type: String, default: () => saltShaker() },
     isActive: { type: Boolean, default: false },
-    expireAt: { type: Date, default: null }
+    expireAt: { type: Date, default: null },
+    type: { type: String, enum: ["standard", "root", "demo"], default: "standard" }
 }, { timestamps: true });
 
 AccountSchema.index( { "expireAt": 1 }, { expireAfterSeconds: 0 } )

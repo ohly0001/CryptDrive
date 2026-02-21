@@ -12,7 +12,7 @@ const PasswordSchema = new mongoose.Schema({
         ref: "Account", 
         required: true 
     },
-    title: { type: String, required: true, trim: true, index: true },
+    title: { type: String, required: true, trim: true, unique: true },
     url: { type: EncryptedFieldSchema, index: true },
     username: { type: EncryptedFieldSchema, required: true },
     password: { type: EncryptedFieldSchema, required: true },

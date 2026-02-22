@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta charset="UTF-8">
+        <meta name="author" content="Robert Ohly">
+        <name>CyptDrive New Group</name>
+        <script src="/js/addGroup.js" defer></script>
+        <link rel="stylesheet" href="/css/site.css">
+        <link rel="stylesheet" href="/css/addGroup.css">
+        <script src="https://kit.fontawesome.com/0f23db6f2c.js" crossorigin="anonymous"></script>
+    </head>
+    <body>
+        <h1>CyptDrive New Group</h1>
+        <form id="newPasswordForm">
+        <fieldset>
+            <legend>Add Password</legend>
+
+            <label for="newName">Name</label><br>
+            <input id="newName" type="text" placeholder="Example" size="128" required><br><br>
+
+            <label for="useJoinCode"><i class="fa-solid fa-user-lock"></i> Generate Join Code? (Will exprire in 1 week)</label>
+            <input id="useJoinCode" type="checkbox"><br>
+
+            <label for="newFavourite">
+                <i class="fa-solid fa-star"></i> Flag as Favourite?
+                <input id="newFavourite" type="checkbox">
+            </label><br><br>
+
+            <label for="maxMembers"><i class="fa-solid fa-users"></i> Max Members</label>
+            <input id="maxMembers" type="number" min="1" max="10" value="1" required><br><br>
+
+            <label for="newMember"><i class="fa-solid fa-user-plus"></i> Invite Member By Username</label><br>
+            <input id="newMember" type="text" name="Press enter to add" placeholder="abc@email.com" size="128" required><br>
+            <div class="memberContainer" id="newMembers"></div><br>
+
+            <label for="newTag"><i class='fas fa-tags'></i> Add Search Tag</label><br>
+            <input id="newTag" type="text" name="Press enter to add" placeholder="work"><br>
+            <div class="tagContainer" id="newTags"></div><br><br>
+
+            <label for="newDesc"><i class='fas fa-sticky-note'></i> Description</label><br>
+            <textarea id="newDesc" rows="3" placeholder="Optional description..."></textarea><br><br>
+
+            <input type="submit" value="Add Group">
+            <button type="button" onclick="document.location.href='/home/groupManagement';">↩ Back</button>
+        </fieldset>
+    </form>
+    </body>
+</html>

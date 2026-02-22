@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
     // Elements
+    const titleInput = document.getElementById("titleUrl");
     const urlInput = document.getElementById("savedUrl");
     const userInput = document.getElementById("savedUser");
     const passwordInput = document.getElementById("savedPassword");
@@ -21,6 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const passwordId = "<%= password._id %>";
 
     // Populate fields from server
+    titleInput.value = "<%= password.title %>";
     urlInput.value = "<%= password.url %>";
     userInput.value = "<%= password.username %>";
     passwordInput.value = "<%= password.password %>";
@@ -34,17 +36,13 @@ document.addEventListener("DOMContentLoaded", () => {
         tagContainer.innerHTML = "";
         tags.forEach(tag => {
             const el = document.createElement("span");
-            el.className = "tag";
+            el.className = "searchTag";
             el.innerText = tag;
-
-            const removeBtn = document.createElement("button");
-            removeBtn.type = "button";
-            removeBtn.innerHTML = "&times;";
-            removeBtn.onclick = () => {
+            el.title = `Click to remove the '${tag}' tag`;
+            el.onclick = () => {
                 tags.delete(tag);
                 renderTags();
             };
-            el.appendChild(removeBtn);
             tagContainer.appendChild(el);
         });
     }
@@ -57,7 +55,6 @@ document.addEventListener("DOMContentLoaded", () => {
             e.preventDefault();
             const value = tagInput.value.trim();
             if (value) {
-                value.split(/\s+/).forEach(t => tags.add(t));
                 tagInput.value = "";
                 renderTags();
             }
@@ -73,7 +70,7 @@ document.addEventListener("DOMContentLoaded", () => {
     form.addEventListener("submit", async e => {
         e.preventDefault();
         const payload = {
-            title: urlInput.value, // optional: if you have a title field, adjust
+            title: titleInput.value, 
             url: urlInput.value,
             username: userInput.value,
             password: passwordInput.value,

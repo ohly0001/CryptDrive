@@ -1,5 +1,5 @@
 // accountController.js
-import Account from "../models/account.js";
+import Account from "../models/Account.js";
 import { derivekek } from "../utilities/encryption.js";
 
 // Pull current user account details
@@ -11,11 +11,6 @@ const pull = async (req, res) => {
     try {
         const account = await Account.findById(req.user._id).lean();
         if (!account) return res.status(404).json({ message: 'Account not found' });
-
-        // Remove sensitive fields
-        delete account.password;
-        delete account.secretKey;
-        delete account.kekSalt;
 
         res.status(200).json(account);
     } catch (err) {

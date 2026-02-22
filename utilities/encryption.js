@@ -1,3 +1,5 @@
+import cryptDriveConfig from "../config/cryptDriveConfig.json" with { type: "json" };
+
 import crypto from 'crypto';
 import argon2 from 'argon2';
 
@@ -16,17 +18,17 @@ export async function derivekek(password, salt) {
 }
 
 export function saltShaker() {
-    return crypto.randomBytes(16).toString('base64');
+    return crypto.randomBytes(cryptDriveConfig.passwordSaltRounds).toString('base64');
 }
 
 export function generateAESKey() {
-    return crypto.randomBytes(32).toString('base64'); // 256-bit AES
+    return crypto.randomBytes(cryptDriveConfig.aesKeySize).toString('base64'); // 256-bit AES
 }
 
 export function encryptBuffer(buffer, secretKeyBase64) {
     // decode base64 key
     const key = Buffer.from(secretKeyBase64, 'base64');
-    if (key.length !== 32) throw new Error('AES key must be 32 bytes');
+    if (key.length !== cryptDriveConfig.aesKeySize) throw new Error('AES key must be 32 bytes');
 
     const iv = crypto.randomBytes(12);
     const cipher = crypto.createCipheriv(algorithm, key, iv);
@@ -47,7 +49,7 @@ export function encryptBuffer(buffer, secretKeyBase64) {
 
 export function encrypt(text="", secretKey) {
     const key = Buffer.from(secretKey, 'base64');
-    if (key.length !== 32) throw new Error('AES key must be 32 bytes');
+    if (key.length !== cryptDriveConfig.aesKeySize) throw new Error('AES key must be 32 bytes');
 
     const iv = crypto.randomBytes(12);
     const cipher = crypto.createCipheriv(algorithm, key, iv);
@@ -64,7 +66,7 @@ export function encrypt(text="", secretKey) {
 
 export function decryptBuffer(encryptedData, ivBase64, authTagBase64, secretKeyBase64) {
     const key = Buffer.from(secretKeyBase64, 'base64');
-    if (key.length !== 32) throw new Error('AES key must be 32 bytes');
+    if (key.length !== cryptDriveConfig.aesKeySize) throw new Error('AES key must be 32 bytes');
 
     const iv = Buffer.from(ivBase64, 'base64');
     const authTag = Buffer.from(authTagBase64, 'base64');
@@ -82,7 +84,7 @@ export function decryptBuffer(encryptedData, ivBase64, authTagBase64, secretKeyB
 
 export function decrypt(encryptedObject, secretKey) {
     const key = Buffer.from(secretKey, 'base64');
-    if (key.length !== 32) throw new Error('AES key must be 32 bytes');
+    if (key.length !== cryptDriveConfig.aesKeySize) throw new Error('AES key must be 32 bytes');
 
     const iv = Buffer.from(encryptedObject.iv, 'base64');
     const authTag = Buffer.from(encryptedObject.authTag, 'base64');

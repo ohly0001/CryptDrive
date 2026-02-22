@@ -1,3 +1,4 @@
+import cryptDriveConfig from '../config/cryptDriveConfig.json' with { type: 'json' };
 import mongoose from 'mongoose';
 
 const lifeSpan = 10 * 60;
@@ -23,7 +24,7 @@ const CodeSchema = new mongoose.Schema({
 CodeSchema.index({ "createdAt": 1 }, { "expireAfterSeconds":lifeSpan });
 
 CodeSchema.pre('save', { document: true, query: false }, async function(next) {
-    this.code = await bcrypt.hash(this.code, 12);
+    this.code = await bcrypt.hash(this.code, cryptDriveConfig.passwordSaltRounds);
 });
 
 CodeSchema.methods.compareCode = async function(candidateCode) {

@@ -5,6 +5,7 @@ import { isAuthenticated } from '../middleware/authCheck.js'; // ensures req.use
 const router = express.Router();
 
 router.post('/create', isAuthenticated, controller.createGroup);
+router.get('/viewAdd', isAuthenticated, controller.viewCreateGroup);
 router.post('/list', isAuthenticated, controller.listGroups);
 router.post('/join', isAuthenticated, controller.joinGroup);
 router.post('/leave', isAuthenticated, controller.leaveGroup);

@@ -39,6 +39,23 @@ button:hover {
     background: #2563eb;
 }
 
+.memberTag {
+    display: flex;
+    border-radius: 15px 15px 15px 15px;
+    border-width: 3px;
+    border-style: solid;
+    padding: 2px 2px 2px 8px;
+    background-color: white;
+    font-size: 12px;
+}
+.memberContainer {
+    display: flex;
+    flex-direction: column;
+    padding: 2px;
+    margin: 2px;
+    gap: 4px;
+}
+
 .searchTag {
     display: inline;
     border-radius: 15px 0px 0px 15px;

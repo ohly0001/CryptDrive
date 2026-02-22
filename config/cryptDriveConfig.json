@@ -1,5 +1,7 @@
 {
     "minPasswordSize": 12,
     "maxPasswordSize": 99,
-    "passwordSaltRounds": 12
+    "passwordSaltRounds": 16,
+    "aesKeySize": 32,
+    "joinCodeDuration": 604800000
 }

@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const tag = document.createElement('span');
         tag.innerText = value;
-        tag.title = 'Click to remove';
+        tag.title = `Click to remove the '${value}' tag`;
         tag.classList.add('searchTag');
         tag.style.borderColor = calculateColour(value);
 

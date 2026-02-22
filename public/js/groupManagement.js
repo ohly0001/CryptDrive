@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const tagContainer = document.getElementById("newTags");
     const sortModeBtn = document.getElementById("sortMode");
 
-    document.getElementById("createGroupButton").addEventListener("click", () => location.href = "/groups/create");
+    document.getElementById("createGroupButton").addEventListener("click", () => location.href = "/groups/viewAdd");
     document.getElementById("joinGroupButton").addEventListener("click", joinGroup);
 
     // Toggle favourites filter

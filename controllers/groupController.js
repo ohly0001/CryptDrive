@@ -1,20 +1,36 @@
+import cryptDriveConfig from '../config/cryptDriveConfig.json' with { type: 'json' };
 import Group from '../models/Group.js';
 import Account from '../models/Account.js';
 
+// FUTURE FEATURE - join requests (both for approving codes and being invited by an owner)
+
+const viewCreateGroup = async (req, res) => {
+    res.render('addGroup');
+}
+
 const createGroup = async (req, res) => {
     try {
-        const { name, joinCode, maxMembers } = req.body;
+        const { name, generateJoinCode, favourite, members, maxMembers, tags, description } = req.body;
         if (!name) return res.status(400).json({ message: "Group name required" });
+
+        // Resolve emails to IDs
+        const memberDocs = await Account.find({ email: { $in: members } }).select('_id').lean();
+        const memberIds = memberDocs.map(m => m._id);
 
         const group = new Group({
             name,
             owner: req.user._id,
-            members: [req.user._id],
+            members: memberIds,
             maxMembers: maxMembers || 10,
-            joinCode: joinCode || null
+            tags: tags || [],
+            description: description || "",
+            favourites: favourite ? [req.user._id] : [],
+            joinCode: generateJoinCode ? Math.floor(Math.random() * 1000000).toString().padStart(6, '0') : null
         });
 
-        if (joinCode) await group.secure();
+        if (group.joinCode) {
+            await group.setJoinCode(group.joinCode);
+        }
 
         await group.save();
         res.json({ message: "Group created", group });
@@ -184,6 +200,7 @@ const toggleFavourite = async (req, res) => {
 
 export default {
     createGroup,
+    viewCreateGroup,
     listGroups,
     joinGroup,
     leaveGroup,

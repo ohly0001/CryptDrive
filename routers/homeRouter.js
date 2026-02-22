@@ -5,6 +5,7 @@ const router = express.Router();
 
 router.get("/", controller.viewHome);
 router.get("/accountManagement", controller.viewAccountManagement);
+router.get("/groupManagement", controller.viewGroupManagement);
 router.get("/passwordVault", controller.viewPasswordVault);
 router.get("/passwordFactory", controller.viewPasswordFactory);
 router.get("/fileRepository", controller.viewFileRepository);

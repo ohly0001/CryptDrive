@@ -31,5 +31,5 @@ PasswordSchema.set('toJSON', {
     }
 });
 
-const Password = mongoose.model('Password', PasswordSchema);
+const Password = mongoose.models.Password || mongoose.model('Password', PasswordSchema);
 export default Password;

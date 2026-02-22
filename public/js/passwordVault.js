@@ -97,9 +97,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const tag = document.createElement('span');
         tag.innerText = value;
-        tag.title = 'Click to remove';
+        tag.title = `Click to remove the '${value}' tag`;
         tag.classList.add('searchTag');
         tag.style.borderColor = calculateColour(value);
+        tag.style.cursor = "pointer";
 
         tag.addEventListener('click', () => {
             state.searchTags.delete(value);
@@ -107,6 +108,8 @@ document.addEventListener("DOMContentLoaded", () => {
             resetSearch();
         });
         tagContainer.appendChild(tag);
+
+        resetSearch();
     }
 
     const debounce = (fn, delay = 250) => {
@@ -369,6 +372,7 @@ document.addEventListener("DOMContentLoaded", () => {
         ["url", "username", "password", "note"].forEach(key => {
             const b = document.createElement("button");
             b.innerText = key;
+            b.style.cursor = "copy";
 
             b.onclick = async () => {
                 const res = await fetch('/pass/copy', {
@@ -405,8 +409,11 @@ document.addEventListener("DOMContentLoaded", () => {
         (e.searchTags || []).forEach(t => {
             const tag = document.createElement("span");
             tag.innerText = t;
+            tag.title = `Click to add the '${t}' tag`;
             tag.classList.add("searchTag");
             tag.style.borderColor = calculateColour(t);
+            tag.onclick = () => addSearchTag(t);
+            tag.style.cursor = "pointer";
             tagWrap.appendChild(tag);
         });
 
@@ -438,7 +445,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     tagFilter.value = "";
                     tagBox.innerHTML = "";
                     tagBox.classList.add("hidden");
-                    resetSearch();
+                    //resetSearch();
                 };
                 tagBox.appendChild(item);
             });

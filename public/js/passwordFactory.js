@@ -1,6 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
     const PasswordGenerator = (() => {
-
         let length = 16;
 
         let allowedCharSet = new Set(
@@ -169,15 +168,19 @@ document.addEventListener('DOMContentLoaded', () => {
             bindToggle('unsafeSymbols', charSets.unsafeSymbols);
 
             // peek
-            const passwordField = document.getElementById('generatedPassword');
+            const password = document.getElementById('generatedPassword');
             const peekButton = document.getElementById('passwordPeek');
+            const showPassword = () => {
+                peekButton.innerHTML = '<i class="fa-solid fa-eye"></i>';
+                password.type = 'text'
+            };
+            const hidePassword = () => {
+                peekButton.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
+                password.type = 'password'
+            };
 
-            const show = () => passwordField.type = 'text';
-            const hide = () => passwordField.type = 'password';
-
-            ['mousedown','touchstart'].forEach(e => peekButton.addEventListener(e, show));
-            ['mouseup','mouseleave','touchend']
-                .forEach(e => peekButton.addEventListener(e, hide));
+            ['mousedown', 'touchstart'].forEach(evt => peekButton.addEventListener(evt, showPassword));
+            ['mouseup', 'mouseleave', 'touchend'].forEach(evt => peekButton.addEventListener(evt, hidePassword));
         };
 
         const init = () => {

@@ -1,8 +1,8 @@
 import passport from "passport";
-import Account from '../models/account.js';
+import Account from '../models/Account.js';
 import Code from '../models/codes.js';
 import nodemailer from 'nodemailer';
-import { randomInt, timingSafeEqual } from 'crypto';
+import { randomInt } from 'crypto';
 import { derivekek } from "../utilities/encryption.js";
 
 const sendConfirmationEmail = async (email, code) => {

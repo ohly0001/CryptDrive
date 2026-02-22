@@ -30,5 +30,5 @@ CodeSchema.methods.compareCode = async function(candidateCode) {
     return await bcrypt.compare(candidateCode, this.code);
 };
 
-const Code = mongoose.model('Code', CodeSchema);
+const Code = mongoose.models.Code || mongoose.model('Code', CodeSchema);
 export default Code;

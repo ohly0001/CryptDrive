@@ -58,5 +58,5 @@ DirectorySchema.methods.recursiveCreation = async function(account, path) {
     return parent;
 }
 
-const Directory = mongoose.model('Directory', DirectorySchema);
+const Directory = mongoose.models.Directory || mongoose.model('Directory', DirectorySchema);
 export default Directory;

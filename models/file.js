@@ -19,5 +19,5 @@ const FileSchema = new mongoose.Schema({
     authTag: { type: String, required: true }
 }, { timestamps: true });
 
-const File = mongoose.model('File', FileSchema);
+const File = mongoose.models.File || mongoose.model('File', FileSchema);
 export default File;

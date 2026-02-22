@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Robert Ohly">
+    <title>CyptDrive Group Management</title>
+    <script src="/js/groupManagement.js" defer></script>
+    <script src="https://kit.fontawesome.com/0f23db6f2c.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="/css/site.css">
+    <link rel="stylesheet" href="/css/passwordVault.css">
+</head>
+<body>
+    <%- include('components/nav') %>
+
+    <h1>CryptDrive Group Management</h1>
+
+    <!-- JOIN GROUP -->
+    <div id="joinGroupSection">
+        <input id="joinCode" type="text" placeholder="Enter Group Join Code">
+        <button id="joinGroupButton"><i class="fa-solid fa-right-to-bracket"></i> Join</button>
+        <button id="createGroupButton"><i class="fa-solid fa-plus"></i> Create Group</button>
+    </div>
+
+    <!-- SEARCH & FILTER -->
+    <form id="searchForm">
+        <fieldset>
+            <legend>Search / Filter Groups</legend>
+            <input id="searchField" type="text" placeholder="Search by Group Name">
+
+            <button type="button" id="favorite"><i class="fa fa-star"></i> Favourites</button>
+            <button type="button" id="sortMode">Sort By: <i class="fa-solid fa-arrow-up-a-z"></i></button><br>
+
+            <label for="tagFilter"><i class="fa-solid fa-tag"></i> Add Tag Filter</label>
+            <input type="text" id="tagFilter" placeholder="Tag name (press enter)"><br>
+            <div class="tagContainer" id="newTags"></div>
+        </fieldset>
+    </form>
+
+    <!-- GROUP LIST -->
+    <div id="groupContainer"></div>
+    <div id="loadingIndicator" style="text-align:center; padding:20px; opacity:.6;">
+        Scrolling loads more...
+    </div>
+</body>
+</html>
+

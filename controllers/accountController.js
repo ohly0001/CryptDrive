@@ -35,23 +35,30 @@ const update = async (req, res) => {
         const account = await Account.findById(req.user._id);
         if (!account) return res.status(404).json({ message: 'Account not found' });
 
-        if (email) {
-            account.email = email.trim().toLowerCase();
-        }
+        if (email) account.email = email.trim().toLowerCase();
 
         if (password) {
-            // Re-secure account if password changes
             account.password = password.trim();
             const kek = await derivekek(password, account.kekSalt);
             await account.resecure(kek, oldPassword);
         } else {
-            await account.save(); // Save email or other changes that don't alter the KeK
+            await account.save();
         }
 
-        res.status(200).json({ message: 'Account updated!' });
+        // Reload updated account
+        const updatedAccount = await Account.findById(req.user._id).lean();
+        delete updatedAccount.password;
+        delete updatedAccount.secretKey;
+        delete updatedAccount.kekSalt;
+
+        res.status(200).json(updatedAccount);
+
     } catch (err) {
         res.status(400).json({ message: `Failed to update account: ${err}` });
     }
 };
 
-export default { pull, update };
+export default { 
+    pull, 
+    update 
+};

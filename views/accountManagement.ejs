@@ -17,8 +17,10 @@
         <fieldset>
             <legend>Account Details</legend>
             <div id="accountDetails">
-                <label for="email">Email</label>
-                <input id="email" type="email" value="Test" readonly>
+                <label for="email"><i class="fa-solid fa-at"></i> Email</label><br>
+                <input id="email" type="email" value="Test" readonly><br>
+                <label for="accountType">Account Type</label><br>
+                <input id="accountType" type="accountType" value="Test" readonly>
             </div>
         </fieldset>
         <fieldset>
@@ -31,5 +33,7 @@
             <legend>Session & Navigation</legend>
             <button id="logout"><i class="fa fa-sign-out"></i> Log Out</button><br><br>
         </fieldset>
+        <p id="createdAt"><i class="fa-solid fa-clock"></i> Created On:</p>
+        <p id="updatedAt"><i class="fa-regular fa-clock"></i> Last Updated On:</p>
     </body>
 </html>

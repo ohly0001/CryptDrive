@@ -71,5 +71,5 @@ GroupSchema.methods.removeMember = async function (memberId) {
     return true;
 };
 
-const Group = mongoose.model('Group', GroupSchema);
+const Group = mongoose.models.Group || mongoose.model('Group', GroupSchema);
 export default Group;

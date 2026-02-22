@@ -76,5 +76,5 @@ AccountSchema.pre('deleteOne', { document: true, query: false }, async function(
     ]);
 });
 
-const Account = mongoose.model('Account', AccountSchema);
+const Account = mongoose.models.Account || mongoose.model('Account', AccountSchema);
 export default Account;

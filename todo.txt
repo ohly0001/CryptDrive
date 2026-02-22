@@ -1,0 +1,9 @@
+File Manager
+
+//TODO delete file, disble navToParent if in root, imp delete dir, imp edit file name & tags & note, imp move file between dir, imp change ownership, imp deletion gating if not owner, imp ownerhip indicator, imp file & directory selection / favouriting
+//TODO group based file sharing. The file owner maintains full control over the file, but the share allows over uses to (change file tags, move the file, rename the file, edit the file note, overwrite the file, download file, but not; delete the file, change its permisison group or transfer its ownership), 
+//TODO allow file previewing for (maybe pdf if its easy), images, txt, csv, json, xml in the browser (or any plain text viewable file) but requires a decryption request to see its contents
+
+Registration
+
+Test code is sent correctly

@@ -3,10 +3,11 @@ import { Strategy as LocalStrategy } from 'passport-local';
 import Account from '../models/account.js';
 
 function configurePassport() {
-    const authenticateAccount = async (email, password, done) => {
-
+    const authenticateAccount = async (identification, password, done) => {
         try {
-            const account = await Account.findOne({ email });
+            // allow either username or email matching
+            // username is case sensitive, email is not
+            const account = await Account.findOne({ $or: [{ username: identification }, { email: identification.toLowerCase() }] });
 
             if (!account) {
                 return done(null, false, { message: 'Invalid login credentials' });

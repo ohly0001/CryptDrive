@@ -1,9 +1,15 @@
 function processRegisterForm(form) {
     if (!form.reportValidity()) return;
 
-    const email = document.getElementById("email").value.trim();
+    const username = document.getElementById("username").value.trim();
+    const email = document.getElementById("email").value.trim().toLowerCase();
     const password = document.getElementById("password1").value;
     const passConfirm = document.getElementById("password2").value;
+
+    if (username === email) {
+        alert("Your cannot use your email as your usename");
+        return;
+    }
 
     if (password !== passConfirm) {
         alert("Passwords must match");
@@ -28,7 +34,7 @@ function processRegisterForm(form) {
     fetch('/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ username, email, password })
     })
     .then(async (res) => {
         if (!res.ok) {

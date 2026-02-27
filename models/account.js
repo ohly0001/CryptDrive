@@ -11,6 +11,7 @@ const EncryptedFieldSchema = new mongoose.Schema({
 
 const AccountSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    username: { type: String, required: true, unique: true, lowercase: true, trim: true },
     password: { type: String, required: true }, // bcrypt hash
     secretKey: { type: EncryptedFieldSchema }, // store as AES object
     kekSalt: { type: String, default: () => saltShaker() },

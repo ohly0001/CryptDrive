@@ -32,18 +32,18 @@ const resend = async (req, res) => {
 
 const register = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { username, email, password } = req.body;
 
         if (!email || !password) {
             return res.status(400).send('Missing required fields.');
         }
 
-        const existingAccount = await Account.findOne({ email });
+        const existingAccount = await Account.findOne({ $or: [{ username: username }, { email: email }] });
         if (existingAccount) {
-            return res.status(409).send('Username or email already exists.');
+            return res.status(409).send('That username or email is already taken.');
         }
 
-        const newAccount = new Account({email, password});
+        const newAccount = new Account({username, email, password});
         const kek = await derivekek(req.body.password, newAccount.kekSalt);
         await newAccount.secure(kek);
         req.session.kek = kek;

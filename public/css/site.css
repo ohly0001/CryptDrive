@@ -44,13 +44,12 @@ button:hover {
     border-radius: 15px 15px 15px 15px;
     border-width: 3px;
     border-style: solid;
-    padding: 2px 2px 2px 8px;
+    padding: 2px 8px 2px 8px;
     background-color: white;
     font-size: 12px;
 }
 .memberContainer {
-    display: flex;
-    flex-direction: column;
+    display: inline-flex;
     padding: 2px;
     margin: 2px;
     gap: 4px;

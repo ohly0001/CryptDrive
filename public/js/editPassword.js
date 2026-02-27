@@ -1,48 +1,60 @@
 document.addEventListener("DOMContentLoaded", () => {
-    // Elements
-    const titleInput = document.getElementById("titleUrl");
+
+    // ======= Server Data =======
+    const passwordData = window.__PASSWORD__;
+    const passwordId = passwordData._id;
+
+    // ======= Elements =======
+    const titleInput = document.getElementById("savedTitle");
     const urlInput = document.getElementById("savedUrl");
     const userInput = document.getElementById("savedUser");
     const passwordInput = document.getElementById("savedPassword");
     const passwordPeekBtn = document.getElementById("passwordPeek");
+    const favouriteInput = document.getElementById("savedFavourite");
 
     const tagInput = document.getElementById("savedTag");
     const tagContainer = document.getElementById("savedTags");
 
     const noteInput = document.getElementById("savedNote");
-    const form = document.getElementById("addPasswordForm");
+    const form = document.getElementById("editPasswordForm");
 
-    const creationTime = document.getElementById("creationTime");
-    const updatedTime = document.getElementById("updatedTime");
-
-    const deleteBtn = form.querySelector("button[type='button']:first-of-type");
+    const deleteBtn = document.getElementById("delete");
+    const revertBtn = document.getElementById("revert");
+    const backBtn = document.getElementById("back");
 
     // ======= State =======
-    let tags = new Set(<%= JSON.stringify(password.searchTags || []) %>);
-    const passwordId = "<%= password._id %>";
+    let tags = new Set(passwordData.searchTags || []);
 
-    // Populate fields from server
-    titleInput.value = "<%= password.title %>";
-    urlInput.value = "<%= password.url %>";
-    userInput.value = "<%= password.username %>";
-    passwordInput.value = "<%= password.password %>";
-    noteInput.value = "<%= password.note %>";
+    // ======= Utilities =======
+    function calculateColour(str) {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = str.charCodeAt(i) + ((hash << 5) - hash);
+        }
 
-    creationTime.innerHTML += ` ${new Date("<%= password.createdAt || Date.now() %>").toLocaleString()}`;
-    updatedTime.innerHTML += ` ${new Date("<%= password.updatedAt || Date.now() %>").toLocaleString()}`;
+        let colour = "#";
+        for (let i = 0; i < 3; i++) {
+            const value = (hash >> (i * 8)) & 0xff;
+            colour += value.toString(16).padStart(2, "0");
+        }
+        return colour;
+    }
 
-    // ======= Render Tags =======
     function renderTags() {
         tagContainer.innerHTML = "";
+
         tags.forEach(tag => {
             const el = document.createElement("span");
             el.className = "searchTag";
             el.innerText = tag;
-            el.title = `Click to remove the '${tag}' tag`;
-            el.onclick = () => {
+            el.title = `Click to remove '${tag}'`;
+            el.style.borderColor = calculateColour(tag);
+
+            el.addEventListener("click", () => {
                 tags.delete(tag);
                 renderTags();
-            };
+            });
+
             tagContainer.appendChild(el);
         });
     }
@@ -51,10 +63,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ======= Tag Input =======
     tagInput.addEventListener("keydown", e => {
-        if (e.key === "Enter" || e.key === " " || e.key === ",") {
+        if (e.key === 'Enter') {
             e.preventDefault();
             const value = tagInput.value.trim();
+
             if (value) {
+                tags.add(value);
                 tagInput.value = "";
                 renderTags();
             }
@@ -63,20 +77,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ======= Password Reveal =======
     passwordPeekBtn.addEventListener("click", () => {
-        passwordInput.type = passwordInput.type === "password" ? "text" : "password";
+        passwordInput.type =
+            passwordInput.type === "password" ? "text" : "password";
     });
 
     // ======= Form Submit =======
     form.addEventListener("submit", async e => {
         e.preventDefault();
+
         const payload = {
-            title: titleInput.value, 
-            url: urlInput.value,
-            username: userInput.value,
+            title: titleInput.value.trim(),
+            url: urlInput.value.trim(),
+            username: userInput.value.trim(),
             password: passwordInput.value,
-            note: noteInput.value,
-            searchTags: Array.from(tags),
-            isFavourite: <%= password.isFavourite %>
+            note: noteInput.value.trim(),
+            searchTags: [...tags],
+            isFavourite: favouriteInput.checked
         };
 
         try {
@@ -87,11 +103,13 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             const data = await res.json();
+
             if (data.redirect) {
                 window.location.href = data.redirect;
             } else if (data.message) {
                 alert(data.message);
             }
+
         } catch (err) {
             console.error(err);
             alert("Error saving password.");
@@ -99,19 +117,30 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // ======= Delete =======
-    deleteBtn.addEventListener("click", async e => {
+    deleteBtn.addEventListener("click", async () => {
         if (!confirm("Delete this password?")) return;
+
         try {
-            const res = await fetch("/pass/deleteOne", {
+            await fetch("/pass/deleteOne", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ id: passwordId })
             });
-            alert("Deleted!");
+
             window.location.href = "/home/passwordVault";
         } catch (err) {
             console.error(err);
             alert("Failed to delete password.");
         }
+    });
+
+    // ======= Revert =======
+    revertBtn.addEventListener("click", () => {
+        location.reload();
+    });
+
+    // ======= Back =======
+    backBtn.addEventListener("click", () => {
+        window.location.href = "/home/passwordVault";
     });
 });

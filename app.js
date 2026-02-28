@@ -10,6 +10,8 @@ import rootRouter from './routers/rootRouter.js';
 import session from 'express-session';
 import { connectDB, initializeDB } from './config/database.js';
 import { fileURLToPath } from 'url';
+import { MAX_SESSION_LENGTH } from './sse/schedulerState.js';
+import scheduler from './sse/scheduler.js';
 
 dotenv.config();
 configurePassport(passport);
@@ -48,7 +50,7 @@ const startServer = async () => {
             mongoUrl: process.env.MONGO_URL
         }),
         cookie: {
-            maxAge: 1000 * 60 * 60 * 24, // 1 day
+            maxAge: MAX_SESSION_LENGTH, // 1 hour
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax'
         }
@@ -84,6 +86,8 @@ const startServer = async () => {
         }
     });
 
+    scheduler.startScheduler();
+
     // --- Graceful shutdown ---
     const shutdown = async (signal) => {
         if (isShuttingDown) return;
@@ -95,7 +99,9 @@ const startServer = async () => {
         const forceTimeout = setTimeout(() => {
             console.error('[Shutdown] Grace period expired. Killing remaining connections.');
             process.exit(0);
-        }, 5000);
+        }, 10000);
+
+        scheduler.stopScheduler();
 
         // Close HTTP server
         server.close(async () => {

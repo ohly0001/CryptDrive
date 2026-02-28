@@ -5,6 +5,7 @@ import passRouter from "./passRouter.js";
 import fileRouter from "./fileRouter.js";
 import accountRouter from "./accountRouter.js";
 import groupRouter from "./groupRouter.js";
+import sseRouter from "./sseRouter.js";
 
 const router = express.Router();
 
@@ -14,5 +15,6 @@ router.use('/pass', passRouter);
 router.use('/file', fileRouter);
 router.use('/account', accountRouter);
 router.use('/groups', groupRouter);
+router.use('/sse', sseRouter);
 
 export default router;

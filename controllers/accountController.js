@@ -24,12 +24,13 @@ const update = async (req, res) => {
         return res.status(401).json({ redirect: '/auth/login' });
     }
 
-    const { email, password, oldPassword } = req.body;
+    const { username, email, password, oldPassword } = req.body;
 
     try {
         const account = await Account.findById(req.user._id);
         if (!account) return res.status(404).json({ message: 'Account not found' });
 
+        if (username) account.username = username.trim();
         if (email) account.email = email.trim().toLowerCase();
 
         if (password) {

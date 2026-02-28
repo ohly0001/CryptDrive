@@ -7,9 +7,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const editAccountButton = document.getElementById('editAccount');
     const accountTypeField = document.getElementById('accountType');
+    const usernameField = document.getElementById('username');
     const emailField = document.getElementById('email');
     const createdAt = document.getElementById('createdAt');
     const updatedAt = document.getElementById('updatedAt');
+
+    function setEditting(state) {
+        editingAccount = state;
+        usernameField.readOnly = !state;
+        emailField.readOnly = !state;
+        editAccountButton.innerHTML = editingAccount ? '<i class="fa-solid fa-floppy-disk"></i> Save Changes' : '<i class="fas fa-user-edit"></i> Edit Account';
+    }
+    function startEditting() {
+        setEditting(true);
+    }
+    function stopEditting() {
+        setEditting(false);
+    }
 
     // =============================
     // Load Account
@@ -30,6 +44,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         currentAccount = data;
 
+        usernameField.value = data.username;
         accountTypeField.value = data.type;
         emailField.value = data.email;
 
@@ -39,7 +54,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         updatedAt.innerHTML =
             `<i class="fa-regular fa-clock"></i> Last Updated On: ${new Date(data.updatedAt).toLocaleString()}`;
 
-        emailField.readOnly = true;
+        stopEditting();
 
     } catch (err) {
         console.error(err);
@@ -52,31 +67,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     editAccountButton.addEventListener('click', async () => {
 
         if (!editingAccount) {
-            // Enter edit mode
-            editingAccount = true;
-            emailField.readOnly = false;
-            editAccountButton.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Changes';
+            startEditting();
             return;
         }
 
         // =============================
         // Save Mode
         // =============================
+        const newUsername = usernameField.value.trim();
         const newEmail = emailField.value.trim().toLowerCase();
 
         // Prevent unnecessary update
-        if (newEmail === currentAccount.email) {
-            editingAccount = false;
-            emailField.readOnly = true;
-            editAccountButton.innerHTML = '<i class="fas fa-user-edit"></i> Edit Account';
+        if (newUsername === currentAccount.username || newEmail === currentAccount.email) {
+            alert("No changes were made.");
+            stopEditting();
             return;
         }
+
+        if (!confirm("Are you sure you want commit these changes?")) return;
 
         try {
             const res = await fetch('/account/update', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: newEmail })
+                body: JSON.stringify({ username: newUsername, email: newEmail })
             });
 
             const data = await res.json();
@@ -94,14 +108,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Update local state from server response
             currentAccount = data;
 
+            usernameField.value = data.username;
             emailField.value = data.email;
-            emailField.readOnly = true;
+            stopEditting();
 
             updatedAt.innerHTML =
                 `<i class="fa-regular fa-clock"></i> Last Updated On: ${new Date(data.updatedAt).toLocaleString()}`;
-
-            editingAccount = false;
-            editAccountButton.innerHTML = '<i class="fas fa-user-edit"></i> Edit Account';
 
         } catch (err) {
             console.error(err);

@@ -22,14 +22,14 @@ const initializeDB = async () => {
 
 async function seedRootAccount() {
     try {
-        const { ROOT_ACCOUNT_EMAIL, ROOT_ACCOUNT_PASSWORD } = process.env;
+        const { ROOT_ACCOUNT_USERNAME, ROOT_ACCOUNT_EMAIL, ROOT_ACCOUNT_PASSWORD } = process.env;
 
-        if (!ROOT_ACCOUNT_EMAIL || !ROOT_ACCOUNT_PASSWORD) {
+        if (!ROOT_ACCOUNT_USERNAME || !ROOT_ACCOUNT_EMAIL || !ROOT_ACCOUNT_PASSWORD) {
             console.error('[Setup] Missing ROOT_ACCOUNT_* environment variables.');
             process.exit(1);
         }
 
-        const rootExists = await Account.findOne({ email: ROOT_ACCOUNT_EMAIL });
+        const rootExists = await Account.findOne({ username: ROOT_ACCOUNT_USERNAME });
 
         if (rootExists) {
             console.log('[Setup] The root account already exists.');
@@ -37,6 +37,7 @@ async function seedRootAccount() {
         }
 
         const rootAccount = new Account({
+            username: ROOT_ACCOUNT_USERNAME,
             email: ROOT_ACCOUNT_EMAIL,
             password: ROOT_ACCOUNT_PASSWORD,
             type: "root",
@@ -55,24 +56,33 @@ async function seedRootAccount() {
 
 async function resetDemoAccount() {
     try {
-        const { DEMO_ACCOUNT_EMAIL, DEMO_ACCOUNT_PASSWORD } = process.env;
+        const { DEMO_ACCOUNT_USERNAME, DEMO_ACCOUNT_EMAIL, DEMO_ACCOUNT_PASSWORD } = process.env;
 
-        if (!DEMO_ACCOUNT_EMAIL || !DEMO_ACCOUNT_PASSWORD) {
+        if (!DEMO_ACCOUNT_USERNAME || !DEMO_ACCOUNT_EMAIL || !DEMO_ACCOUNT_PASSWORD) {
             console.error('[Setup] Missing DEMO_ACCOUNT_* environment variables.');
             process.exit(1);
         }
 
-        let demoAccount = await Account.findOne({ email: DEMO_ACCOUNT_EMAIL });
+        let demoAccount = await Account.findOne({ username: DEMO_ACCOUNT_USERNAME });
         const isNew = !demoAccount;
 
         if (isNew) {
-            demoAccount = new Account({ email: DEMO_ACCOUNT_EMAIL, type: "demo" });
+            demoAccount = new Account({
+                username: DEMO_ACCOUNT_USERNAME,
+                email: DEMO_ACCOUNT_EMAIL,
+                password: DEMO_ACCOUNT_PASSWORD,
+                type: "demo",
+                isActive: true
+            });
+        } else {
+            demoAccount.username = DEMO_ACCOUNT_USERNAME;
+            demoAccount.email = DEMO_ACCOUNT_EMAIL;
+            demoAccount.password = DEMO_ACCOUNT_PASSWORD;
+            demoAccount.type = "demo";
+            demoAccount.isActive = true;
         }
 
-        demoAccount.password = DEMO_ACCOUNT_PASSWORD;
-        demoAccount.type = "demo";
-        demoAccount.isActive = true;
-
+        // TODO only recalculate password if it change
         const kek = await derivekek(DEMO_ACCOUNT_PASSWORD, demoAccount.kekSalt);
 
         if (isNew) {

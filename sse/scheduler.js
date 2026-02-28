@@ -5,14 +5,30 @@ let accountTimeoutInterval = null;
 // ---------------------
 // Client Management
 // ---------------------
-function removeClient(clientId) {
+function removeClient(clientId, notifyShutdown = false) {
     const client = state.clients.get(clientId);
     if (!client) return;
 
+    // Notify the client about shutdown if requested
+    if (notifyShutdown && client.res && !client.res.writableEnded) {
+        try {
+            client.res.write(`data: ${JSON.stringify({ type: 'shutdown', message: 'Server is shutting down' })}\n\n`);
+        } catch {}
+    }
+
+    // Destroy session
+    if (client.session) {
+        client.session.destroy(err => {
+            if (err) console.error(`Failed to destroy session for client ${clientId}:`, err);
+        });
+    }
+
+    // Remove other clients for the same user
     if (client.userId && state.users.has(client.userId)) {
-        const userSet = state.users.get(client.userId);
-        userSet.delete(clientId);
-        if (userSet.size === 0) state.users.delete(client.userId);
+        for (const otherId of state.users.get(client.userId)) {
+            if (otherId !== clientId) removeClient(otherId, notifyShutdown);
+        }
+        state.users.delete(client.userId);
     }
 
     try {
@@ -45,10 +61,25 @@ function accountTimeout() {
         if (now - client.lastActivity > MAX_SESSION_LENGTH) {
             try {
                 if (client.res && !client.res.writableEnded) {
-                    // Send a session_timeout event
                     client.res.write(`data: ${JSON.stringify({ type: 'session_timeout', message: 'Session expired' })}\n\n`);
                 }
             } catch {}
+
+            // Destroy the session
+            if (client.session) {
+                client.session.destroy(err => {
+                    if (err) console.error(`Failed to destroy session for client ${clientId}:`, err);
+                });
+            }
+
+            // Remove all other clients for this user
+            if (client.userId && state.users.has(client.userId)) {
+                for (const otherId of state.users.get(client.userId)) {
+                    if (otherId !== clientId) removeClient(otherId);
+                }
+                state.users.delete(client.userId);
+            }
+
             removeClient(clientId);
         }
     }
@@ -101,6 +132,7 @@ function subscribe(req, res) {
         id: clientId,
         res,
         userId,
+        session: req.session,
         connectedAt: Date.now(),
         lastActivity: Date.now()
     };
@@ -148,9 +180,9 @@ function stopScheduler() {
         accountTimeoutInterval = null;
     }
 
-    // Close all remaining SSE state.clients
+    // Notify all clients of shutdown and remove them
     for (const clientId of state.clients.keys()) {
-        removeClient(clientId);
+        removeClient(clientId, true);
     }
 
     state.status = STATUS.STOPPED;
@@ -160,7 +192,6 @@ function stopScheduler() {
 // Exports
 // ---------------------
 export default {
-    unsubscribe,
     subscribe,
     updateTimeout,
     startScheduler,

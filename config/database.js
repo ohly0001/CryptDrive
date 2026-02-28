@@ -103,15 +103,15 @@ async function resetDemoAccount() {
 
 async function resetDemoPasswords() {
     try {
-        const { DEMO_ACCOUNT_EMAIL, DEMO_ACCOUNT_PASSWORD } = process.env;
+        const { DEMO_ACCOUNT_USERNAME, DEMO_ACCOUNT_PASSWORD } = process.env;
 
         const demoAccount = await Account.findOne(
-            { email: DEMO_ACCOUNT_EMAIL },
+            { username: DEMO_ACCOUNT_USERNAME },
             { _id: 1, kekSalt: 1, secretKey: 1 }
         ).lean();
 
         if (!demoAccount) {
-            throw new Error(`Demo account with email ${DEMO_ACCOUNT_EMAIL} not found.`);
+            throw new Error(`Demo account '${DEMO_ACCOUNT_USERNAME}' not found.`);
         }
 
         const accountId = demoAccount._id;

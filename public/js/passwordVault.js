@@ -9,7 +9,7 @@
    STATE
 ========================= */
 const state = {
-    pageSize: 50,
+    pageSize: 6, //only 6 are fully visible on initial page load, so fetch in sets of 6
     offset: 0,
     loading: false,
     reachedEnd: false,
@@ -296,25 +296,28 @@ document.addEventListener("DOMContentLoaded", () => {
         const viewportHeight = window.innerHeight;
         const scrollTop = window.scrollY;
 
-        visibleStart = Math.floor(scrollTop / rowHeight) - 10;
-        visibleEnd = Math.ceil((scrollTop + viewportHeight) / rowHeight) + 10;
+        visibleStart = Math.floor(scrollTop / rowHeight) - 10; // smaller buffer
+        visibleEnd = Math.ceil((scrollTop + viewportHeight) / rowHeight) + 5;
 
         visibleStart = Math.max(0, visibleStart);
         visibleEnd = Math.min(state.allPasswords.length, visibleEnd);
 
+        // Clear container and only render visible passwords
         container.innerHTML = "";
 
+        // Top spacer
+        const spacerTop = document.createElement("div");
+        spacerTop.style.height = (visibleStart * rowHeight) + "px";
+        container.appendChild(spacerTop);
+
+        // Render only visible passwords
         for (let i = visibleStart; i < visibleEnd; i++) {
             container.appendChild(renderRow(state.allPasswords[i], i));
         }
 
-        const spacerTop = document.createElement("div");
-        spacerTop.style.height = (visibleStart * rowHeight) + "px";
-
+        // Bottom spacer
         const spacerBottom = document.createElement("div");
         spacerBottom.style.height = ((state.allPasswords.length - visibleEnd) * rowHeight) + "px";
-
-        container.prepend(spacerTop);
         container.appendChild(spacerBottom);
     }
 
@@ -327,11 +330,14 @@ document.addEventListener("DOMContentLoaded", () => {
         row.dataset.id = e._id;
         if (index === state.selectedIndex) row.classList.add("keyboardSelected");
 
+        // Checkbox
         const checkbox = document.createElement('button');
-        checkbox.innerHTML = '<i class="fa-regular fa-square"></i>';
-        checkbox.addEventListener('click', (e) => {
+        checkbox.innerHTML = state.selectedPasswords.has(index) ? 
+            '<i class="fa-regular fa-square-check"></i>' : 
+            '<i class="fa-regular fa-square"></i>';
+        checkbox.addEventListener('click', () => {
             if (state.selectedPasswords.has(index)) {
-                state.selectedPasswords.delete(index)
+                state.selectedPasswords.delete(index);
                 checkbox.innerHTML = '<i class="fa-regular fa-square"></i>';
             } else {
                 state.selectedPasswords.add(index);
@@ -340,40 +346,32 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         row.appendChild(checkbox);
 
+        // Title
         const title = document.createElement("span");
         title.innerText = e.title || "No Title";
 
-        // favourite
+        // Favourite button
         const favBtn = document.createElement("button");
-        favBtn.innerHTML = e.isFavourite
-            ? "<i class='fa fa-star'></i>"
-            : "<i class='fa fa-star-o'></i>";
-
+        favBtn.innerHTML = e.isFavourite ? "<i class='fa fa-star'></i>" : "<i class='fa fa-star-o'></i>";
         favBtn.onclick = async () => {
             e.isFavourite = !e.isFavourite;
-            favBtn.innerHTML = e.isFavourite
-                ? "<i class='fa fa-star'></i>"
-                : "<i class='fa fa-star-o'></i>";
-
+            favBtn.innerHTML = e.isFavourite ? "<i class='fa fa-star'></i>" : "<i class='fa fa-star-o'></i>";
             fetch('/pass/toggleFavourite', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id: e._id, state: e.isFavourite })
             });
-            
             sortAllPasswords();
             renderVirtual();
         };
 
-        // copy menu
+        // Copy menu
         const copyMenu = document.createElement("div");
         copyMenu.classList.add("hidden", "copy_options");
-
         ["url", "username", "password", "note"].forEach(key => {
             const b = document.createElement("button");
             b.innerText = key;
             b.style.cursor = "copy";
-
             b.onclick = async () => {
                 const res = await fetch('/pass/copy', {
                     method: 'POST',
@@ -384,7 +382,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 await navigator.clipboard.writeText(data.decryptedValue);
                 refreshAutoHideCopyOptionContainer(copyMenu);
             };
-
             copyMenu.appendChild(b);
         });
 
@@ -393,18 +390,24 @@ document.addEventListener("DOMContentLoaded", () => {
         copyBtn.onclick = ev => {
             hideAllCopyMenus();
             copyMenu.classList.remove("hidden");
-            copyMenu.style.left = ev.clientX + "px";
-            copyMenu.style.top = ev.clientY + "px";
+
+            // Offset relative to button so it won't drift
+            const rect = copyBtn.getBoundingClientRect();
+            copyMenu.style.position = "absolute";
+            copyMenu.style.left = `${rect.left + window.scrollX}px`;
+            copyMenu.style.top = `${rect.bottom + window.scrollY}px`;
+
             refreshAutoHideCopyOptionContainer(copyMenu);
         };
 
+        // Edit button
         const editBtn = document.createElement("button");
         editBtn.innerHTML = "<i class='fa fa-edit'></i>";
         editBtn.onclick = () => location.href = `/pass/viewEdit/${e._id}`;
 
         row.append(title, favBtn, copyBtn, editBtn, copyMenu);
 
-        // tags
+        // Tags
         const tagWrap = document.createElement("div");
         (e.searchTags || []).forEach(t => {
             const tag = document.createElement("span");
@@ -416,8 +419,8 @@ document.addEventListener("DOMContentLoaded", () => {
             tag.style.cursor = "pointer";
             tagWrap.appendChild(tag);
         });
-
         row.appendChild(tagWrap);
+
         return row;
     }
 
@@ -506,16 +509,6 @@ document.addEventListener("DOMContentLoaded", () => {
     bindToggle("matchEntire", "matchEntire");
     bindToggle("useRegex", "useRegex");
     bindToggle("blacklistTags", "blacklistTags");
-    /*
-    //Requires higher font sub tier?
-    const blackListButton = document.getElementById("blacklistTags");
-    blackListButton.addEventListener('click', () => {
-        state["blacklistTags"] = !state["blacklistTags"];
-        blackListButton.classList.toggle("toggled", state["blacklistTags"]);
-        blackListButton.innerHTML = `<i class="fa-${state["blacklistTags"] ? "solid" : "regular"} fa-filter"></i>`; 
-        resetSearch();
-    });
-    */
 
     /* =========================
        SORT MODE

@@ -94,39 +94,75 @@ function navigateToDir(path) {
 // ===== File / Directory Listing =====
 async function loadFiles(path) {
     try {
-        const res = await fetch(`/file/list/${path}`);
-        const { directories = [], files = [] } = await res.json();
+        const res = await fetch(`/file/list?path=${encodeURIComponent(path)}`);
+        const data = await res.json();
         const fileList = document.getElementById('fileList');
         fileList.innerHTML = '';
 
         // ----- Directories -----
-        directories.forEach(dir => {
-            const div = document.createElement('div');
-            div.className = 'file-item directory';
-            div.innerText = dir.basename;
-            div.appendChild(renderOwnership(dir.account === currentUser ? currentUser : 'Shared'));
+        (data.directories || []).forEach(dir => {
+            const dirDiv = document.createElement('div');
+            dirDiv.className = 'file-item directory';
+            dirDiv.innerText = dir.basename;
 
-            div.addEventListener('click', () => navigateToDir(`${path}/${dir.basename}`));
-            fileList.appendChild(div);
+            // Ownership indicator
+            dirDiv.appendChild(renderOwnership(dir.account === currentUser ? currentUser : 'Shared'));
+
+            // Actions container
+            const actions = document.createElement('div');
+            actions.className = 'file-actions';
+
+            // Download button for directory
+            const downloadBtn = document.createElement('button');
+            downloadBtn.innerHTML = '<i class="fa-solid fa-download"></i>';
+            downloadBtn.title = 'Download folder as ZIP';
+            downloadBtn.onclick = e => {
+                e.stopPropagation();
+                downloadDirectory(dir._id);
+            };
+            actions.appendChild(downloadBtn);
+
+            // Owner-only actions
+            if (dir.account === currentUser) {
+                // Delete
+                const delBtn = document.createElement('button');
+                delBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+                delBtn.onclick = e => { e.stopPropagation(); deleteDirectory(dir.basename); };
+                actions.appendChild(delBtn);
+
+                // Rename
+                const renameBtn = document.createElement('button');
+                renameBtn.innerHTML = '<i class="fa-solid fa-pen"></i>';
+                renameBtn.onclick = e => { e.stopPropagation(); renameItem('directory', dir.basename); };
+                actions.appendChild(renameBtn);
+            }
+
+            dirDiv.appendChild(actions);
+
+            // Navigate into directory on click
+            dirDiv.addEventListener('click', () => navigateToDir(`${path}/${dir.basename}`));
+
+            fileList.appendChild(dirDiv);
         });
 
-        // ----- Files -----
-        files.forEach(file => {
-            const div = document.createElement('div');
-            div.className = 'file-item';
-            div.innerHTML = `<span>${file.original}</span>`;
-            div.appendChild(renderOwnership(file.account === currentUser ? currentUser : 'Shared'));
+        // ----- Files (existing code) -----
+        (data.files || []).forEach(file => {
+            const fileDiv = document.createElement('div');
+            fileDiv.className = 'file-item';
+            fileDiv.innerHTML = `<span>${file.original}</span>`;
+            fileDiv.appendChild(renderOwnership(file.account === currentUser ? currentUser : 'Shared'));
 
             const actions = document.createElement('div');
             actions.className = 'file-actions';
 
+            // Download file button
             const downloadBtn = document.createElement('button');
             downloadBtn.innerHTML = '<i class="fa-solid fa-download"></i>';
             downloadBtn.onclick = e => { e.stopPropagation(); downloadFile(file._id); };
             actions.appendChild(downloadBtn);
 
-            div.appendChild(actions);
-            fileList.appendChild(div);
+            fileDiv.appendChild(actions);
+            fileList.appendChild(fileDiv);
         });
 
     } catch (err) {

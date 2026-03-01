@@ -2,37 +2,67 @@
 //TODO group based file sharing. The file owner maintains full control over the file, but the share allows over uses to (change file tags, move the file, rename the file, edit the file note, overwrite the file, download file, but not; delete the file, change its permisison group or transfer its ownership), 
 //TODO allow file previewing for (maybe pdf if its easy), images, txt, csv, json, xml in the browser (or any plain text viewable file) but requires a decryption request to see its contents
 
-
-
 let currentPath = 'root';
 
 // ===== File Selection / Drag & Drop =====
-async function selectFile() {
+sync function selectFile() {
     try {
-        const [fileHandle] = await window.showOpenFilePicker();
-        const file = await fileHandle.getFile();
-        await uploadFiles([file]);
+        const fileHandles = await window.showOpenFilePicker({ multiple: true });
+        const files = await Promise.all(fileHandles.map(fh => fh.getFile()));
+        if (files.length === 0) return;
+
+        if (files.length === 1) {
+            await uploadSingleFile(files[0]);
+        } else {
+            await uploadMultipleFiles(files);
+        }
     } catch (error) {
         console.error('File picker error:', error);
+        alert('Failed to select file(s).');
     }
 }
 
-async function uploadFiles(files) {
+async function uploadSingleFile(file) {
     const formData = new FormData();
-    for (const file of files) {
-        formData.append('file[]', file);
+    formData.append('file', file);
+
+    try {
+        const res = await fetch(`/file/upload?path=${encodeURIComponent(currentPath)}`, {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const data = await res.json();
+        console.log('Upload success:', data);
+        alert(`Uploaded "${file.name}" successfully!`);
+        loadFiles(currentPath);
+    } catch (err) {
+        console.error('Upload error:', err);
+        alert('Upload failed. See console for details.');
     }
+}
+
+async function uploadMultipleFiles(files) {
+    const formData = new FormData();
+    files.forEach(f => formData.append('file[]', f));
 
     try {
         const res = await fetch(`/file/uploadMany?path=${encodeURIComponent(currentPath)}`, {
             method: 'POST',
             body: formData
         });
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
         const data = await res.json();
         console.log('Upload success:', data);
+        alert(`Uploaded ${files.length} files successfully!`);
         loadFiles(currentPath);
     } catch (err) {
         console.error('Upload error:', err);
+        alert('Upload failed. See console for details.');
     }
 }
 
@@ -354,7 +384,6 @@ async function deleteDirectory(dirName) {
 // ===== Event Listeners =====
 document.addEventListener('DOMContentLoaded', () => {
     const dropZone = document.getElementById('dropZone');
-    const chooseFileText = document.getElementById('chooseFileText');
     const createDirBtn = document.getElementById('createDirBtn');
     const navToParent = document.getElementById('navToParent');
 
@@ -367,7 +396,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loadFiles(currentPath);
     });
 
-    chooseFileText.addEventListener('click', selectFile);
+    dropZone.addEventListener('click', selectFile);
     createDirBtn.addEventListener('click', createDirectory);
 
     dropZone.addEventListener('dragover', e => {

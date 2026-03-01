@@ -2,6 +2,10 @@ import mongoose from 'mongoose';
 import File from './file.js';
 
 const DirectorySchema = new mongoose.Schema({
+    _id: {
+        type: mongoose.Schema.Types.UUID,
+        default: () => uuidv7(), 
+    },
     account: { 
         type: mongoose.Schema.Types.ObjectId, 
         ref: "Account", 
@@ -17,7 +21,9 @@ const DirectorySchema = new mongoose.Schema({
         ref: "Directory", 
         default: null
     },
-    name: { type: String, index: true },
+    path: { type: String, required: true, trim: true },
+    searchTags: { type: [String], index: true },
+    basename: { type: String, index: true },
 }, { timestamps: true });
 
 DirectorySchema.methods.getChildCount = async function() {

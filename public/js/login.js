@@ -6,7 +6,7 @@ function processLoginForm(form) {
     const loginInput = document.getElementById('login');
 
     loginInput.disabled = true;
-    loginInput.value = 'Please Wait';
+    loginInput.value = 'Please Wait...';
 
     fetch('/auth/login', {
         method: 'POST', 

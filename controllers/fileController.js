@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import { decrypt, encryptBuffer } from '../utilities/encryption.js';
 import File from '../models/file.js';
 import Directory from '../models/directory.js';
+import { v7 } from 'uuid';
 
 // ===== path setup =====
 const __filename = fileURLToPath(import.meta.url);
@@ -41,10 +42,10 @@ const uploader = multer({
 
 // ===== middleware runner =====
 const runMiddleware = (req, res, fn) => {
-  new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     fn(req, res, err => (err ? reject(err) : resolve()));
   });
-}  
+};
 
 // ===== ensure base uploads dir =====
 const baseUploadDir = path.join(__dirname, '../uploads');
@@ -53,63 +54,63 @@ if (!fs.existsSync(baseUploadDir)) {
 }
 
 // ===== SAVE ENCRYPTED FILE =====
-const saveEncryptedFile = async (req, file, relativePath = '') => {
-  // decrypt user master key
+import { randomBytes } from 'crypto';
+
+// ===== BULK SAVE ENCRYPTED FILES =====
+const encryptFiles = async (req, files, relativePath = '') => {
+  // Decrypt user KEK once
   const secretKey = decrypt(req.user.secretKey, req.session.kek);
 
-  // sanitize filename
-  const safeName = path.basename(file.originalname).replace(/[^\w.\-]/g, '_');
-
-  // per-user directory on disk
+  // Ensure user directory
   const userDir = path.join(baseUploadDir, req.user._id.toString());
   fs.mkdirSync(userDir, { recursive: true });
 
-  // encrypt buffer
-  const { encryptedData, iv, authTag } = encryptBuffer(file.buffer, secretKey);
-
-  // generate final filename
-  const finalName = `${Date.now()}-${safeName}.enc`;
-  const fullPath = path.join(userDir, finalName);
-
-  // write encrypted file to disk
-  fs.writeFileSync(fullPath, encryptedData);
-
-  // === DATABASE DIRECTORY ===
-  // Ensure user root directory exists
+  // Ensure root directory in DB
   let rootDir = await Directory.findOne({ account: req.user._id, parent: null });
   if (!rootDir) {
     rootDir = new Directory({ account: req.user._id, name: 'root', parent: null });
     await rootDir.save();
   }
+  const targetDir = relativePath ? await rootDir.recursiveCreation(req.user, relativePath) : rootDir;
 
-  // Use recursiveCreation to build nested directories (if relativePath is provided)
-  const targetDir = relativePath
-    ? await rootDir.recursiveCreation(req.user, relativePath)
-    : rootDir;
+  const results = [];
 
-  // === SAVE FILE TO DATABASE ===
-  const fileObj = new File({
-    account: req.user._id,
-    directory: targetDir._id,
-    name: file.originalname,
-    storedAs: finalName,
-    mime: file.mimetype,
-    size: file.size,
-    iv,
-    authTag
-  });
-  await fileObj.save();
+  for (const file of files) {
+    // Sanitize filename
+    const finalName = `${v7()}.enc`;
 
-  return {
-    storedAs: finalName,
-    original: file.originalname,
-    directory: targetDir.name
-  };
+    // Encrypt file with batch key
+    const { encryptedData, iv, authTag } = encryptBuffer(file.buffer, secretKey);
+
+    const fullPath = path.join(userDir, finalName);
+    fs.writeFileSync(fullPath, encryptedData);
+
+    // Save file metadata
+    const fileObj = new File({
+      account: req.user._id,
+      directory: targetDir._id,
+      name: file.originalname,
+      storedAs: finalName,
+      mime: file.mimetype,
+      size: file.size,
+      iv,
+      authTag,
+    });
+    await fileObj.save();
+
+    results.push({
+      storedAs: finalName,
+      original: file.originalname,
+      directory: targetDir.name
+    });
+  }
+
+  return results;
 };
 
 // ===== CONTROLLERS =====
 const view = async (req, res) => {
-  res.render('fileRepository');
+  res.render('fileRepository', {});
 };
 
 // ===== SINGLE UPLOAD =====
@@ -125,11 +126,11 @@ const upload = async (req, res) => {
       return res.status(400).json({ message: 'No file provided' });
     }
 
-    const result = await saveEncryptedFile(req, req.file, 'Projects/EncryptedFiles');
+    const result = await encryptFiles(req, [req.file], 'Projects/EncryptedFiles');
 
     res.status(200).json({
       message: 'File uploaded & encrypted',
-      file: result
+      file: result[0]
     });
   } catch (err) {
     if (err instanceof multer.MulterError) {
@@ -153,11 +154,7 @@ const uploadMany = async (req, res) => {
       return res.status(400).json({ message: 'No files provided' });
     }
 
-    const results = [];
-    for (const file of req.files) {
-        const r = await saveEncryptedFile(req, file, 'Projects/EncryptedFiles');
-        results.push(r);
-    }
+    const results = await encryptFiles(req, req.files, 'Projects/EncryptedFiles');
 
     res.status(200).json({
       message: 'Files uploaded & encrypted',
@@ -173,13 +170,34 @@ const uploadMany = async (req, res) => {
 };
 
 const listFiles = async (req, res) => {
-  const { path = 'root' } = req.query;
-  // TODO: implement real DB query with Directory/File models
-  // Here is a mock:
-  res.json({
-    directories: [{ name: 'Projects' }, { name: 'Photos' }],
-    files: [{ _id: '123', name: 'example.txt' }]
-  });
+  try {
+    if (!req.isAuthenticated?.() || !req.user) {
+      return res.status(401).json({ redirect: '/auth/login' });
+    }
+
+    const { path: dirPath = 'root' } = req.query;
+
+    // 1. Find the directory by name/path
+    let startDir = await Directory.findOne({ account: req.user._id, name: dirPath });
+    if (!startDir) {
+      return res.status(404).json({ message: 'Directory not found' });
+    }
+
+    // 2. Fetch child directories
+    const directories = await Directory.find({ account: req.user._id, parent: startDir._id })
+      .select('name')
+      .lean();
+
+    // 3. Fetch files in this directory
+    const files = await File.find({ account: req.user._id, directory: startDir._id })
+      .select('_id name storedAs mime size')
+      .lean();
+
+    res.status(200).json({ directories, files });
+  } catch (err) {
+    console.error('List files error:', err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 };
 
 // ===== CREATE DIRECTORY =====
@@ -191,6 +209,13 @@ const createDirectory = async (req, res) => {
 
 // ===== DOWNLOAD FILE =====
 const downloadFile = async (req, res) => {
+  const { id } = req.params;
+  // TODO: implement file fetch from DB & decryption
+  res.status(501).json({ message: 'Download not yet implemented' });
+};
+
+//as zip, including subdirecties
+const downloadDirectory = async (req, res) => {
   const { id } = req.params;
   // TODO: implement file fetch from DB & decryption
   res.status(501).json({ message: 'Download not yet implemented' });
@@ -211,7 +236,7 @@ const search = async (req, res) => {
     //const pathSegments = filePath.split(path.sep);
 
     // 1. Find the directory to start from
-    let startDir = await Directory.findOne({ account: req.user._id, name: path });
+    let startDir = await Directory.findOne({ account: req.user._id, name: filePath });
     if (!startDir) {
       return res.status(404).json({ message: 'Directory not found' });
     }

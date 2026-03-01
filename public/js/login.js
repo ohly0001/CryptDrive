@@ -7,6 +7,7 @@ function processLoginForm(form) {
 
     loginInput.disabled = true;
     loginInput.value = 'Please Wait...';
+    loginInput.style.cursor = 'wait';
 
     fetch('/auth/login', {
         method: 'POST', 
@@ -23,6 +24,7 @@ function processLoginForm(form) {
             
             loginInput.disabled = false;
             loginInput.value = 'Login';
+            loginInput.style.cursor = 'pointer';
         }
     });
 }

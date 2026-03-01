@@ -24,7 +24,7 @@ a:hover {
 }
 
 /* Buttons */
-button {
+button, input[type="submit"] {
     background: #1e3a8a;
     color: white;
     border: none;
@@ -34,9 +34,12 @@ button {
     cursor: pointer;
     transition: 0.2s;
 }
-
-button:hover {
+button:hover, input[type="submit"]:hover {
     background: #2563eb;
+}
+button:disabled, input[type="submit"]:disabled {
+    background: #3A3A3A;
+    cursor: not-allowed;
 }
 
 .memberTag {

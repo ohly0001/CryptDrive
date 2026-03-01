@@ -7,7 +7,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="author" content="Robert Ohly">
-    <title>CryptDrive ∷ File Repository</title>
+    <title>CryptDrive File Preview</title>
+    <!-- Prism CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.css" rel="stylesheet" />
+
+    <!-- Prism JS -->
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
     <script src="/js/fileRepository.js" defer></script>
     <script src="https://kit.fontawesome.com/0f23db6f2c.js" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="/css/site.css">
@@ -17,7 +25,7 @@
     <%- include('components/master') %>
     <%- include('components/nav') %>
 
-    <h1>CryptDrive ∷ File Repository</h1>
+    <h1>CryptDrive File Preview</h1>
 
     <!-- Drag & drop / file select -->
     <div id="dropZone">

@@ -41,7 +41,7 @@ function notifyServer() {
     fetch('/sse/stayin-alive', { method: 'POST', keepalive: true })
         .then(res => {
             if (res.ok) lastActivityTime = Date.now();
-            if (res.status === 401) window.location.replace('/');
+            if (res.status === 401) window.location.replace('/login.html');
         })
         .catch(err => console.error('Refresh failed', err));
 }
@@ -77,7 +77,7 @@ function connectSSE() {
 
         if (data?.type === 'session_timeout' || data?.type === 'shutdown') {
             stopActivityPing();
-            window.location.replace('/');
+            window.location.replace('/login.html');
         } else {
             document.dispatchEvent(new CustomEvent('sse-message', { detail: data }));
         }

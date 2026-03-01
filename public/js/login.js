@@ -3,6 +3,10 @@ function processLoginForm(form) {
 
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
+    const loginInput = document.getElementById('login');
+
+    loginInput.disabled = true;
+    loginInput.value = 'Please Wait';
 
     fetch('/auth/login', {
         method: 'POST', 
@@ -16,6 +20,9 @@ function processLoginForm(form) {
         } else if (data.message) {
             alert(data.message);
             document.getElementById('password').value = '';
+            
+            loginInput.disabled = false;
+            loginInput.value = 'Login';
         }
     });
 }

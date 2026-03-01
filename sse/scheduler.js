@@ -1,3 +1,4 @@
+// scheduler.js
 import { state, INTERVAL, STATUS, MAX_CLIENTS, MAX_SESSION_LENGTH } from './schedulerState.js';
 
 let accountTimeoutInterval = null;
@@ -5,32 +6,28 @@ let accountTimeoutInterval = null;
 // ---------------------
 // Client Management
 // ---------------------
-function removeClient(clientId, notifyShutdown = false) {
+function removeClient(clientId) {
     const client = state.clients.get(clientId);
     if (!client) return;
 
-    // Notify the client about shutdown if requested
-    if (notifyShutdown && client.res && !client.res.writableEnded) {
-        try {
-            client.res.write(`data: ${JSON.stringify({ type: 'shutdown', message: 'Server is shutting down' })}\n\n`);
-        } catch {}
-    }
-
-    // Destroy session
+    // Destroy session safely
     if (client.session) {
         client.session.destroy(err => {
             if (err) console.error(`Failed to destroy session for client ${clientId}:`, err);
         });
     }
 
-    // Remove other clients for the same user
+    // Remove all other clients for the same user
     if (client.userId && state.users.has(client.userId)) {
-        for (const otherId of state.users.get(client.userId)) {
-            if (otherId !== clientId) removeClient(otherId, notifyShutdown);
-        }
+        // Get all other IDs first
+        const otherIds = Array.from(state.users.get(client.userId)).filter(id => id !== clientId);
+        // Delete the user mapping before recursion to prevent infinite loop
         state.users.delete(client.userId);
+        // Remove other clients
+        otherIds.forEach(otherId => removeClient(otherId));
     }
 
+    // End the response
     try {
         if (client.res && !client.res.writableEnded) client.res.end();
     } catch {}

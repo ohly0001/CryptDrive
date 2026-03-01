@@ -5,7 +5,7 @@ import { derivekek } from "../utilities/encryption.js";
 // Pull current user account details
 const pull = async (req, res) => {
     if (!req.isAuthenticated?.() || !req.user) {
-        return res.status(401).json({ redirect: '/auth/login' });
+        return res.status(401).json({ redirect: '/login.html' });
     }
 
     try {
@@ -21,7 +21,7 @@ const pull = async (req, res) => {
 // Update current user account details
 const update = async (req, res) => {
     if (!req.isAuthenticated?.() || !req.user) {
-        return res.status(401).json({ redirect: '/auth/login' });
+        return res.status(401).json({ redirect: '/login.html' });
     }
 
     const { username, email, password, oldPassword } = req.body;

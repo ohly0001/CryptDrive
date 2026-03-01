@@ -1,3 +1,4 @@
+// authController.js
 import passport from "passport";
 import Account from '../models/Account.js';
 import Code from '../models/codes.js';
@@ -163,7 +164,7 @@ const deregister = async (req, res, next) => {
             req.session.destroy((err) => {
                 if (err) return next(err);
                 //res.clearCookie('cryptdrive');
-                res.redirect('/');
+                res.redirect('/login.html');
             });
         });
 
@@ -174,12 +175,12 @@ const deregister = async (req, res, next) => {
 
 const logout = async (req, res, next) => {
     req.logout(err => {
-        if (err) return next(err);
+        if (err) return res.json({message: 'Something went wrong during logout'});
 
         req.session.destroy((err) => {
             if (err) return next(err);
-            //res.clearCookie('cryptdrive');
-            res.redirect('/');
+            res.clearCookie('cryptdrive');
+            res.json({redirect: '/login.html'});
         });
     });
 };

@@ -9,7 +9,7 @@ import sseRouter from "./sseRouter.js";
 
 const router = express.Router();
 
-router.use('/auth', authRouter);     // Auth endpoints
+router.use('/auth', authRouter); 
 router.use('/home', homeRouter);
 router.use('/pass', passRouter);
 router.use('/file', fileRouter);

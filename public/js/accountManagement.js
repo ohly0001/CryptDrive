@@ -145,12 +145,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Logout
     // =============================
     document.getElementById('logout').addEventListener('click', async () => {
-        try {
-            const res = await fetch('/auth/logout', { method: 'POST' });
-            const data = await res.json();
+        const res = await fetch('/auth/logout', { method: 'POST' });
+        const data = await res.json();
+        
+        if (data.redirect) {
             window.location.replace(data.redirect);
-        } catch {
-            alert('Failed to log out.');
+        } else if (data.message) {
+            alert(data.message);
         }
     });
 });

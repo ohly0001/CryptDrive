@@ -2,10 +2,6 @@ import mongoose from 'mongoose';
 import File from './file.js';
 
 const DirectorySchema = new mongoose.Schema({
-    _id: {
-        type: mongoose.Schema.Types.UUID,
-        default: () => uuidv7(), 
-    },
     account: { 
         type: mongoose.Schema.Types.ObjectId, 
         ref: "Account", 
@@ -45,7 +41,7 @@ DirectorySchema.methods.removeAccount = async function(account) {
     this.shared = this.shared.filter(id => !id.equals(account._id));
 }
 
-// Recursive directory creation
+// Recursive directory creation (from base to root)
 DirectorySchema.methods.recursiveCreation = async function(account, path) {
     const parts = path.split('/').filter(Boolean);
     let parent = this; // starting directory (can be root)

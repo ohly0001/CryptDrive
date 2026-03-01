@@ -2,22 +2,41 @@
 //TODO group based file sharing. The file owner maintains full control over the file, but the share allows over uses to (change file tags, move the file, rename the file, edit the file note, overwrite the file, download file, but not; delete the file, change its permisison group or transfer its ownership), 
 //TODO allow file previewing for (maybe pdf if its easy), images, txt, csv, json, xml in the browser (or any plain text viewable file) but requires a decryption request to see its contents
 
-let currentPath = 'root';
+let currentPath = '/';
+const selectedFiles = new Set();
 
-// ===== File Selection / Drag & Drop =====
-sync function selectFile() {
+// ===== Utility Functions =====
+function updateCurrentPathDisplay() {
+    document.getElementById('currentPath').innerText = currentPath;
+}
+
+function toggleSelectFile(fileId, btn) {
+    if (selectedFiles.has(fileId)) {
+        selectedFiles.delete(fileId);
+        btn.innerHTML = '<i class="fa-regular fa-square"></i>';
+    } else {
+        selectedFiles.add(fileId);
+        btn.innerHTML = '<i class="fa-regular fa-square-check"></i>';
+    }
+}
+
+function renderOwnership(owner) {
+    const span = document.createElement('span');
+    span.classList.add('ownerIndicator');
+    span.innerText = owner === currentUser ? 'You' : owner;
+    return span;
+}
+
+// ===== File Upload =====
+async function selectFile() {
     try {
-        const fileHandles = await window.showOpenFilePicker({ multiple: true });
-        const files = await Promise.all(fileHandles.map(fh => fh.getFile()));
-        if (files.length === 0) return;
+        const handles = await window.showOpenFilePicker({ multiple: true });
+        const files = await Promise.all(handles.map(h => h.getFile()));
+        if (!files.length) return;
 
-        if (files.length === 1) {
-            await uploadSingleFile(files[0]);
-        } else {
-            await uploadMultipleFiles(files);
-        }
-    } catch (error) {
-        console.error('File picker error:', error);
+        files.length === 1 ? uploadSingleFile(files[0]) : uploadMultipleFiles(files);
+    } catch (err) {
+        console.error('File picker error:', err);
         alert('Failed to select file(s).');
     }
 }
@@ -25,40 +44,22 @@ sync function selectFile() {
 async function uploadSingleFile(file) {
     const formData = new FormData();
     formData.append('file', file);
-
-    try {
-        const res = await fetch(`/file/upload?path=${encodeURIComponent(currentPath)}`, {
-            method: 'POST',
-            body: formData
-        });
-
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-        const data = await res.json();
-        console.log('Upload success:', data);
-        alert(`Uploaded "${file.name}" successfully!`);
-        loadFiles(currentPath);
-    } catch (err) {
-        console.error('Upload error:', err);
-        alert('Upload failed. See console for details.');
-    }
+    await uploadRequest('/file/upload', formData, `Uploaded "${file.name}" successfully!`);
 }
 
 async function uploadMultipleFiles(files) {
     const formData = new FormData();
     files.forEach(f => formData.append('file[]', f));
+    await uploadRequest('/file/uploadMany', formData, `Uploaded ${files.length} files successfully!`);
+}
 
+async function uploadRequest(url, formData, successMsg) {
     try {
-        const res = await fetch(`/file/uploadMany?path=${encodeURIComponent(currentPath)}`, {
-            method: 'POST',
-            body: formData
-        });
-
+        const res = await fetch(`${url}?path=${encodeURIComponent(currentPath)}`, { method: 'POST', body: formData });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
         const data = await res.json();
-        console.log('Upload success:', data);
-        alert(`Uploaded ${files.length} files successfully!`);
+        console.log('Upload result:', data);
+        alert(successMsg);
         loadFiles(currentPath);
     } catch (err) {
         console.error('Upload error:', err);
@@ -66,28 +67,9 @@ async function uploadMultipleFiles(files) {
     }
 }
 
-// ===== File download =====
-async function downloadFile(fileId) {
-    try {
-        const res = await fetch(`/file/download/${fileId}`);
-        if (!res.ok) throw new Error('Download failed');
-
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = ''; // let browser use original filename
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-    } catch (err) {
-        console.error('Download error:', err);
-    }
-}
-
 // ===== Directory Management =====
 async function createDirectory() {
-    const name = prompt('Enter new folder name:');
+    const name = prompt('Enter folder name:');
     if (!name) return;
 
     try {
@@ -105,144 +87,45 @@ async function createDirectory() {
 
 function navigateToDir(path) {
     currentPath = path;
-    document.getElementById('currentPath').innerText = currentPath;
+    updateCurrentPathDisplay();
     loadFiles(path);
 }
 
-// ===== Load files =====
-// ===== File Selection State =====
-const selectedFiles = new Set(); // stores fileIds
-
-// ===== Updated loadFiles =====
+// ===== File / Directory Listing =====
 async function loadFiles(path) {
     try {
-        const res = await fetch(`/file/list?path=${encodeURIComponent(path)}`);
-        const data = await res.json();
+        const res = await fetch(`/file/list/${path}`);
+        const { directories = [], files = [] } = await res.json();
         const fileList = document.getElementById('fileList');
         fileList.innerHTML = '';
 
-        // ---- Directories ----
-        data.directories.forEach(dir => {
-            const dirDiv = document.createElement('div');
-            dirDiv.className = 'file-item directory';
-            dirDiv.innerText = dir.name;
+        // ----- Directories -----
+        directories.forEach(dir => {
+            const div = document.createElement('div');
+            div.className = 'file-item directory';
+            div.innerText = dir.basename;
+            div.appendChild(renderOwnership(dir.account === currentUser ? currentUser : 'Shared'));
 
-            // Ownership indicator
-            const ownerSpan = document.createElement('span');
-            ownerSpan.innerText = dir.owner === currentUser ? 'You' : dir.owner;
-            ownerSpan.classList.add('ownerIndicator');
-            dirDiv.appendChild(ownerSpan);
-
-            // Select button
-            const selectBtn = document.createElement('button');
-            selectBtn.innerHTML = '<i class="fa-regular fa-square"></i>';
-            selectBtn.onclick = (e) => {
-                e.stopPropagation();
-                if (selectedFiles.has(dir.name)) {
-                    selectedFiles.delete(dir.name);
-                    selectBtn.innerHTML = '<i class="fa-regular fa-square"></i>';
-                } else {
-                    selectedFiles.add(dir.name);
-                    selectBtn.innerHTML = '<i class="fa-regular fa-square-check"></i>';
-                }
-            };
-            dirDiv.appendChild(selectBtn);
-
-            // Navigate on click
-            dirDiv.addEventListener('click', () => navigateToDir(`${path}/${dir.name}`));
-
-            // Actions container
-            const actions = document.createElement('div');
-            actions.className = 'file-actions';
-
-            // Delete (only if owner)
-            if (dir.owner === currentUser) {
-                const delBtn = document.createElement('button');
-                delBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
-                delBtn.onclick = (e) => { e.stopPropagation(); deleteDirectory(dir.name); };
-                actions.appendChild(delBtn);
-
-                const renameBtn = document.createElement('button');
-                renameBtn.innerHTML = '<i class="fa-solid fa-pen"></i>';
-                renameBtn.onclick = (e) => { e.stopPropagation(); renameItem('directory', dir.name); };
-                actions.appendChild(renameBtn);
-            }
-
-            dirDiv.appendChild(actions);
-            fileList.appendChild(dirDiv);
+            div.addEventListener('click', () => navigateToDir(`${path}/${dir.basename}`));
+            fileList.appendChild(div);
         });
 
-        // ---- Files ----
-        data.files.forEach(file => {
+        // ----- Files -----
+        files.forEach(file => {
             const div = document.createElement('div');
             div.className = 'file-item';
-            const nameSpan = document.createElement('span');
-            nameSpan.innerText = file.name;
-            div.appendChild(nameSpan);
+            div.innerHTML = `<span>${file.original}</span>`;
+            div.appendChild(renderOwnership(file.account === currentUser ? currentUser : 'Shared'));
 
-            // Ownership
-            const ownerSpan = document.createElement('span');
-            ownerSpan.innerText = file.owner === currentUser ? 'You' : file.owner;
-            ownerSpan.classList.add('ownerIndicator');
-            div.appendChild(ownerSpan);
-
-            // Select button
-            const selectBtn = document.createElement('button');
-            selectBtn.innerHTML = selectedFiles.has(file._id) ? '<i class="fa-regular fa-square-check"></i>' : '<i class="fa-regular fa-square"></i>';
-            selectBtn.onclick = (e) => {
-                e.stopPropagation();
-                if (selectedFiles.has(file._id)) selectedFiles.delete(file._id);
-                else selectedFiles.add(file._id);
-                selectBtn.innerHTML = selectedFiles.has(file._id) ? '<i class="fa-regular fa-square-check"></i>' : '<i class="fa-regular fa-square"></i>';
-            };
-            div.appendChild(selectBtn);
-
-            // Actions
             const actions = document.createElement('div');
             actions.className = 'file-actions';
 
-            // Download
             const downloadBtn = document.createElement('button');
             downloadBtn.innerHTML = '<i class="fa-solid fa-download"></i>';
-            downloadBtn.onclick = (e) => { e.stopPropagation(); downloadFile(file._id); };
+            downloadBtn.onclick = e => { e.stopPropagation(); downloadFile(file._id); };
             actions.appendChild(downloadBtn);
 
-            // Move
-            if (file.owner === currentUser) {
-                const moveBtn = document.createElement('button');
-                moveBtn.innerHTML = '<i class="fa-solid fa-arrow-right-arrow-left"></i>';
-                moveBtn.onclick = (e) => { e.stopPropagation(); moveFile(file._id); };
-                actions.appendChild(moveBtn);
-            }
-
-            // Rename & Delete (owner only)
-            if (file.owner === currentUser) {
-                const renameBtn = document.createElement('button');
-                renameBtn.innerHTML = '<i class="fa-solid fa-pen"></i>';
-                renameBtn.onclick = (e) => { e.stopPropagation(); renameItem('file', file.name); };
-                actions.appendChild(renameBtn);
-
-                const delBtn = document.createElement('button');
-                delBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
-                delBtn.onclick = (e) => { e.stopPropagation(); deleteFile(file._id); };
-                actions.appendChild(delBtn);
-            }
-
             div.appendChild(actions);
-
-            // Tags display
-            const tagWrap = document.createElement("div");
-            (file.tags || []).forEach(t => {
-                const tag = document.createElement("span");
-                tag.innerText = t;
-                tag.title = `Click to add '${t}' tag`;
-                tag.classList.add("searchTag");
-                tag.style.borderColor = calculateColour(t);
-                tag.onclick = () => addSearchTag(t);
-                tagWrap.appendChild(tag);
-            });
-            div.appendChild(tagWrap);
-
             fileList.appendChild(div);
         });
 
@@ -251,185 +134,114 @@ async function loadFiles(path) {
     }
 }
 
-// ===== File Search =====
+// ===== File Download =====
+async function downloadFile(fileId) {
+    try {
+        const res = await fetch(`/file/download/${fileId}`);
+        if (!res.ok) throw new Error('Download failed');
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = '';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+    } catch (err) {
+        console.error('Download error:', err);
+    }
+}
+
+async function downloadDirectory(directoryId) { 
+    try {
+        const res = await fetch(`/file/zip/${directoryId}`);
+        if (!res.ok) throw new Error('Download failed');
+
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+
+        // Parse filename from Content-Disposition header
+        let filename = 'directory.zip';
+        const disposition = res.headers.get('Content-Disposition');
+        if (disposition && disposition.includes('filename=')) {
+            const match = disposition.match(/filename="?(.+?)"?(\s*;|$)/);
+            if (match && match[1]) filename = match[1];
+        }
+
+        // Create temporary link and click it
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        // Release memory
+        URL.revokeObjectURL(url);
+
+    } catch (err) {
+        console.error('Download error:', err);
+        alert('Failed to download directory.');
+    }
+}
+
+// ===== Search =====
 async function searchFiles(query) {
     try {
         const res = await fetch('/file/search', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query, filePath: currentPath })
+            body: JSON.stringify({ searchTerm: query, filepath: currentPath })
         });
         const data = await res.json();
         const fileList = document.getElementById('fileList');
         fileList.innerHTML = '';
-
-        if (data.files.length === 0) {
-            fileList.innerHTML = '<i>No results found</i>';
-            return;
-        }
-
-        data.files.forEach(file => {
+        (data.files || []).forEach(file => {
             const div = document.createElement('div');
             div.className = 'file-item';
-            div.innerHTML = `<span>${file.name}</span>
-                            <div class="file-actions">
-                            <button onclick="downloadFile('${file._id}')">
-                                <i class="fa-solid fa-download"></i>
-                            </button>
-                            <button disabled>
-                                <i class="fa-solid fa-share-nodes"></i>
-                            </button>
-                            <button onclick="moveFile('${file._id}')">
-                                <i class="fa-solid fa-arrow-right-arrow-left"></i>
-                            </button>
-                            </div>`;
+            div.innerHTML = `<span>${file.original}</span>`;
             fileList.appendChild(div);
-
-            const dirDiv = document.createElement('div');
-            dirDiv.className = 'file-item directory';
-            dirDiv.innerText = dir.name;
-
-            if (file.owner === currentUser) {
-                const delBtn = document.createElement('button');
-                delBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
-                delBtn.onclick = (e) => { e.stopPropagation(); deleteDirectory(dir.name); };
-                dirDiv.appendChild(delBtn);
-            }
-            
-            dirDiv.addEventListener('click', () => navigateToDir(`${path}/${dir.name}`));
-            fileList.appendChild(dirDiv);
         });
     } catch (err) {
         console.error('Search error:', err);
     }
 }
 
-function toggleSelectFile(fileId, btn) {
-    if (selectedFiles.has(fileId)) {
-        selectedFiles.delete(fileId);
-        btn.innerHTML = '<i class="fa-regular fa-square"></i>';
-    } else {
-        selectedFiles.add(fileId);
-        btn.innerHTML = '<i class="fa-regular fa-square-check"></i>';
-    }
-}
-
-function renderOwnership(file) {
-    const span = document.createElement('span');
-    span.innerText = file.owner === currentUser ? 'You' : file.owner;
-    span.classList.add('ownerIndicator');
-    return span;
-}
-
-async function renameItem(type, oldName) {
-    const newName = prompt(`Enter new name for ${oldName}:`);
-    if (!newName) return;
-
-    try {
-        const res = await fetch(`/file/${type}/rename`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path: currentPath, oldName, newName })
-        });
-        const data = await res.json();
-        if (data.success) loadFiles(currentPath);
-    } catch (err) {
-        console.error('Rename error:', err);
-    }
-}
-
-async function moveFile(fileId) {
-    const dest = prompt('Enter destination path (relative to root):');
-    if (!dest) return;
-
-    try {
-        const res = await fetch(`/file/move`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ fileId, destPath: dest })
-        });
-        const data = await res.json();
-        if (data.success) loadFiles(currentPath);
-    } catch (err) {
-        console.error('Move file error:', err);
-    }
-}
-
-async function deleteFile(fileId) {
-    if (!confirm('Are you sure you want to delete this file?')) return;
-    try {
-        const res = await fetch(`/file/delete/${fileId}`, { method: 'DELETE' });
-        const data = await res.json();
-        if (data.success) loadFiles(currentPath);
-    } catch (err) {
-        console.error('Delete file error:', err);
-    }
-}
-
-async function deleteDirectory(dirName) {
-    if (!confirm(`Are you sure you want to delete folder "${dirName}"?`)) return;
-    try {
-        const res = await fetch(`/file/directory/delete`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path: `${currentPath}/${dirName}` })
-        });
-        const data = await res.json();
-        if (data.success) loadFiles(currentPath);
-    } catch (err) {
-        console.error('Delete directory error:', err);
-    }
-}
-
 // ===== Event Listeners =====
 document.addEventListener('DOMContentLoaded', () => {
+    updateCurrentPathDisplay();
+
     const dropZone = document.getElementById('dropZone');
     const createDirBtn = document.getElementById('createDirBtn');
     const navToParent = document.getElementById('navToParent');
 
-    navToParent.addEventListener('click', (e) => {
-        if (currentPath === 'root') return; // Disable if in root
+    dropZone.addEventListener('click', selectFile);
+    createDirBtn.addEventListener('click', createDirectory);
+    navToParent.addEventListener('click', () => {
+        if (currentPath === 'root') return;
         const parts = currentPath.split('/');
-        parts.pop(); // Remove last folder
+        parts.pop();
         currentPath = parts.join('/') || 'root';
-        document.getElementById('currentPath').innerText = currentPath;
+        updateCurrentPathDisplay();
         loadFiles(currentPath);
     });
 
-    dropZone.addEventListener('click', selectFile);
-    createDirBtn.addEventListener('click', createDirectory);
-
-    dropZone.addEventListener('dragover', e => {
-        e.preventDefault();
-        dropZone.classList.add('hover');
-    });
-
-    dropZone.addEventListener('dragleave', () => {
-        dropZone.classList.remove('hover');
-    });
-
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('hover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('hover'));
     dropZone.addEventListener('drop', e => {
         e.preventDefault();
         dropZone.classList.remove('hover');
-        const files = Array.from(e.dataTransfer.files);
-        uploadFiles(files);
+        uploadMultipleFiles(Array.from(e.dataTransfer.files));
     });
 
-    // ===== Add search bar dynamically =====
+    // Search input
     const searchInput = document.createElement('input');
     searchInput.type = 'text';
     searchInput.placeholder = 'Search files...';
-    searchInput.style.marginBottom = '10px';
     dropZone.insertAdjacentElement('afterend', searchInput);
-
-    searchInput.addEventListener('input', (e) => {
+    searchInput.addEventListener('input', e => {
         const query = e.target.value.trim();
-        if (query) searchFiles(query);
-        else loadFiles(currentPath);
-    });
-
-    navToParent.addEventListener('click', (e) => {
-        
+        query ? searchFiles(query) : loadFiles(currentPath);
     });
 
     loadFiles(currentPath);

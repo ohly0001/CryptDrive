@@ -1,4 +1,4 @@
-let currentPath = '/';
+let currentPath = '/home';
 const selectedFiles = new Set();
 const favoriteFiles = new Set();
 
@@ -249,13 +249,14 @@ function navigateToDir(path) {
 // ===== File / Directory Listing =====
 async function loadFiles(path) {
     try {
-        const res = await fetch(`/file/list?path=${encodeURIComponent(path)}`);
+        const res = await fetch(`/file/list/${encodeURIComponent(path)}`);
         const data = await res.json();
         const fileList = document.getElementById('fileList');
         fileList.innerHTML='';
 
         // Directories
         (data.directories||[]).forEach(dir=>{
+            // TODO use font awesome for different file types
             const dirDiv=document.createElement('div');
             dirDiv.className='file-item directory';
             dirDiv.innerText=dir.basename;

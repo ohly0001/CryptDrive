@@ -1,52 +1,30 @@
-<!--todo drag and drop file manipulation and directory management-->
-<!--todo download button-->
-<!--sub directory navigation and dir creation/deletion-->
-<!--file sharing management-->
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta name="author" content="Robert Ohly">
-    <title>CryptDrive File Preview</title>
-    <!-- Prism CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.css" rel="stylesheet" />
-
-    <!-- Prism JS -->
-    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-
-    <script src="/js/fileRepository.js" defer></script>
+    <meta name="author" content="Your Name">
+    <title>CryptDrive ∷ Preview File</title>
+    <script>
+        window.__FILE__ = <%- JSON.stringify(file) %>;
+        window.currentUser = <%- JSON.stringify(currentUser) %>;
+        window.favoriteFiles = <%- JSON.stringify(favoriteFiles || []) %>;
+    </script>
+    <script src="https://cdn.jsdelivr.net"></script>
+    
+    <script src="/js/previewFile.js" defer></script>
     <script src="https://kit.fontawesome.com/0f23db6f2c.js" crossorigin="anonymous"></script>
+    
+    <link href="https://cdn.jsdelivr.net" rel="stylesheet" />
     <link rel="stylesheet" href="/css/site.css">
-    <link rel="stylesheet" href="/css/fileRepository.css">
+    <link rel="stylesheet" href="/css/previewFile.css">
 </head>
 <body>
     <%- include('components/master') %>
-    <%- include('components/nav') %>
 
-    <h1>CryptDrive File Preview</h1>
+    <h1>CryptDrive ∷ Preview File</h1>
 
-    <!-- Drag & drop / file select -->
-    <div id="dropZone">
-        <i class="fa-solid fa-file-arrow-up fa-2x"></i><br>
-        <p><b>Choose a file</b> or drag files here</p>
-    </div>
-
-    <!-- Subdirectory navigation -->
-    <div>
-        <i class="fa-solid fa-folder-open"></i></i> You are here: <span id="currentPath">root</span>
-    </div>
-    <div>
-        <button id="createDirBtn">
-            <i class="fa-solid fa-folder-plus"></i> New Folder
-        </button>
-        <button id="navToParent">
-            <i class="fa-solid fa-circle-arrow-up"></i> Go to Parent
-        </button>
-    </div>
-
-    <!-- File list -->
-    <div id="fileList" class="file-list"></div>
+    <div id="previewContainer"></div>
+    <div id="metadataContainer"></div>
+    <div id="actionsContainer"></div>
 </body>
 </html>

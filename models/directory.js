@@ -1,6 +1,12 @@
 import mongoose from 'mongoose';
 import File from './file.js';
 
+const EncryptedFieldSchema = new mongoose.Schema({
+    encryptedData: { type: String, required: true },
+    iv: { type: String, required: true },
+    authTag: { type: String, required: true }
+}, { _id: false });
+
 const DirectorySchema = new mongoose.Schema({
     account: { 
         type: mongoose.Schema.Types.ObjectId, 
@@ -20,6 +26,7 @@ const DirectorySchema = new mongoose.Schema({
     path: { type: String, required: true, trim: true },
     searchTags: { type: [String], index: true },
     basename: { type: String, index: true },
+    note: { type: EncryptedFieldSchema }
 }, { timestamps: true });
 
 DirectorySchema.methods.getChildCount = async function() {

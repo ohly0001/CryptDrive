@@ -1,5 +1,6 @@
 import mongoose from 'mongoose'; 
 import Account from '../models/account.js';
+import Directory from '../models/directory.js';
 import Password from '../models/password.js';
 import demo_passwords from "./demo-passwords.json" with { type: 'json' };
 import { derivekek, decrypt, encrypt } from '../utilities/encryption.js';
@@ -43,10 +44,23 @@ async function seedRootAccount() {
             type: "root",
             isActive: true
         });
+
         const kek = await derivekek(ROOT_ACCOUNT_PASSWORD, rootAccount.kekSalt);
+
         await rootAccount.secure(kek);
         await rootAccount.save();
 
+        const secretKey = decrypt(rootAccount.secretKey, kek);
+        
+        const homeDirectory = new Directory({
+            account: rootAccount._id,
+            path: '/home',
+            basename: 'home',
+            searchTags: ['home'],
+            note: encrypt("Root account home directory", secretKey)
+        });
+        await homeDirectory.save();
+        
         console.log('[Setup] Root account created successfully.');
     } catch (err) {
         console.error('[Setup] Error seeding root account:', err);
@@ -94,6 +108,28 @@ async function resetDemoAccount() {
             await demoAccount.resecure(kek, DEMO_ACCOUNT_PASSWORD);
             console.log('[Setup] Reset existing demo account.');
         }
+
+        const secretKey = decrypt(demoAccount.secretKey, kek);
+
+        let homeDirectory = await Directory.findOne({ basename: 'home', account: demoAccount._id });
+
+        if (!homeDirectory) {
+            homeDirectory = new Directory({
+                account: demoAccount._id,
+                path: '/home',
+                basename: 'home',
+                searchTags: ['home'],
+                note: encrypt("Demo account home directory", secretKey)
+            });
+            await homeDirectory.save();
+        } else {
+            homeDirectory.path = '/home';
+            homeDirectory.basename = 'home';
+            homeDirectory.basename = ['home'],
+            homeDirectory.note = encrypt("Demo account home directory", secretKey);
+            await homeDirectory.save();
+        }
+
         console.log('[Setup] Demo account synchronized successfully.');
     } catch (err) {
         console.error('[Setup] Error synchronizing demo account:', err);

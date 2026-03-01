@@ -1,5 +1,5 @@
 export const MAX_CLIENTS = 500;
-export const MAX_SESSION_LENGTH = 1 * 60 * 60 * 1000;
+export const MAX_SESSION_LENGTH = 1 * 60 * 60 * 1000; // 1 hour
 
 export const STATUS = Object.freeze({
     COLD: "Cold", //starting from nothing, can be used to differentiate cold start from warm start
@@ -12,7 +12,7 @@ export const STATUS = Object.freeze({
 
 export const INTERVAL = {
     HEARTBEAT: 30 * 1000,
-    ACCOUNT_TIMEOUT: 1 * 60 * 60 * 1000
+    ACCOUNT_TIMEOUT: 5 * 60 * 1000 // check every 5 minutes
 }
 
 export var state = {

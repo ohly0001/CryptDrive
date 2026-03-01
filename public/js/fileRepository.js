@@ -116,36 +116,37 @@ async function loadFiles(path) {
             const downloadBtn = document.createElement('button');
             downloadBtn.innerHTML = '<i class="fa-solid fa-download"></i>';
             downloadBtn.title = 'Download folder as ZIP';
-            downloadBtn.onclick = e => {
-                e.stopPropagation();
-                downloadDirectory(dir._id);
-            };
+            downloadBtn.onclick = e => { e.stopPropagation(); downloadDirectory(dir._id); };
             actions.appendChild(downloadBtn);
 
-            // Owner-only actions
+            // Owner-only actions: Delete, Rename, Move
             if (dir.account === currentUser) {
-                // Delete
                 const delBtn = document.createElement('button');
                 delBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
                 delBtn.onclick = e => { e.stopPropagation(); deleteDirectory(dir.basename); };
                 actions.appendChild(delBtn);
 
-                // Rename
                 const renameBtn = document.createElement('button');
                 renameBtn.innerHTML = '<i class="fa-solid fa-pen"></i>';
                 renameBtn.onclick = e => { e.stopPropagation(); renameItem('directory', dir.basename); };
                 actions.appendChild(renameBtn);
+
+                const moveBtn = document.createElement('button');
+                moveBtn.innerHTML = '<i class="fa-solid fa-arrow-right-arrow-left"></i>';
+                moveBtn.title = 'Move directory';
+                moveBtn.onclick = e => { e.stopPropagation(); moveFile(dir._id); };
+                actions.appendChild(moveBtn);
             }
 
             dirDiv.appendChild(actions);
 
-            // Navigate into directory on click
+            // Navigate into directory
             dirDiv.addEventListener('click', () => navigateToDir(`${path}/${dir.basename}`));
 
             fileList.appendChild(dirDiv);
         });
 
-        // ----- Files (existing code) -----
+        // ----- Files -----
         (data.files || []).forEach(file => {
             const fileDiv = document.createElement('div');
             fileDiv.className = 'file-item';
@@ -155,13 +156,35 @@ async function loadFiles(path) {
             const actions = document.createElement('div');
             actions.className = 'file-actions';
 
-            // Download file button
+            // Download file
             const downloadBtn = document.createElement('button');
             downloadBtn.innerHTML = '<i class="fa-solid fa-download"></i>';
             downloadBtn.onclick = e => { e.stopPropagation(); downloadFile(file._id); };
             actions.appendChild(downloadBtn);
 
+            // Owner-only actions: Rename, Delete, Move
+            if (file.account === currentUser) {
+                const renameBtn = document.createElement('button');
+                renameBtn.innerHTML = '<i class="fa-solid fa-pen"></i>';
+                renameBtn.title = 'Rename file';
+                renameBtn.onclick = e => { e.stopPropagation(); renameItem('file', file.original); };
+                actions.appendChild(renameBtn);
+
+                const delBtn = document.createElement('button');
+                delBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+                delBtn.title = 'Delete file';
+                delBtn.onclick = e => { e.stopPropagation(); deleteFile(file._id); };
+                actions.appendChild(delBtn);
+
+                const moveBtn = document.createElement('button');
+                moveBtn.innerHTML = '<i class="fa-solid fa-arrow-right-arrow-left"></i>';
+                moveBtn.title = 'Move file';
+                moveBtn.onclick = e => { e.stopPropagation(); moveFile(file._id); };
+                actions.appendChild(moveBtn);
+            }
+
             fileDiv.appendChild(actions);
+
             fileList.appendChild(fileDiv);
         });
 

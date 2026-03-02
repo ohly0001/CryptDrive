@@ -1,11 +1,5 @@
 import mongoose from 'mongoose';
 
-const EncryptedFieldSchema = new mongoose.Schema({
-    encryptedData: { type: String, required: true },
-    iv: { type: String, required: true },
-    authTag: { type: String, required: true }
-}, { _id: false });
-
 const FileSchema = new mongoose.Schema({
     account: { 
         type: mongoose.Schema.Types.ObjectId, 
@@ -28,7 +22,7 @@ const FileSchema = new mongoose.Schema({
     searchTags: { type: [String], index: true },
     iv: { type: String, required: true },
     authTag: { type: String, required: true },
-    note: { type: EncryptedFieldSchema }
+    note: { type: String }
 }, { timestamps: true });
 
 const File = mongoose.models.File || mongoose.model('File', FileSchema);

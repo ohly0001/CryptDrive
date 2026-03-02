@@ -22,186 +22,165 @@ const initializeDB = async () => {
 };
 
 async function seedRootAccount() {
-    try {
-        const { ROOT_ACCOUNT_USERNAME, ROOT_ACCOUNT_EMAIL, ROOT_ACCOUNT_PASSWORD } = process.env;
+  try {
+    const {
+      ROOT_ACCOUNT_USERNAME,
+      ROOT_ACCOUNT_EMAIL,
+      ROOT_ACCOUNT_PASSWORD
+    } = process.env;
 
-        if (!ROOT_ACCOUNT_USERNAME || !ROOT_ACCOUNT_EMAIL || !ROOT_ACCOUNT_PASSWORD) {
-            console.error('[Setup] Missing ROOT_ACCOUNT_* environment variables.');
-            process.exit(1);
-        }
-
-        const rootExists = await Account.findOne({ username: ROOT_ACCOUNT_USERNAME });
-
-        if (rootExists) {
-            console.log('[Setup] The root account already exists.');
-            return;
-        }
-
-        const rootAccount = new Account({
-            username: ROOT_ACCOUNT_USERNAME,
-            email: ROOT_ACCOUNT_EMAIL,
-            password: ROOT_ACCOUNT_PASSWORD,
-            type: "root",
-            isActive: true
-        });
-
-        const kek = await derivekek(ROOT_ACCOUNT_PASSWORD, rootAccount.kekSalt);
-
-        await rootAccount.secure(kek);
-        await rootAccount.save();
-
-        const secretKey = decrypt(rootAccount.secretKey, kek);
-        
-        const homeDirectory = new Directory({
-            account: rootAccount._id,
-            path: '/home',
-            basename: 'home',
-            searchTags: ['home'],
-            note: encrypt("Root account home directory", secretKey)
-        });
-        await homeDirectory.save();
-        
-        console.log('[Setup] Root account created successfully.');
-    } catch (err) {
-        console.error('[Setup] Error seeding root account:', err);
-        process.exit(1);
+    if (!ROOT_ACCOUNT_USERNAME || !ROOT_ACCOUNT_EMAIL || !ROOT_ACCOUNT_PASSWORD) {
+      throw new Error('[Setup] Missing ROOT_ACCOUNT_* environment variables.');
     }
-};
+
+    let rootAccount = await Account.findOne({ username: ROOT_ACCOUNT_USERNAME });
+
+    // If root does not exist → create it
+    if (!rootAccount) {
+      rootAccount = new Account({
+        username: ROOT_ACCOUNT_USERNAME,
+        email: ROOT_ACCOUNT_EMAIL,
+        password: ROOT_ACCOUNT_PASSWORD,
+        type: 'root',
+        isActive: true
+      });
+
+      const kek = await derivekek(ROOT_ACCOUNT_PASSWORD, rootAccount.kekSalt);
+      await rootAccount.secure(kek);
+      await rootAccount.save();
+
+      console.log('[Setup] Root account created.');
+    }
+
+    // Ensure root home directory exists (self-healing invariant)
+    const kek = await derivekek(ROOT_ACCOUNT_PASSWORD, rootAccount.kekSalt);
+    const secretKey = decrypt(rootAccount.secretKey, kek);
+
+    await Directory.updateOne(
+      { account: rootAccount._id, path: '/home' },
+      {
+        $setOnInsert: {
+          basename: 'home',
+          searchTags: ['home'],
+          note: encrypt('Root account home directory', secretKey)
+        }
+      },
+      { upsert: true }
+    );
+
+    console.log('[Setup] Root account verified.');
+
+  } catch (err) {
+    console.error('[Setup] Root seeding error:', err);
+    process.exit(1);
+  }
+}
 
 async function resetDemoAccount() {
-    try {
-        const { DEMO_ACCOUNT_USERNAME, DEMO_ACCOUNT_EMAIL, DEMO_ACCOUNT_PASSWORD } = process.env;
+  try {
+    const { DEMO_ACCOUNT_USERNAME, DEMO_ACCOUNT_EMAIL, DEMO_ACCOUNT_PASSWORD } = process.env;
 
-        if (!DEMO_ACCOUNT_USERNAME || !DEMO_ACCOUNT_EMAIL || !DEMO_ACCOUNT_PASSWORD) {
-            console.error('[Setup] Missing DEMO_ACCOUNT_* environment variables.');
-            process.exit(1);
-        }
-
-        let demoAccount = await Account.findOne({ username: DEMO_ACCOUNT_USERNAME });
-        const isNew = !demoAccount;
-
-        if (isNew) {
-            demoAccount = new Account({
-                username: DEMO_ACCOUNT_USERNAME,
-                email: DEMO_ACCOUNT_EMAIL,
-                password: DEMO_ACCOUNT_PASSWORD,
-                type: "demo",
-                isActive: true
-            });
-        } else {
-            demoAccount.username = DEMO_ACCOUNT_USERNAME;
-            demoAccount.email = DEMO_ACCOUNT_EMAIL;
-            demoAccount.password = DEMO_ACCOUNT_PASSWORD;
-            demoAccount.type = "demo";
-            demoAccount.isActive = true;
-        }
-
-        // TODO only recalculate password if it change
-        const kek = await derivekek(DEMO_ACCOUNT_PASSWORD, demoAccount.kekSalt);
-
-        if (isNew) {
-            await demoAccount.secure(kek);
-            await demoAccount.save();
-            console.log('[Setup] Created new demo account.');
-        } else {
-            // TEST if this breaks when the .env changes
-            await demoAccount.resecure(kek, DEMO_ACCOUNT_PASSWORD);
-            console.log('[Setup] Reset existing demo account.');
-        }
-
-        const secretKey = decrypt(demoAccount.secretKey, kek);
-
-        let homeDirectory = await Directory.findOne({ basename: 'home', account: demoAccount._id });
-
-        if (!homeDirectory) {
-            homeDirectory = new Directory({
-                account: demoAccount._id,
-                path: '/home',
-                basename: 'home',
-                searchTags: ['home'],
-                note: encrypt("Demo account home directory", secretKey)
-            });
-            await homeDirectory.save();
-        } else {
-            homeDirectory.path = '/home';
-            homeDirectory.basename = 'home';
-            homeDirectory.basename = ['home'],
-            homeDirectory.note = encrypt("Demo account home directory", secretKey);
-            await homeDirectory.save();
-        }
-
-        console.log('[Setup] Demo account synchronized successfully.');
-    } catch (err) {
-        console.error('[Setup] Error synchronizing demo account:', err);
-        process.exit(1);
+    if (!DEMO_ACCOUNT_USERNAME || !DEMO_ACCOUNT_EMAIL || !DEMO_ACCOUNT_PASSWORD) {
+      throw new Error('[Setup] Missing DEMO_ACCOUNT_* environment variables.');
     }
+
+    // Delete existing demo account
+    await Account.deleteOne({ username: DEMO_ACCOUNT_USERNAME });
+
+    const demoAccount = new Account({
+      username: DEMO_ACCOUNT_USERNAME,
+      email: DEMO_ACCOUNT_EMAIL,
+      password: DEMO_ACCOUNT_PASSWORD,
+      type: 'demo',
+      isActive: true
+    });
+
+    const kek = await derivekek(DEMO_ACCOUNT_PASSWORD, demoAccount.kekSalt);
+    await demoAccount.secure(kek);
+    await demoAccount.save();
+
+    const secretKey = decrypt(demoAccount.secretKey, kek);
+
+    // Reconcile home directory
+    await Directory.updateOne(
+      { account: demoAccount._id, path: '/home' },
+      {
+        $set: {
+          basename: 'home',
+          searchTags: ['home'],
+          note: encrypt('Demo account home directory', secretKey)
+        }
+      },
+      { upsert: true }
+    );
+
+    console.log('[Setup] Demo account recreated successfully.');
+  } catch (err) {
+    console.error('[Setup] Demo reset error:', err);
+    process.exit(1);
+  }
 }
 
 async function resetDemoPasswords() {
-    try {
-        const { DEMO_ACCOUNT_USERNAME, DEMO_ACCOUNT_PASSWORD } = process.env;
+  try {
+    const {
+      DEMO_ACCOUNT_USERNAME,
+      DEMO_ACCOUNT_PASSWORD
+    } = process.env;
 
-        const demoAccount = await Account.findOne(
-            { username: DEMO_ACCOUNT_USERNAME },
-            { _id: 1, kekSalt: 1, secretKey: 1 }
-        ).lean();
+    const demoAccount = await Account.findOne(
+      { username: DEMO_ACCOUNT_USERNAME },
+      { _id: 1, kekSalt: 1, secretKey: 1 }
+    ).lean();
 
-        if (!demoAccount) {
-            throw new Error(`Demo account '${DEMO_ACCOUNT_USERNAME}' not found.`);
-        }
-
-        const accountId = demoAccount._id;
-
-        const allowedTitles = demo_passwords.map(p => p.title);
-
-        await Password.deleteMany({
-            account: accountId,
-            title: { $nin: allowedTitles }
-        });
-
-        // Derive + decrypt once
-        const kek = await derivekek(DEMO_ACCOUNT_PASSWORD, demoAccount.kekSalt);
-        const secretKey = decrypt(demoAccount.secretKey, kek);
-
-        const ops = demo_passwords.map(json => {
-            const normalizedTags = (json.searchTags || []).map(t => t.toLowerCase());
-
-            const doc = {
-                account: accountId,
-                title: json.title,
-                url: encrypt(json.url, secretKey),
-                searchTags: normalizedTags,
-                username: encrypt(json.username, secretKey),
-                password: encrypt(json.password, secretKey),
-                note: encrypt(json.note, secretKey),
-                isFavourite: json.isFavourite
-            };
-
-            return {
-                updateOne: {
-                    filter: { account: accountId, title: doc.title },
-                    update: { $set: doc },
-                    upsert: true
-                }
-            };
-        });
-
-        if (ops.length === 0) return;
-
-        await Password.bulkWrite(ops, {
-            ordered: false // continues on duplicates
-        });
-
-        console.log(`[Setup] Demo passwords synchronized (skipped existing).`);
-
-    } catch (err) {
-        if (err.code === 11000) {
-            console.warn('[Setup] Some duplicates were skipped.');
-        } else {
-            console.error('[Setup] Error seeding:', err);
-            process.exit(1);
-        }
+    if (!demoAccount) {
+      throw new Error('Demo account not found.');
     }
+
+    const accountId = demoAccount._id;
+
+    //const allowedTitles = demo_passwords.map(p => p.title);
+
+    // Remove drift
+    //await Password.deleteMany({
+    //  account: accountId,
+    //  title: { $nin: allowedTitles }
+    //});
+    // I hate this
+    await Password.deleteMany({ account: accountId });
+
+    const kek = await derivekek(DEMO_ACCOUNT_PASSWORD, demoAccount.kekSalt);
+    const secretKey = decrypt(demoAccount.secretKey, kek);
+
+    const ops = demo_passwords.map(json => ({
+      updateOne: {
+        filter: { account: accountId, title: json.title },
+        update: {
+          $set: {
+            account: accountId,
+            title: json.title,
+            url: encrypt(json.url, secretKey),
+            username: encrypt(json.username, secretKey),
+            password: encrypt(json.password, secretKey),
+            note: encrypt(json.note, secretKey),
+            searchTags: (json.searchTags || []).map(t => t.toLowerCase()),
+            isFavourite: json.isFavourite
+          }
+        },
+        upsert: true
+      }
+    }));
+
+    if (ops.length) {
+      await Password.bulkWrite(ops, { ordered: false });
+    }
+
+    console.log('[Setup] Demo passwords synchronized.');
+
+  } catch (err) {
+    console.error('[Setup] Demo password sync error:', err);
+    process.exit(1);
+  }
 }
 
 export { connectDB, initializeDB };

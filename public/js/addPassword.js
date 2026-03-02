@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const newUrl = document.getElementById('newUrl');
     const newUser = document.getElementById('newUser');
     const newPassword = document.getElementById('newPassword');
+    const passwordPeekBtn = document.getElementById("passwordPeek");
     const newTag = document.getElementById('newTag');
     const tagContainer = document.getElementById('newTags');
     const newNote = document.getElementById('newNote');
@@ -88,4 +89,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     ['mousedown', 'touchstart'].forEach(evt => peekButton.addEventListener(evt, showPassword));
     ['mouseup', 'mouseleave', 'touchend'].forEach(evt => peekButton.addEventListener(evt, hidePassword));
+
+    passwordPeekBtn.addEventListener("click", () => {
+        const visible = passwordInput.type === "password";
+        passwordInput.type = visible ? "text" : "password";
+        passwordPeekBtn.innerHTML = !visible ? '<i class="fa-solid fa-eye"></i>' : '<i class="fa-solid fa-eye-slash"></i>';
+    });
 });

@@ -3,17 +3,11 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
 import { encrypt, decrypt, derivekek, generateAESKey, saltShaker } from '../utilities/encryption.js';
 
-const EncryptedFieldSchema = new mongoose.Schema({
-    encryptedData: { type: String, required: true },
-    iv: { type: String, required: true },
-    authTag: { type: String, required: true }
-}, { _id: false });
-
 const AccountSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     username: { type: String, required: true, unique: true, trim: true },
     password: { type: String, required: true }, // bcrypt hash
-    secretKey: { type: EncryptedFieldSchema }, // store as AES object
+    secretKey: { type: String }, 
     kekSalt: { type: String, default: () => saltShaker() },
     isActive: { type: Boolean, default: false },
     expireAt: { type: Date, default: null },

@@ -28,15 +28,18 @@ function configurePassport() {
         }
     };
 
-    passport.use(new LocalStrategy({ usernameField: 'email' }, authenticateAccount));
+    passport.use(new LocalStrategy(
+        { usernameField: 'identification', passwordField: 'password' }, 
+        authenticateAccount
+    ));
 
     passport.serializeUser((account, done) => done(null, account.id));
 
     passport.deserializeUser(async (id, done) => {
         try {
             const account = await Account.findById(id)
-                .select('-password') // remove irrelevant sensitive info
-                .lean(); // return plain JS object
+                .select('-password'); // remove irrelevant sensitive info
+                //.lean(); // return plain JS object
             done(null, account || false);
         } catch (err) {
             done(err);

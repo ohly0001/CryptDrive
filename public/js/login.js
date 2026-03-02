@@ -1,7 +1,7 @@
 function processLoginForm(form) {
     if (!form.checkValidity()) return;
 
-    const email = document.getElementById('email').value;
+    const identification = document.getElementById('identification').value;
     const password = document.getElementById('password').value;
     const loginInput = document.getElementById('login');
 
@@ -12,7 +12,7 @@ function processLoginForm(form) {
     fetch('/auth/login', {
         method: 'POST', 
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }), 
+        body: JSON.stringify({ identification, password }), 
     })
     .then(res => res.json())
     .then(data => {

@@ -1,12 +1,19 @@
 import cryptDriveConfig from "../config/cryptDriveConfig.json" with { type: "json" };
-
 import crypto from 'crypto';
 import argon2 from 'argon2';
 
 const algorithm = 'aes-256-gcm';
+const KEY_SIZE = cryptDriveConfig.aesKeySize; // Consistent reference
+
+// Helper to ensure key is a 32-byte Buffer
+const getRawKey = (secretKey) => {
+    const key = Buffer.from(secretKey, 'base64');
+    if (key.length !== KEY_SIZE) throw new Error(`AES key must be ${KEY_SIZE} bytes`);
+    return key;
+};
 
 export async function derivekek(password, salt) {
-    return await argon2.hash(password, {
+    const hash = await argon2.hash(password, {
         type: argon2.argon2id,
         salt: Buffer.from(salt, 'base64'),
         memoryCost: 19456,
@@ -15,6 +22,7 @@ export async function derivekek(password, salt) {
         hashLength: 32,
         raw: true
     });
+    return hash.toString('base64'); // Convert to base64 so encrypt/decrypt can use it
 }
 
 export function saltShaker() {
@@ -22,78 +30,86 @@ export function saltShaker() {
 }
 
 export function generateAESKey() {
-    return crypto.randomBytes(cryptDriveConfig.aesKeySize).toString('base64'); // 256-bit AES
+    return crypto.randomBytes(KEY_SIZE).toString('base64');
 }
 
-export function encryptBuffer(buffer, secretKeyBase64) {
-    // decode base64 key
-    const key = Buffer.from(secretKeyBase64, 'base64');
-    if (key.length !== cryptDriveConfig.aesKeySize) throw new Error('AES key must be 32 bytes');
-
+/**
+ * BUFFER METHODS (For File I/O)
+ */
+export function encryptBuffer(buffer, secretKey) {
+    const key = getRawKey(secretKey);
     const iv = crypto.randomBytes(12);
     const cipher = crypto.createCipheriv(algorithm, key, iv);
 
-    const encryptedData = Buffer.concat([
-        cipher.update(buffer),
-        cipher.final()
-    ]);
-
+    const encryptedData = Buffer.concat([cipher.update(buffer), cipher.final()]);
     const authTag = cipher.getAuthTag();
 
     return {
-        encryptedData,                  // raw Buffer to write to disk
-        iv: iv.toString('base64'),      // store in JSON metadata
-        authTag: authTag.toString('base64')
+        encryptedData, 
+        meta: {
+            iv: iv.toString('base64'),
+            authTag: authTag.toString('base64')
+        }
     };
 }
 
-export function encrypt(text="", secretKey) {
-    const key = Buffer.from(secretKey, 'base64');
-    if (key.length !== cryptDriveConfig.aesKeySize) throw new Error('AES key must be 32 bytes');
-
-    const iv = crypto.randomBytes(12);
-    const cipher = crypto.createCipheriv(algorithm, key, iv);
-
-    const encryptedData = cipher.update(text, 'utf8', 'base64') + cipher.final('base64');
-    const authTag = cipher.getAuthTag();
-
-    return {
-        encryptedData,
-        iv: iv.toString('base64'),
-        authTag: authTag.toString('base64')
-    };
-}
-
-export function decryptBuffer(encryptedData, ivBase64, authTagBase64, secretKeyBase64) {
-    const key = Buffer.from(secretKeyBase64, 'base64');
-    if (key.length !== cryptDriveConfig.aesKeySize) throw new Error('AES key must be 32 bytes');
-
-    const iv = Buffer.from(ivBase64, 'base64');
-    const authTag = Buffer.from(authTagBase64, 'base64');
+export function decryptBuffer(encryptedData, metadata, secretKey) {
+    const key = getRawKey(secretKey);
+    const iv = Buffer.from(metadata.iv, 'base64');
+    const authTag = Buffer.from(metadata.authTag, 'base64');
 
     const decipher = crypto.createDecipheriv(algorithm, key, iv);
     decipher.setAuthTag(authTag);
 
-    const decrypted = Buffer.concat([
-        decipher.update(encryptedData),
-        decipher.final()
-    ]);
-
-    return decrypted;
+    return Buffer.concat([decipher.update(encryptedData), decipher.final()]);
 }
 
-export function decrypt(encryptedObject, secretKey) {
-    const key = Buffer.from(secretKey, 'base64');
-    if (key.length !== cryptDriveConfig.aesKeySize) throw new Error('AES key must be 32 bytes');
+/**
+ * STRING METHODS (For Mongoose/Fields)
+ * Format: iv:authTag:encryptedData
+ */
+export function encrypt(text = "", secretKey) {
+    const key = getRawKey(secretKey);
+    const iv = crypto.randomBytes(12);
+    const cipher = crypto.createCipheriv(algorithm, key, iv);
 
-    const iv = Buffer.from(encryptedObject.iv, 'base64');
-    const authTag = Buffer.from(encryptedObject.authTag, 'base64');
+    let encrypted = cipher.update(text, 'utf8', 'base64');
+    encrypted += cipher.final('base64');
 
-    const decipher = crypto.createDecipheriv(algorithm, key, iv);
-    decipher.setAuthTag(authTag);
+    return `${iv.toString('base64')}:${cipher.getAuthTag().toString('base64')}:${encrypted}`;
+}
 
-    let decrypted = decipher.update(encryptedObject.encryptedData, 'base64', 'utf8');
-    decrypted += decipher.final('utf8');
+export function decrypt(encryptedString, secretKey) {
+    const key = getRawKey(secretKey);
+    const [iv, authTag, data] = encryptedString.split(':');
+    
+    const decipher = crypto.createDecipheriv(algorithm, key, Buffer.from(iv, 'base64'));
+    decipher.setAuthTag(Buffer.from(authTag, 'base64'));
 
-    return decrypted;
+    try {
+        let decrypted = decipher.update(data, 'base64', 'utf8');
+        decrypted += decipher.final('utf8');
+        return decrypted;
+    } catch (err) {
+        throw new Error('Decryption failed: Data tampered or wrong key');
+    }
+}
+
+/**
+ * JSON METHODS
+ */
+export function encryptJSON(json = {}, secretKey) {
+    const encryptedJson = {};
+    Object.entries(json).forEach(([prop, text]) => {
+        encryptedJson[prop] = encrypt(text, secretKey);
+    });
+    return encryptedJson;
+}
+
+export function decryptJSON(encryptedJSON = {}, secretKey) {
+    const decryptedJson = {};
+    Object.entries(encryptedJSON).forEach(([prop, val]) => {
+        decryptedJson[prop] = decrypt(val, secretKey);
+    });
+    return decryptedJson;
 }

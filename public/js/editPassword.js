@@ -77,8 +77,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ======= Password Reveal =======
     passwordPeekBtn.addEventListener("click", () => {
-        passwordInput.type =
-            passwordInput.type === "password" ? "text" : "password";
+        const visible = passwordInput.type === "password";
+        passwordInput.type = visible ? "text" : "password";
+        passwordPeekBtn.innerHTML = !visible ? '<i class="fa-solid fa-eye"></i>' : '<i class="fa-solid fa-eye-slash"></i>';
     });
 
     // ======= Form Submit =======

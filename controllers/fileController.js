@@ -61,13 +61,13 @@ const encryptFiles = async (req, files, relativePath = '') => {
     // Ensure root directory in DB
     let rootDir = await Directory.findOne({ account: req.user._id, parent: null });
     if (!rootDir) {
-    rootDir = new Directory({
-        account: req.user._id,
-        basename: 'root',
-        path: 'root',
-        parent: null
-    });
-    await rootDir.save();
+        rootDir = new Directory({
+            account: req.user._id,
+            basename: 'root',
+            path: '/',
+            parent: null
+        });
+        await rootDir.save();
     }
 
     const targetDir = relativePath ? await rootDir.recursiveCreation(req.user, relativePath) : rootDir;

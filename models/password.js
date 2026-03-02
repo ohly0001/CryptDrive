@@ -1,11 +1,5 @@
 import mongoose from 'mongoose';
 
-const EncryptedFieldSchema = new mongoose.Schema({
-    encryptedData: { type: String, required: true },
-    iv: { type: String, required: true },
-    authTag: { type: String, required: true }
-}, { _id: false }); // No separate _id for subdocs
-
 const PasswordSchema = new mongoose.Schema({
     account: { 
         type: mongoose.Schema.Types.ObjectId, 
@@ -13,10 +7,10 @@ const PasswordSchema = new mongoose.Schema({
         required: true 
     },
     title: { type: String, required: true, trim: true, unique: true },
-    url: { type: EncryptedFieldSchema, index: true },
-    username: { type: EncryptedFieldSchema, required: true },
-    password: { type: EncryptedFieldSchema, required: true },
-    note: { type: EncryptedFieldSchema },
+    url: { type: String, index: true },
+    username: { type: String, required: true },
+    password: { type: String, required: true },
+    note: { type: String },
     searchTags: { type: [String], index: true },
     isFavourite: { type: Boolean, default: false }
 }, { timestamps: true });

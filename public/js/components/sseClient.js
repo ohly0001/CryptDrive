@@ -1,30 +1,28 @@
 // sseClient.js
 const EVENTS_URL = '/sse/subscribe';
-const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 min
+const IDLE_THRESHOLD = 5 * 60 * 1000;   // 5 min of inactivity before ping
+const PERIODIC_PING = 5 * 60 * 1000;    // ping even if never idle
 const RETRY_INTERVAL = 3000;
 const ACTIVITY_EVENTS = ['mousemove','mousedown','keydown','scroll','touchstart','visibilitychange'];
 
 let lastActivityTime = Date.now();
-let activityTimeout = null;
-let activityInterval = null;
-let es = null; // SSE connection reference
+let lastServerPing = 0;
+let idleTimeout = null;
+let periodicPingInterval = null;
+let es = null;
 
 // ---------------------
-// Cleanup on shutdown
+// Stop activity tracking and SSE
 // ---------------------
 function stopActivityPing() {
-    // Stop throttled timeout
-    if (activityTimeout) clearTimeout(activityTimeout);
-    activityTimeout = null;
+    if (idleTimeout) clearTimeout(idleTimeout);
+    idleTimeout = null;
 
-    // Stop interval ping
-    if (activityInterval) clearInterval(activityInterval);
-    activityInterval = null;
+    if (periodicPingInterval) clearInterval(periodicPingInterval);
+    periodicPingInterval = null;
 
-    // Remove activity listeners
     ACTIVITY_EVENTS.forEach(event => document.removeEventListener(event, onActivity, { passive: true }));
 
-    // Close SSE
     if (es) {
         es.close();
         es = null;
@@ -32,30 +30,46 @@ function stopActivityPing() {
 }
 
 // ---------------------
-// Activity tracking
+// Notify server if idle threshold reached
 // ---------------------
 function notifyServer() {
     const now = Date.now();
-    if (now - lastActivityTime < REFRESH_INTERVAL) return; // Throttle
+    if (now - lastServerPing < 1000) return; // very small throttle to avoid double-ping
 
     fetch('/sse/stayin-alive', { method: 'POST', keepalive: true })
         .then(res => {
-            if (res.ok) lastActivityTime = Date.now();
-            if (res.status === 401) window.location.replace('/login.html');
+            lastServerPing = Date.now();
+
+            if (res.ok) {
+                lastActivityTime = Date.now(); // confirm activity on server
+            }
+
+            if (res.status === 401) {
+                stopActivityPing();
+                window.location.replace('/login.html');
+            }
         })
-        .catch(err => console.error('Refresh failed', err));
+        .catch(err => console.error('Activity ping failed', err));
 }
 
+// ---------------------
+// Handle user activity
+// ---------------------
 function onActivity() {
-    if (activityTimeout) clearTimeout(activityTimeout);
-    activityTimeout = setTimeout(notifyServer, REFRESH_INTERVAL);
+    lastActivityTime = Date.now();
+
+    if (idleTimeout) clearTimeout(idleTimeout);
+    // Only notify server after IDLE_THRESHOLD ms of inactivity
+    idleTimeout = setTimeout(notifyServer, IDLE_THRESHOLD);
 }
 
-// Add activity listeners
+// ---------------------
+// Set up activity listeners
+// ---------------------
 ACTIVITY_EVENTS.forEach(event => document.addEventListener(event, onActivity, { passive: true }));
 
-// Periodic ping even if no activity
-activityInterval = setInterval(notifyServer, REFRESH_INTERVAL);
+// Periodic ping for long-lived sessions (in case user never goes idle)
+periodicPingInterval = setInterval(notifyServer, PERIODIC_PING);
 
 // ---------------------
 // SSE connection
@@ -66,14 +80,11 @@ function connectSSE() {
     es.onopen = () => console.log('[SSE] Connected');
 
     es.onmessage = (event) => {
+        if (event.data.startsWith(':')) return; // ignore heartbeat
+
         let data;
-        try {
-            if (event.data.startsWith(':')) return; // Ignore heartbeat
-            data = JSON.parse(event.data);
-        } catch (err) {
-            console.warn('[SSE] Failed to parse message:', event.data);
-            return;
-        }
+        try { data = JSON.parse(event.data); } 
+        catch (err) { console.warn('[SSE] Failed to parse message:', event.data); return; }
 
         if (data?.type === 'session_timeout' || data?.type === 'shutdown') {
             stopActivityPing();

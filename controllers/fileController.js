@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import { decrypt, encryptBuffer } from '../utilities/encryption.js';
 import File from '../models/file.js';
 import Directory from '../models/directory.js';
+import Group from '../models/group.js';
 import { v7 as uuidv7 } from 'uuid';
 import archiver from 'archiver';
 
@@ -104,7 +105,83 @@ const encryptFiles = async (req, files, relativePath = '') => {
 };
 
 // ===== CONTROLLERS =====
-const view = async (req, res) => res.render('fileRepository', {});
+const view = async (req, res) => {
+    res.render('fileRepository', {})
+};
+
+const viewFile = async (req, res) => {
+    if (!req.isAuthenticated?.() || !req.user) {
+        return res.status(401).json({ redirect: '/auth/login' });
+    }
+
+    if (!req.session?.kek) {
+        return res.status(401).json({message: 'Vault locked'});
+    }
+
+    const id = req.params.id;
+    const file = await File.findById(id);
+
+    if (!file) {
+        return res.status(404).send('File not found');
+    }
+
+    const secretKey = decrypt(req.user.secretKey, req.session.kek);
+
+    const group = await Group.findById(file.shared);
+    const isFavourite = req.user._id in file.isFavourite;
+
+    const decrypted = {
+        _id: file._id,
+        filename: file.filename,
+        shared: group ? group.toJSON() : {},
+        path: file.path,
+        mime: file.mime,
+        size: file.size,
+        searchTags: file.searchTags,
+        note: decrypt(file.note, secretKey),
+        isFavourite: isFavourite,
+        createdAt: file.createdAt,
+        updatedAt: file.updatedAt
+    };
+
+    res.render('editFile', { account: req.user, file: decrypted });
+};
+
+const viewDirectory = async (req, res) => {
+    if (!req.isAuthenticated?.() || !req.user) {
+        return res.status(401).json({ redirect: '/auth/login' });
+    }
+
+    if (!req.session?.kek) {
+        return res.status(401).json({message: 'Vault locked'});
+    }
+
+    const id = req.params.id;
+    const directory = await Directory.findById(id);
+
+    if (!directory) {
+        return res.status(404).send('Directory not found');
+    }
+
+    const secretKey = decrypt(req.user.secretKey, req.session.kek);
+
+    const group = await Group.findById(file.shared);
+    const isFavourite = req.user._id in directory.isFavourite;
+
+    const decrypted = {
+        _id: directory._id,
+        basename: directory.basename,
+        path: directory.path,
+        shared: group ? group.toJSON() : {},
+        searchTags: directory.searchTags,
+        note: decrypt(directory.note, secretKey),
+        isFavourite,
+        createdAt: directory.createdAt,
+        updatedAt: directory.updatedAt
+    };
+    
+    res.render('editDirectory', { account: req.user, directory: decrypted });
+};
 
 // ===== PATH UTILITY ======
 const resolvePath = (cwd, filepath) => {
@@ -384,6 +461,7 @@ const downloadDirectory = async (req, res) => {
 
 export default {
   view,
+  viewFile,
   search,
   upload,
   uploadMany,

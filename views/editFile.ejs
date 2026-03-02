@@ -6,12 +6,11 @@
     <title>CryptDrive ∷ Preview File</title>
     <script>
         window.__FILE__ = <%- JSON.stringify(file) %>;
-        window.currentUser = <%- JSON.stringify(currentUser) %>;
-        window.favoriteFiles = <%- JSON.stringify(favoriteFiles || []) %>;
+        window.currentUser = <%- JSON.stringify(account) %>;
     </script>
     <script src="https://cdn.jsdelivr.net"></script>
     
-    <script src="/js/previewFile.js" defer></script>
+    <script src="/js/editFile.js" defer></script>
     <script src="https://kit.fontawesome.com/0f23db6f2c.js" crossorigin="anonymous"></script>
     
     <link href="https://cdn.jsdelivr.net" rel="stylesheet" />

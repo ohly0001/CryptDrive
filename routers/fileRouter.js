@@ -11,5 +11,6 @@ router.post("/directory/create", controller.createDirectory);
 router.get("/download/:id", controller.downloadFile);
 router.get("/zip/:id", controller.downloadDirectory);
 router.post("/search", controller.search);
+router.get("/viewFile/:id", controller.viewFile);
 
 export default router;

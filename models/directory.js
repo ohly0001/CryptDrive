@@ -14,9 +14,13 @@ const DirectorySchema = new mongoose.Schema({
         required: true 
     },
     shared: { 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: "Group", 
+    },
+    isFavourite: { 
         type: [mongoose.Schema.Types.ObjectId], 
         ref: "Account", 
-        default: []
+        required: true 
     },
     parent: { 
         type: mongoose.Schema.Types.ObjectId, 

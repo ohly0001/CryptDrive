@@ -156,7 +156,9 @@ const viewEdit = async (req, res, next) => {
             username: decrypt(password.username, secretKey),
             password: decrypt(password.password, secretKey),
             note: decrypt(password.note, secretKey),
-            isFavourite: password.isFavourite
+            isFavourite: password.isFavourite,
+            createdAt: password.createdAt,
+            updatedAt: password.updatedAt
         };
 
         res.render('editPassword', {

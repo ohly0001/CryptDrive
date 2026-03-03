@@ -1,3 +1,5 @@
+//TODO allow files or folders to be dragged to drop them inside others
+
 const mimeToCategory = {
     'audio': new Set(['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp4']),
     'video': new Set(['video/mp4', 'video/webm', 'video/ogg']),
@@ -10,7 +12,8 @@ const mimeToCategory = {
     'code': new Set(['text/html', 'text/css', 'application/javascript', 'application/json', 'application/xml']),
     'text': new Set(['text/plain', 'text/markdown']),
     'zip': new Set(['application/zip', 'application/x-7z-compressed', 'application/x-rar-compressed']),
-    'crypto': new Set(['application/pgp-encrypted', 'application/x-pem-file']),
+    'secure': new Set(['application/pgp-encrypted', 'application/x-pem-file']),
+    'crypto': new Set(['application/x-bitcoin']),
     'medical': new Set(['application/hl7-v2', 'application/fhir+json']),
     'system': new Set(['application/octet-stream'])
 };
@@ -28,6 +31,7 @@ const categoryIcons = {
     code: '<i class="fa-solid fa-file-code"></i>',
     text: '<i class="fa-solid fa-file-lines"></i>',
     zip: '<i class="fa-solid fa-file-zipper"></i>',
+    secure: '<i class="fa-solid fa-file-shield"></i>',
     crypto: '<i class="fa-solid fa-file-invoice-dollar"></i>',
     medical: '<i class="fa-solid fa-file-medical"></i>',
     system: '<i class="fa-solid fa-laptop-file"></i>',
@@ -193,11 +197,17 @@ async function loadFiles(path) {
         const fileList = document.getElementById('fileList');
         fileList.innerHTML='';
 
+        //TODO current directory and parent directory at top
+
         // Directories
         (data.directories||[]).forEach(dir=>{
             // TODO use font awesome for different file types
             const dirDiv=document.createElement('div');
             dirDiv.className='file-item directory';
+
+            dirDiv.addEventListener('click', e => {
+                //TODO navigate to this directory
+            });
 
             const title = document.createElement('span');
             title.innerText = `<span><i class="fa-solid fa-folder-closed"></i> ${dir.basename}</span>`;

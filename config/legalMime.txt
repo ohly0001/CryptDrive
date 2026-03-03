@@ -29,6 +29,11 @@ audio/midi
 audio/opus
 audio/mp4
 audio/x-ms-wma
+application/pgp-encrypted
+application/x-pem-file
+application/x-bitcoin
+application/hl7-v2
+application/fhir+json
 application/vnd.openxmlformats-officedocument.wordprocessingml.document
 application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
 application/vnd.openxmlformats-officedocument.presentationml.presentation

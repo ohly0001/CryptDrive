@@ -14,13 +14,14 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // ===== load legal mime list safely =====
-const legalMime = fs
+const legalMime = new Set(fs
     .readFileSync(path.join(__dirname, '../config/legalMime.txt'), 'utf8')
     .split(/\r?\n/)
     .map(m => m.trim())
-    .filter(Boolean);
+    .filter(Boolean));
 
 // ===== config =====
+const DIRECTORY_PERMS = 600; // prevent execution of files
 const maxFiles = 10;
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
@@ -29,11 +30,8 @@ const storage = multer.memoryStorage();
 
 // ===== file filter =====
 const fileFilter = (req, file, cb) => {
-    if (legalMime.includes(file.mimetype)) {
-        cb(null, true);
-    } else {
-        cb(new Error('Invalid file type. Only certain files are allowed.'), false);
-    }
+    const isLegal = legalMime.has(file.mimetype);
+    cb(isLegal ? null : new Error('Invalid file type'), isLegal);
 };
 
 const uploader = multer({

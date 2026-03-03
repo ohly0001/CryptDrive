@@ -1,3 +1,56 @@
+const mimeToCategory = {
+    'audio': new Set(['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp4']),
+    'video': new Set(['video/mp4', 'video/webm', 'video/ogg']),
+    'image': new Set(['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/svg+xml']),
+    'pdf': new Set(['application/pdf']),
+    'word': new Set(['application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']),
+    'excel': new Set(['application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']),
+    'powerpoint': new Set(['application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation']),
+    'csv': new Set(['text/csv']),
+    'code': new Set(['text/html', 'text/css', 'application/javascript', 'application/json', 'application/xml']),
+    'text': new Set(['text/plain', 'text/markdown']),
+    'zip': new Set(['application/zip', 'application/x-7z-compressed', 'application/x-rar-compressed']),
+    'crypto': new Set(['application/pgp-encrypted', 'application/x-pem-file']),
+    'medical': new Set(['application/hl7-v2', 'application/fhir+json']),
+    'system': new Set(['application/octet-stream'])
+};
+
+const categoryIcons = {
+    default: '<i class="fa-solid fa-file"></i>',
+    audio: '<i class="fa-solid fa-file-audio"></i>',
+    video: '<i class="fa-solid fa-file-video"></i>',
+    image: '<i class="fa-solid fa-file-image"></i>',
+    pdf: '<i class="fa-solid fa-file-pdf"></i>',
+    word: '<i class="fa-solid fa-file-word"></i>',
+    excel: '<i class="fa-solid fa-file-excel"></i>',
+    powerpoint: '<i class="fa-solid fa-file-powerpoint"></i>',
+    csv: '<i class="fa-solid fa-file-csv"></i>',
+    code: '<i class="fa-solid fa-file-code"></i>',
+    text: '<i class="fa-solid fa-file-lines"></i>',
+    zip: '<i class="fa-solid fa-file-zipper"></i>',
+    crypto: '<i class="fa-solid fa-file-invoice-dollar"></i>',
+    medical: '<i class="fa-solid fa-file-medical"></i>',
+    system: '<i class="fa-solid fa-laptop-file"></i>',
+    error: '<i class="fa-solid fa-file-circle-exclamation"></i>'
+};
+
+function getFileIcon(mime) {
+    if (!mime) return categoryIcons.error;
+
+    for (const [category, mimeList] of Object.entries(mimeToCategory)) {
+        if (mimeList.has(mime)) {
+            return categoryIcons[category] || categoryIcons.default;
+        }
+    }
+
+    // Fallback for MIME types starting with image/audio/video
+    if (mime.startsWith('image/')) return categoryIcons.image;
+    if (mime.startsWith('audio/')) return categoryIcons.audio;
+    if (mime.startsWith('video/')) return categoryIcons.video;
+
+    return categoryIcons.default;
+}
+
 let currentPath = '/home';
 const selectedFiles = new Set();
 const favoriteFiles = new Set();
@@ -99,23 +152,6 @@ async function moveFile(fileId) {
     }
 }
 
-async function editFileMetadata(fileId) {
-    const note = prompt('Enter file note:');
-    const tags = prompt('Enter file tags (comma-separated):');
-    try {
-        const res = await fetch(`/file/metadata/${fileId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ note, tags: tags ? tags.split(',').map(t => t.trim()) : [] })
-        });
-        if (!res.ok) throw new Error('Metadata update failed');
-        loadFiles(currentPath);
-    } catch (err) {
-        console.error('Edit metadata error:', err);
-        alert('Failed to update metadata.');
-    }
-}
-
 // ===== File Upload =====
 async function selectFile() {
     try {
@@ -162,18 +198,30 @@ async function loadFiles(path) {
             // TODO use font awesome for different file types
             const dirDiv=document.createElement('div');
             dirDiv.className='file-item directory';
-            dirDiv.innerText=dir.basename;
+
+            const title = document.createElement('span');
+            title.innerText = `<span><i class="fa-solid fa-folder-closed"></i> ${dir.basename}</span>`;
+
+            ['mouseover', 'mouseenter', 'pointerenter', 'pointerover'].forEach(t => dirDiv.addEventListener(t, e => {
+                title.innerHTML = `<span><i class="fa-solid fa-folder-open"></i> ${dir.basename}</span>`;
+            }));
+            ['mouseout', 'mouseleave', 'pointerout', 'pointerleave'].forEach(t => dirDiv.addEventListener(t, e => {
+                title.innerHTML = `<span><i class="fa-solid fa-folder-closed"></i> ${dir.basename}</span>`;
+            }));
+            dirDiv.appendChild(title);
+
             dirDiv.appendChild(renderOwnership(dir.account===currentUser?currentUser:'Shared'));
 
             const actions=document.createElement('div'); actions.className='file-actions';
             const downloadBtn=document.createElement('button'); downloadBtn.innerHTML='<i class="fa-solid fa-download"></i>'; downloadBtn.title='Download folder as ZIP'; downloadBtn.onclick=e=>{ e.stopPropagation(); downloadDirectory(dir._id); }; actions.appendChild(downloadBtn);
 
             if(dir.account===currentUser){
-                ['delete','rename','move'].forEach(action=>{
+                ['delete','rename','move','configure'].forEach(action=>{
                     const btn=document.createElement('button');
                     if(action==='delete'){ btn.innerHTML='<i class="fa-solid fa-trash"></i>'; btn.onclick=e=>{ e.stopPropagation(); deleteDirectory(dir.basename); }; }
                     if(action==='rename'){ btn.innerHTML='<i class="fa-solid fa-pen"></i>'; btn.onclick=e=>{ e.stopPropagation(); renameItem('directory',dir.basename); }; }
                     if(action==='move'){ btn.innerHTML='<i class="fa-solid fa-arrow-right-arrow-left"></i>'; btn.onclick=e=>{ e.stopPropagation(); moveFile(dir._id); }; }
+                    if(action==='configure'){  } // redirect to editDirectory
                     actions.appendChild(btn);
                 });
             }
@@ -184,7 +232,10 @@ async function loadFiles(path) {
 
         // Files
         (data.files||[]).forEach(file=>{
-            const fileDiv=document.createElement('div'); fileDiv.className='file-item'; fileDiv.innerHTML=`<span>${file.original}</span>`; fileDiv.appendChild(renderOwnership(file.account===currentUser?currentUser:'Shared'));
+            const fileDiv=document.createElement('div'); 
+            fileDiv.className='file-item'; 
+            fileDiv.innerHTML=`<span>${getFileIcon(file.mime)} ${file.original}</span>`; 
+            fileDiv.appendChild(renderOwnership(file.account===currentUser?currentUser:'Shared'));
 
             const actions=document.createElement('div'); actions.className='file-actions';
 
@@ -192,19 +243,18 @@ async function loadFiles(path) {
             const previewBtn=document.createElement('button'); 
             previewBtn.innerHTML = '<i class="fa-solid fa-arrows-to-eye"></i>';
             previewBtn.title='Preview file'; 
-            previewBtn.onclick = () => { document.location.href = `/file/viewFile/${file._id}` };
+            previewBtn.onclick = () => { document.location.href = `/file/editFile/${file._id}` };
             actions.appendChild(previewBtn);
 
             // Favorite
             const favBtn=document.createElement('button'); favBtn.innerHTML=favoriteFiles.has(file._id)?'<i class="fa-solid fa-star"></i>':'<i class="fa-regular fa-star"></i>'; favBtn.title='Favorite'; favBtn.onclick=e=>{ e.stopPropagation(); toggleFavorite(file._id,favBtn); }; actions.appendChild(favBtn);
 
             if(file.account===currentUser){
-                ['rename','delete','move','metadata'].forEach(action=>{
+                ['rename','delete','move'].forEach(action=>{
                     const btn=document.createElement('button');
                     if(action==='rename'){ btn.innerHTML='<i class="fa-solid fa-pen"></i>'; btn.onclick=e=>{ e.stopPropagation(); renameItem('file',file.original); }; }
                     if(action==='delete'){ btn.innerHTML='<i class="fa-solid fa-trash"></i>'; btn.onclick=e=>{ e.stopPropagation(); deleteFile(file._id); }; }
                     if(action==='move'){ btn.innerHTML='<i class="fa-solid fa-arrow-right-arrow-left"></i>'; btn.onclick=e=>{ e.stopPropagation(); moveFile(file._id); }; }
-                    if(action==='metadata'){ btn.innerHTML='<i class="fa-solid fa-info"></i>'; btn.title='Edit tags/note'; btn.onclick=e=>{ e.stopPropagation(); editFileMetadata(file._id); }; }
                     actions.appendChild(btn);
                 });
             }

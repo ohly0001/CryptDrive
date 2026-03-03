@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", async () => {
+document.addEventListener("DOMContentLoaded", async () => {  
     const file = window.__FILE__;
     const currentUser = window.currentUser;
     const favoriteFiles = new Set(window.favoriteFiles);

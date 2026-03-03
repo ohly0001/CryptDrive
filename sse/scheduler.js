@@ -10,12 +10,17 @@ function removeClient(clientId) {
     const client = state.clients.get(clientId);
     if (!client) return;
 
-    // Destroy session safely
+    try {
+        if (client.res && !client.res.writableEnded) {
+            client.res.end(); 
+        }
+    } catch {}
+
     if (client.session) {
-        client.session.destroy(err => {
-            if (err) console.error(`Failed to destroy session for client ${clientId}:`, err);
-        });
+        client.session.destroy();
     }
+
+    state.clients.delete(clientId);
 
     // Remove all other clients for the same user
     if (client.userId && state.users.has(client.userId)) {

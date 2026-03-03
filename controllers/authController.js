@@ -185,7 +185,8 @@ const logout = async (req, res, next) => {
 
 const autologin = async (req, res) => {
     const loggedIn = req.session &&  req.isAuthenticated?.() && req.user;
-    res.json({ redirect: loggedIn ? '/home' : '/login.html' });
+    //res.json({ redirect: loggedIn ? '/home' : '/login.html' });
+    res.redirect(loggedIn ? '/home' : '/login.html');
 }; 
 
 export default {

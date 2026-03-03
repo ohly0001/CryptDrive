@@ -212,6 +212,7 @@ async function loadFiles(path) {
             const title = document.createElement('span');
             title.innerText = `<span><i class="fa-solid fa-folder-closed"></i> ${dir.basename}</span>`;
 
+            // TEMP
             ['mouseover', 'mouseenter', 'pointerenter', 'pointerover'].forEach(t => dirDiv.addEventListener(t, e => {
                 title.innerHTML = `<span><i class="fa-solid fa-folder-open"></i> ${dir.basename}</span>`;
             }));

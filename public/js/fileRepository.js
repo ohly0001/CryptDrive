@@ -192,16 +192,32 @@ function navigateToDir(path) {
 // ===== File / Directory Listing =====
 async function loadFiles(path) {
     try {
-        const res = await fetch(`/file/list/${encodeURIComponent(path)}`);
+        //const res = await fetch(`/file/list/${encodeURIComponent(path)}`);
+        const res = await fetch('/file/search', {
+            method: 'POST',
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                limit: state.pageSize,
+                offset: state.offset,
+                favouritesOnly: state.favouritesOnly,
+                searchTerm: searchField.value.trim(),
+                matchCase: state.matchCase,
+                matchEntire: state.matchEntire,
+                useRegex: state.useRegex,
+                searchTags: [...state.searchTags],
+                blacklistTags: state.blacklistTags
+            })
+        });
         const data = await res.json();
         const fileList = document.getElementById('fileList');
         fileList.innerHTML='';
 
         //TODO current directory and parent directory at top
+        const title = document.createElement('span');
+        title.innerHTML = `<span><i class="fa-solid fa-folder-open"></i> ${dir.basename}</span>`;
 
         // Directories
         (data.directories||[]).forEach(dir=>{
-            // TODO use font awesome for different file types
             const dirDiv=document.createElement('div');
             dirDiv.className='file-item directory';
 

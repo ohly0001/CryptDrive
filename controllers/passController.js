@@ -3,10 +3,6 @@ import { decrypt, encrypt } from '../utilities/encryption.js';
 
 const search = async (req, res, next) => {
     try {
-        if (!req.isAuthenticated?.() || !req.user) {
-            return res.status(401).json({ redirect: '/auth/login' });
-        }
-
         const {
             limit,
             offset,
@@ -95,13 +91,7 @@ const search = async (req, res, next) => {
 
 const copy = async (req, res, next) => {
     try {
-        if (!req.isAuthenticated?.() || !req.user) {
-            return res.status(401).json({ redirect: '/auth/login' });
-        }
-
-        if (!req.session?.kek) {
-            return res.status(401).json({message: 'Vault locked'});
-        }
+        //if (!req.session?.kek) return res.status(401).json({message: 'Vault locked'});
 
         const { id, category } = req.body;
 
@@ -127,13 +117,7 @@ const copy = async (req, res, next) => {
 
 const viewEdit = async (req, res, next) => {
     try {
-        if (!req.isAuthenticated?.() || !req.user) {
-            return res.status(401).json({ redirect: '/auth/login' });
-        }
-
-        if (!req.session?.kek) {
-            return res.status(401).json({message: 'Vault locked'});
-        }
+        //if (!req.session?.kek) return res.status(401).json({message: 'Vault locked'});
 
         const id = req.params.id;
 
@@ -173,13 +157,7 @@ const viewEdit = async (req, res, next) => {
 
 const edit = async (req, res, next) => {
     try {
-        if (!req.isAuthenticated?.() || !req.user) {
-            return res.status(401).json({ redirect: '/auth/login' });
-        }
-
-        if (!req.session?.kek) {
-            return res.status(401).json({message: 'Vault locked'});
-        }
+        //if (!req.session?.kek) return res.status(401).json({message: 'Vault locked'});
 
         const id = req.params.id;
         const { title, url, searchTags, username, password, note, isFavourite } = req.body;
@@ -218,13 +196,7 @@ const viewAdd = async (req, res, next) => {
 
 const add = async (req, res, next) => {
     try {
-        if (!req.isAuthenticated?.() || !req.user) {
-            return res.status(401).json({ redirect: '/auth/login' });
-        }
-
-        if (!req.session?.kek) {
-            return res.status(401).json({message: 'Vault locked'});
-        }
+        //if (!req.session?.kek) return res.status(401).json({message: 'Vault locked'});
 
         const { title, url, searchTags, username, password, note, isFavourite } = req.body;
 
@@ -251,9 +223,6 @@ const add = async (req, res, next) => {
 
 const deleteOne = async (req, res, next) => {
     try {
-        if (!req.isAuthenticated?.() || !req.user) {
-            return res.status(401).json({ redirect: '/auth/login' });
-        }
         await Password.findByIdAndDelete(req.body.id);
         
     } catch (err) {
@@ -264,9 +233,6 @@ const deleteOne = async (req, res, next) => {
 
 const deleteMany = async (req, res, next) => {
     try {
-        if (!req.isAuthenticated?.() || !req.user) {
-            return res.status(401).json({ redirect: '/auth/login' });
-        }
         await Password.deleteMany({ _id: { $in: req.body.ids }})
         
     } catch (err) {
@@ -277,9 +243,6 @@ const deleteMany = async (req, res, next) => {
 
 const favouriteMany = async (req, res, next) => {
     try {
-        if (!req.isAuthenticated?.() || !req.user) {
-            return res.status(401).json({ redirect: '/auth/login' });
-        }
         const { ids, state } = req.body;
         await Password.updateMany(
             { _id: { $in: ids } },
@@ -293,9 +256,6 @@ const favouriteMany = async (req, res, next) => {
 
 const toggleFavourite = async (req, res, next) => {
     try {
-        if (!req.isAuthenticated?.() || !req.user) {
-            return res.status(401).json({ redirect: '/auth/login' });
-        }
         await Password.findByIdAndUpdate(req.body.id, { $set: { isFavourite: req.body.state } })
     } catch (err) {
         res.json({ message: 'Something went wrong when favouriting/unfavouriting your password' });

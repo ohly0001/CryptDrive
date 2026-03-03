@@ -4,10 +4,6 @@ import { derivekek } from "../utilities/encryption.js";
 
 // Pull current user account details
 const pull = async (req, res) => {
-    if (!req.isAuthenticated?.() || !req.user) {
-        return res.status(401).json({ redirect: '/login.html' });
-    }
-
     try {
         const account = await Account.findById(req.user._id).lean();
         if (!account) return res.status(404).json({ message: 'Account not found' });
@@ -20,10 +16,6 @@ const pull = async (req, res) => {
 
 // Update current user account details
 const update = async (req, res) => {
-    if (!req.isAuthenticated?.() || !req.user) {
-        return res.status(401).json({ redirect: '/login.html' });
-    }
-
     const { username, email, password, oldPassword } = req.body;
 
     try {

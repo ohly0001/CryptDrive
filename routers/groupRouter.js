@@ -1,17 +1,16 @@
 import express from 'express';
 import controller from '../controllers/groupController.js';
-import { isAuthenticated } from '../middleware/authCheck.js'; // ensures req.user exists
 
 const router = express.Router();
 
-router.post('/create', isAuthenticated, controller.createGroup);
-router.get('/viewAdd', isAuthenticated, controller.viewCreateGroup);
-router.post('/list', isAuthenticated, controller.listGroups);
-router.post('/join', isAuthenticated, controller.joinGroup);
-router.post('/leave', isAuthenticated, controller.leaveGroup);
-router.post('/delete', isAuthenticated, controller.deleteGroup);
-router.post('/addMembers', isAuthenticated, controller.addMembers);
-router.post('/removeMembers', isAuthenticated, controller.removeMembers);
-router.post('/favourite', isAuthenticated, controller.toggleFavourite);
+router.post('/create', controller.createGroup);
+router.get('/viewAdd', controller.viewCreateGroup);
+router.post('/list', controller.listGroups);
+router.post('/join', controller.joinGroup);
+router.post('/leave', controller.leaveGroup);
+router.post('/delete', controller.deleteGroup);
+router.post('/addMembers', controller.addMembers);
+router.post('/removeMembers', controller.removeMembers);
+router.post('/favourite', controller.toggleFavourite);
 
 export default router;

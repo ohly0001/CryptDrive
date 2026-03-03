@@ -195,8 +195,6 @@ const resolvePath = (cwd, filepath) => {
 // ===== SEARCH =====
 const search = async (req, res) => {
     try {
-        if (!req.isAuthenticated?.() || !req.user) return res.status(401).json({ redirect: '/login.html' });
-
         const {
             cwd,
             limit = 10,
@@ -326,8 +324,6 @@ const search = async (req, res) => {
 // ===== SINGLE UPLOAD =====
 const upload = async (req, res) => {
     try {
-        if (!req.isAuthenticated?.() || !req.user) return res.status(401).json({ redirect: '/login.html' });
-
         await runMiddleware(req, res, uploader.single('file'));
         if (!req.file) return res.status(400).json({ message: 'No file provided' });
 
@@ -343,8 +339,6 @@ const upload = async (req, res) => {
 // ===== MULTI UPLOAD =====
 const uploadMany = async (req, res) => {
     try {
-        if (!req.isAuthenticated?.() || !req.user) return res.status(401).json({ redirect: '/login.html' });
-
         await runMiddleware(req, res, uploader.array('file[]', maxFiles));
         if (!req.files?.length) return res.status(400).json({ message: 'No files provided' });
 
@@ -360,8 +354,6 @@ const uploadMany = async (req, res) => {
 // ===== LIST FILES & DIRECTORIES =====
 const listFiles = async (req, res) => {
     try {
-        if (!req.isAuthenticated?.() || !req.user) return res.status(401).json({ redirect: '/login.html' });
-
         const { path: dirPath = 'root' } = req.params;
         const startDir = await Directory.findOne({ account: req.user._id, path: dirPath });
         if (!startDir) return res.status(404).json({ message: 'Directory not found' });
@@ -379,8 +371,6 @@ const listFiles = async (req, res) => {
 // ===== CREATE DIRECTORY =====
 const createDirectory = async (req, res) => {
   try {
-    if (!req.isAuthenticated?.() || !req.user) return res.status(401).json({ redirect: '/login.html' });
-
     const { name, parentPath } = req.body;
     let parentDir = await Directory.findOne({ account: req.user._id, path: parentPath });
     if (!parentDir) return res.status(404).json({ message: 'Parent directory not found' });

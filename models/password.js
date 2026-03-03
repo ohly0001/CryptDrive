@@ -6,7 +6,7 @@ const PasswordSchema = new mongoose.Schema({
         ref: "Account", 
         required: true 
     },
-    title: { type: String, required: true, trim: true, unique: true },
+    title: { type: String, required: true, trim: true },
     url: { type: String, index: true },
     username: { type: String, required: true },
     password: { type: String, required: true },

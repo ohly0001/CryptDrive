@@ -117,7 +117,8 @@ const activate = async (req, res, next) => {
 
         req.session.save(err => {
             if (err) return next(err);
-            res.redirect('/auth/completed');
+            //res.redirect('/auth/completed');
+            res.json({ redirect: '/home' });
         });
 });
 
@@ -143,17 +144,14 @@ const login = async (req, res, next) => {
                 if (err) return next(err);
 
                 await account.updateOne({ expireAt: null });
-                res.redirect('/auth/completed');
+                //res.redirect('/auth/completed');
+                res.json({ redirect: '/home' });
             });
         });
     })(req, res, next);
 };
 
 const deregister = async (req, res, next) => {
-    if (!req.isAuthenticated?.() || !req.user) {
-        return res.status(401).send('Not authenticated.');
-    }
-
     try {
         const expireAt = Date.now() + 7 * 24 * 60 * 60 * 1000;
         await Account.updateOne({ _id: req.user._id }, { expireAt });
@@ -185,25 +183,9 @@ const logout = async (req, res, next) => {
     });
 };
 
-const completed = async (req, res) => {
-    res.json({ redirect: '/home' });
-};
-
-const status = async (req, res) => {
-    const token = req.cookies.remember_token;
-    if (token) {
-        const user = await validateRememberToken(token);
-        if (user) {
-            req.login(user, () => {
-                return res.redirect("/dash");
-            });
-            return;
-        }
-    }
-
-    app.get('/auth/status', (req, res) => {
-        res.json({ authenticated: req.isAuthenticated() });
-    });
+const autologin = async (req, res) => {
+    const loggedIn = req.session &&  req.isAuthenticated?.() && req.user;
+    res.json({ redirect: loggedIn ? '/home' : '/login.html' });
 }; 
 
 export default {
@@ -212,7 +194,6 @@ export default {
     login,
     deregister,
     logout,
-    completed,
-    status,
+    autologin,
     resend
 };

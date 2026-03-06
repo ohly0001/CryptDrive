@@ -15,6 +15,8 @@ const PasswordSchema = new mongoose.Schema({
     isFavourite: { type: Boolean, default: false }
 }, { timestamps: true });
 
+PasswordSchema.index({ account: 1, title: 1 }, { unique: true });
+
 PasswordSchema.set('toJSON', {
     transform: (doc, ret) => {
         delete ret.url,

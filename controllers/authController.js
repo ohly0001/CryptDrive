@@ -28,7 +28,7 @@ const sendConfirmationEmail = async (email, code) => {
 };
 
 const resend = async (req, res) => {
-    
+    //TODO resent OTP / code
 };
 
 const register = async (req, res) => {
@@ -112,13 +112,11 @@ const activate = async (req, res, next) => {
         req.login(account, (err) => {
         if (err) return next(err);
 
-        // restore KEK after passport rewrites session
-        if (kek) req.session.kek = kek;
-
-        req.session.save(err => {
+        req.login(account, err => {
             if (err) return next(err);
-            //res.redirect('/auth/completed');
-            res.json({ redirect: '/home' });
+
+            req.session.kek = kek; // restore after passport overwrite
+            req.session.save(next);
         });
 });
 
@@ -184,9 +182,7 @@ const logout = async (req, res, next) => {
 };
 
 const autologin = async (req, res) => {
-    const loggedIn = req.session &&  req.isAuthenticated?.() && req.user;
-    //res.json({ redirect: loggedIn ? '/home' : '/login.html' });
-    res.redirect(loggedIn ? '/home' : '/login.html');
+    res.redirect(req.isAuthenticated?.() ? '/home' : '/login.html');
 }; 
 
 export default {

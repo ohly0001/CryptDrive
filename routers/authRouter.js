@@ -1,3 +1,4 @@
+// authRouter.js
 import express from "express";
 import controller from "../controllers/authController.js";
 import { isAuthenticated } from '../middleware/authCheck.js';

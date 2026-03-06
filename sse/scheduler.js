@@ -1,51 +1,40 @@
 // scheduler.js
 import { state, INTERVAL, STATUS, MAX_CLIENTS, MAX_SESSION_LENGTH } from './schedulerState.js';
 
-let accountTimeoutInterval = null;
-
 // ---------------------
 // Client Management
 // ---------------------
-function removeClient(clientId) {
+function removeClient(clientId, notify = true) {
     const client = state.clients.get(clientId);
     if (!client) return;
 
     try {
-        if (client.res && !client.res.writableEnded) {
-            client.res.end(); 
+        if (client.res && !client.res.writableEnded && notify) {
+            client.res.write(`data: ${JSON.stringify({ type: 'client_disconnected' })}\n\n`);
+            client.res.end();
         }
     } catch {}
 
-    if (client.session) {
-        client.session.destroy();
-    }
-
+    // Remove from clients map first
     state.clients.delete(clientId);
 
-    // Remove all other clients for the same user
+    // Remove from user mapping safely
     if (client.userId && state.users.has(client.userId)) {
-        // Get all other IDs first
-        const otherIds = Array.from(state.users.get(client.userId)).filter(id => id !== clientId);
-        // Delete the user mapping before recursion to prevent infinite loop
-        state.users.delete(client.userId);
-        // Remove other clients
-        otherIds.forEach(otherId => removeClient(otherId));
+        const userSet = state.users.get(client.userId);
+        userSet.delete(clientId);
+        if (userSet.size === 0) state.users.delete(client.userId);
     }
-
-    // End the response
-    try {
-        if (client.res && !client.res.writableEnded) client.res.end();
-    } catch {}
-
-    state.clients.delete(clientId);
 }
 
+// ---------------------
+// Enforce max clients
+// ---------------------
 function enforceCapacity() {
     if (state.clients.size <= MAX_CLIENTS) return;
 
     const overflow = state.clients.size - MAX_CLIENTS;
     let removed = 0;
-    for (const [clientId] of state.clients) {
+    for (const clientId of state.clients.keys()) {
         removeClient(clientId);
         removed++;
         if (removed >= overflow) break;
@@ -59,56 +48,48 @@ function accountTimeout() {
     if (state.status !== STATUS.RUNNING) return;
 
     const now = Date.now();
-    for (const [clientId, client] of state.clients) {
-        if (now - client.lastActivity > MAX_SESSION_LENGTH) {
+    const clientsSnapshot = Array.from(state.clients.entries()); // snapshot to avoid mutation during iteration
+
+    for (const [clientId, client] of clientsSnapshot) {
+        if (!client) continue;
+
+        const inactiveTime = now - client.lastActivity;
+        if (inactiveTime > MAX_SESSION_LENGTH) {
             try {
                 if (client.res && !client.res.writableEnded) {
-                    client.res.write(`data: ${JSON.stringify({ type: 'session_timeout', message: 'Session expired' })}\n\n`);
+                    client.res.write(`data: ${JSON.stringify({ type: 'session_timeout', message: 'Session expired due to inactivity' })}\n\n`);
+                    client.res.end();
                 }
             } catch {}
 
-            // Destroy the session
-            if (client.session) {
-                client.session.destroy(err => {
-                    if (err) console.error(`Failed to destroy session for client ${clientId}:`, err);
-                });
-            }
-
-            // Remove all other clients for this user
-            if (client.userId && state.users.has(client.userId)) {
-                for (const otherId of state.users.get(client.userId)) {
-                    if (otherId !== clientId) removeClient(otherId);
-                }
-                state.users.delete(client.userId);
-            }
-
-            removeClient(clientId);
+            // Remove client safely; session left alive in Mongo
+            removeClient(clientId, false);
         }
     }
 }
 
 // ---------------------
-// User Activity Update
+// Update last activity
 // ---------------------
 function updateTimeout(req, res) {
     const userId = req.user?._id ? String(req.user._id) : null;
-    
-    if (!userId) return res.sendStatus(401); 
+    if (!userId) return res.sendStatus(401);
 
+    const now = Date.now();
     const userSet = state.users.get(userId);
     if (userSet) {
-        const now = Date.now();
-        for (const clientId of userSet) {
+        // update lastActivity for all tabs safely
+        userSet.forEach(clientId => {
             const client = state.clients.get(clientId);
             if (client) client.lastActivity = now;
-        }
+        });
     }
 
     if (req.session) {
         req.session.cookie.maxAge = MAX_SESSION_LENGTH;
-        req.session.save((err) => {
-            if (err) {
-                console.error("Session save error:", err);
+        req.session.save(err => {
+            if (err && !err.message.includes('Unable to find the session to touch')) {
+                console.error('Session save error:', err);
                 return res.sendStatus(500);
             }
             res.sendStatus(200);
@@ -148,9 +129,9 @@ function subscribe(req, res) {
 
     enforceCapacity();
 
-    // Heartbeat to keep connection alive
+    // Heartbeat
     const heartbeat = setInterval(() => {
-        if (!res.writableEnded) res.write(':\n\n'); // SSE comment heartbeat
+        if (!res.writableEnded) res.write(':\n\n');
     }, INTERVAL.HEARTBEAT);
 
     req.on('close', () => {
@@ -160,15 +141,13 @@ function subscribe(req, res) {
 }
 
 // ---------------------
-// Scheduler Control
+// Scheduler control
 // ---------------------
 function startScheduler() {
     if (state.status !== STATUS.STOPPED) return;
 
     state.status = STATUS.STARTING_UP;
-
-    accountTimeoutInterval = setInterval(accountTimeout, INTERVAL.ACCOUNT_TIMEOUT);
-    
+    state.accountTimeoutInterval = setInterval(accountTimeout, INTERVAL.ACCOUNT_TIMEOUT);
     state.status = STATUS.RUNNING;
 }
 
@@ -176,17 +155,13 @@ function stopScheduler() {
     if (state.status !== STATUS.RUNNING) return;
 
     state.status = STATUS.SHUTTING_DOWN;
-
-    if (accountTimeoutInterval !== null) {
-        clearInterval(accountTimeoutInterval);
-        accountTimeoutInterval = null;
+    if (state.accountTimeoutInterval) {
+        clearInterval(state.accountTimeoutInterval);
+        state.accountTimeoutInterval = null;
     }
 
-    // Notify all clients of shutdown and remove them
-    for (const clientId of state.clients.keys()) {
-        removeClient(clientId, true);
-    }
-
+    // Remove all clients safely
+    Array.from(state.clients.keys()).forEach(clientId => removeClient(clientId));
     state.status = STATUS.STOPPED;
 }
 

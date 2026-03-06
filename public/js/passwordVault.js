@@ -27,7 +27,9 @@ const state = {
 
     sortMode: 0, // 0 title asc, 1 title desc, 2 date asc, 3 date desc
 
-    searchTags: new Set()
+    searchTags: new Set(),
+
+    clipboardLive: false
 };
 
 let visibleStart = 0;
@@ -91,6 +93,20 @@ document.addEventListener("DOMContentLoaded", () => {
     /* =========================
        UTIL
     ========================= */
+    async function clearClipboard() {
+        if (state.clipboardLive) await navigator.clipboard.writeText("");
+    }
+
+    async function clearClipboard(text) {
+        navigator.clipboard.writeText(text);
+        state.clipboardLive = true;
+    }
+
+    document.addEventListener('copy', (e) => {
+        console.log("copy"); //check if writeText triggers copy
+        state.clipboardLive = false; // flag to false because contents have been manually overwritten
+    });
+
     function addSearchTag(value) {
         if (state.searchTags.has(value)) return;
         state.searchTags.add(value);
@@ -138,7 +154,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function refreshAutoHideCopyOptionContainer(container) {
         if (container._hideTimer) clearTimeout(container._hideTimer);
-        container._hideTimer = setTimeout(() => container.classList.add('hidden'), 5000);
+        container._hideTimer = setTimeout(() => container.classList.add('hidden'), 1000);
+
+        if (container._clearTimer) clearTimeout(container._clearTimer);
+        container._clearTimer = setTimeout(async () => await clearClipboard(), 60 * 1000);
     }
 
     /* =========================
@@ -379,7 +398,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     body: JSON.stringify({ id: e._id, category: key })
                 });
                 const data = await res.json();
-                await navigator.clipboard.writeText(data.decryptedValue);
+                await writeClipboard(data.decryptedValue)
                 refreshAutoHideCopyOptionContainer(copyMenu);
             };
             copyMenu.appendChild(b);

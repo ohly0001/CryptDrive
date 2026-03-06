@@ -33,7 +33,8 @@ const startServer = async () => {
     app.set('views', path.join(PROJECT_ROOT, 'views'));
 
     // --- Static files ---
-    app.use(express.static(path.join(PROJECT_ROOT, 'public')));
+    app.use(express.static('public'));
+    //app.use(express.static(path.join(PROJECT_ROOT, 'public')));
 
     // --- Body parsing & cookies ---
     app.use(express.json());
@@ -47,7 +48,8 @@ const startServer = async () => {
         resave: false,
         saveUninitialized: false,
         store: MongoStore.create({
-            mongoUrl: process.env.MONGO_URL
+            mongoUrl: process.env.MONGO_URL,
+            touchAfter: 60
         }),
         cookie: {
             maxAge: MAX_SESSION_LENGTH, // 1 hour

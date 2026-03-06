@@ -1,6 +1,4 @@
 export const isAuthenticated = (req, res, next) => {
-    if (req.session && req.isAuthenticated?.() && req.user) {
-        return next();
-    }
+    if (req.isAuthenticated?.()) return next();
     res.redirect(`/login.html`);
 };

@@ -123,62 +123,58 @@ async function resetDemoAccount() {
 
 async function resetDemoPasswords() {
   try {
-    const {
-      DEMO_ACCOUNT_USERNAME,
-      DEMO_ACCOUNT_PASSWORD
-    } = process.env;
+    const { DEMO_ACCOUNT_USERNAME, DEMO_ACCOUNT_PASSWORD } = process.env;
 
     const demoAccount = await Account.findOne(
       { username: DEMO_ACCOUNT_USERNAME },
       { _id: 1, kekSalt: 1, secretKey: 1 }
     ).lean();
 
-    if (!demoAccount) {
-      throw new Error('Demo account not found.');
-    }
+    if (!demoAccount) throw new Error("Demo account not found");
 
     const accountId = demoAccount._id;
-
-    //const allowedTitles = demo_passwords.map(p => p.title);
-
-    // Remove drift
-    //await Password.deleteMany({
-    //  account: accountId,
-    //  title: { $nin: allowedTitles }
-    //});
-    // I hate this
-    await Password.deleteMany({ account: accountId });
 
     const kek = await derivekek(DEMO_ACCOUNT_PASSWORD, demoAccount.kekSalt);
     const secretKey = decrypt(demoAccount.secretKey, kek);
 
-    const ops = demo_passwords.map(json => ({
-      updateOne: {
-        filter: { account: accountId, title: json.title },
-        update: {
-          $set: {
-            account: accountId,
-            title: json.title,
-            url: encrypt(json.url, secretKey),
-            username: encrypt(json.username, secretKey),
-            password: encrypt(json.password, secretKey),
-            note: encrypt(json.note, secretKey),
-            searchTags: (json.searchTags || []).map(t => t.toLowerCase()),
-            isFavourite: json.isFavourite
-          }
-        },
-        upsert: true
-      }
-    }));
+    const allowedIds = [];
 
-    if (ops.length) {
-      await Password.bulkWrite(ops, { ordered: false });
-    }
+    const ops = demo_passwords.map(p => {
+      const _id = p._id;
+      allowedIds.push(_id);
 
-    console.log('[Setup] Demo passwords synchronized.');
+      return {
+        updateOne: {
+          filter: { _id },
+          update: {
+            $set: {
+              _id,
+              account: accountId,
+              title: p.title,
+              url: encrypt(p.url, secretKey),
+              username: encrypt(p.username, secretKey),
+              password: encrypt(p.password, secretKey),
+              note: encrypt(p.note, secretKey),
+              searchTags: (p.searchTags || []).map(t => t.toLowerCase()),
+              isFavourite: p.isFavourite
+            }
+          },
+          upsert: true
+        }
+      };
+    });
+
+    await Password.deleteMany({
+      account: accountId,
+      _id: { $nin: allowedIds }
+    });
+
+    await Password.bulkWrite(ops);
+
+    console.log("[Setup] Demo passwords synchronized.");
 
   } catch (err) {
-    console.error('[Setup] Demo password sync error:', err);
+    console.error("[Setup] Demo password sync error:", err);
     process.exit(1);
   }
 }

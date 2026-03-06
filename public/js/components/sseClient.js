@@ -1,7 +1,7 @@
-// sseClient.js
+// sseClientSafe.js
 const EVENTS_URL = '/sse/subscribe';
-const IDLE_THRESHOLD = 5 * 60 * 1000;   // 5 min of inactivity before ping
-const PERIODIC_PING = 5 * 60 * 1000;    // ping even if never idle
+const IDLE_THRESHOLD = 5 * 60 * 1000;
+const PERIODIC_PING = 5 * 60 * 1000;
 const RETRY_INTERVAL = 3000;
 const ACTIVITY_EVENTS = ['mousemove','mousedown','keydown','scroll','touchstart','visibilitychange'];
 
@@ -10,6 +10,8 @@ let lastServerPing = 0;
 let idleTimeout = null;
 let periodicPingInterval = null;
 let es = null;
+let sseConnected = false;
+let reconnectTimeout = null;
 
 // ---------------------
 // Stop activity tracking and SSE
@@ -26,6 +28,7 @@ function stopActivityPing() {
     if (es) {
         es.close();
         es = null;
+        sseConnected = false;
     }
 }
 
@@ -34,22 +37,18 @@ function stopActivityPing() {
 // ---------------------
 function notifyServer() {
     const now = Date.now();
-    if (now - lastServerPing < 1000) return; // very small throttle to avoid double-ping
+    if (now - lastServerPing < 1000) return;
 
     fetch('/sse/stayin-alive', { method: 'POST', keepalive: true })
         .then(res => {
             lastServerPing = Date.now();
-
-            if (res.ok) {
-                lastActivityTime = Date.now(); // confirm activity on server
-            }
-
+            if (res.ok) lastActivityTime = Date.now();
             if (res.status === 401) {
                 stopActivityPing();
                 window.location.replace('/login.html');
             }
         })
-        .catch(err => console.error('Activity ping failed', err));
+        .catch(err => console.warn('[ActivityPing] Failed', err));
 }
 
 // ---------------------
@@ -57,9 +56,7 @@ function notifyServer() {
 // ---------------------
 function onActivity() {
     lastActivityTime = Date.now();
-
     if (idleTimeout) clearTimeout(idleTimeout);
-    // Only notify server after IDLE_THRESHOLD ms of inactivity
     idleTimeout = setTimeout(notifyServer, IDLE_THRESHOLD);
 }
 
@@ -67,14 +64,15 @@ function onActivity() {
 // Set up activity listeners
 // ---------------------
 ACTIVITY_EVENTS.forEach(event => document.addEventListener(event, onActivity, { passive: true }));
-
-// Periodic ping for long-lived sessions (in case user never goes idle)
 periodicPingInterval = setInterval(notifyServer, PERIODIC_PING);
 
 // ---------------------
 // SSE connection
 // ---------------------
 function connectSSE() {
+    if (sseConnected) return; // prevent multiple connections
+    sseConnected = true;
+
     es = new EventSource(EVENTS_URL);
 
     es.onopen = () => console.log('[SSE] Connected');
@@ -97,9 +95,18 @@ function connectSSE() {
     es.onerror = () => {
         console.warn('[SSE] Connection lost, retrying...');
         es.close();
-        setTimeout(connectSSE, RETRY_INTERVAL);
+        sseConnected = false;
+        if (reconnectTimeout) clearTimeout(reconnectTimeout);
+        reconnectTimeout = setTimeout(connectSSE, RETRY_INTERVAL);
     };
 }
 
+// ---------------------
+// Close SSE gracefully on page unload
+// ---------------------
+window.addEventListener('beforeunload', stopActivityPing);
+
+// ---------------------
 // Start SSE connection
+// ---------------------
 connectSSE();

@@ -1,7 +1,7 @@
 /**
  * Arrows for nav
  * Ctrl+/ for search selection
- * Ctrl+p for new password
+ * Ctrl+p for new note
  * Ctrl+t for top
  */
 
@@ -20,9 +20,9 @@ const state = {
     blacklistTags: false,
     favouritesOnly: false,
 
-    allPasswords: [],
+    allNotes: [],
     selectedIndex: -1,
-    selectedPasswords: new Set(),
+    selectedNotes: new Set(),
     tagSuggestions: new Set(),
 
     sortMode: 0, // 0 title asc, 1 title desc, 2 date asc, 3 date desc
@@ -49,7 +49,7 @@ async function clearClipboard(text) {
 
 document.addEventListener("DOMContentLoaded", () => {
 
-    const container = document.getElementById("passwordContainer");
+    const container = document.getElementById("noteContainer");
     const searchField = document.getElementById("searchField");
     const tagFilter = document.getElementById("tagFilter");
     const tagContainer = document.getElementById('newTags');
@@ -58,22 +58,22 @@ document.addEventListener("DOMContentLoaded", () => {
     const favouriteSelectedBtn = document.getElementById("favouriteSelected");
     const tagBox = document.createElement("div");
 
-    document.getElementById("addPasswordButton").addEventListener('click', () => location.href = '/pass/viewAdd');
+    document.getElementById("addNoteButton").addEventListener('click', () => location.href = '/note/viewAdd');
     
     document.getElementById("selectAll").addEventListener('click', () => {
-        const count = state.allPasswords.length;
+        const count = state.allNotes.length;
         const newSelection = new Set();
         
         for (let i = 0; i < count; i++) {
             newSelection.add(i);
         }
         
-        state.selectedPasswords = newSelection;
+        state.selectedNotes = newSelection;
         renderVirtual();
     });
 
     document.getElementById("deselectAll").addEventListener('click', () => {
-        state.selectedPasswords.clear();
+        state.selectedNotes.clear();
         renderVirtual();
     });
 
@@ -158,8 +158,8 @@ document.addEventListener("DOMContentLoaded", () => {
     /* =========================
        SORTING
     ========================= */
-    function sortAllPasswords() {
-        const arr = state.allPasswords;
+    function sortAllNotes() {
+        const arr = state.allNotes;
 
         arr.sort((a, b) => {
 
@@ -201,7 +201,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    function normalizePassword(p) {
+    function normalizeNote(p) {
         if (p.createdAt && !(p.createdAt instanceof Date)) {
             p.createdAt = new Date(p.createdAt);
         }
@@ -211,11 +211,11 @@ document.addEventListener("DOMContentLoaded", () => {
     /* =========================
        FETCH
     ========================= */
-    async function favouriteSelectedPasswords() {
-        const ids = [...state.selectedPasswords].map(i => state.allPasswords[i]._id);
-        const allFavourited = [...state.selectedPasswords].every(i => state.allPasswords[i].isFavourite)
+    async function favouriteSelectedNotes() {
+        const ids = [...state.selectedNotes].map(i => state.allNotes[i]._id);
+        const allFavourited = [...state.selectedNotes].every(i => state.allNotes[i].isFavourite)
 
-        const res = await fetch("/pass/favouriteMany", {
+        const res = await fetch("/note/favouriteMany", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ ids, state: !allFavourited })
@@ -226,18 +226,18 @@ document.addEventListener("DOMContentLoaded", () => {
             alert(data.message);
         }
 
-        sortAllPasswords();
+        sortAllNotes();
         renderVirtual();
     }
-    favouriteSelectedBtn.addEventListener('click', async () => await favouriteSelectedPasswords());
+    favouriteSelectedBtn.addEventListener('click', async () => await favouriteSelectedNotes());
 
-    async function deleteSelectedPasswords() {
-        if (state.selectedPasswords.size === 0) return;
-        if (!confirm(`Are you sure you want to delete ${state.selectedPasswords.size} password(s)?`)) return
+    async function deleteSelectedNotes() {
+        if (state.selectedNotes.size === 0) return;
+        if (!confirm(`Are you sure you want to delete ${state.selectedNotes.size} note(s)?`)) return
 
-        const ids = [...state.selectedPasswords].map(i => state.allPasswords[i]._id);
+        const ids = [...state.selectedNotes].map(i => state.allNotes[i]._id);
 
-        const res = await fetch("/pass/deleteMany", {
+        const res = await fetch("/note/deleteMany", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ ids })
@@ -248,16 +248,16 @@ document.addEventListener("DOMContentLoaded", () => {
             alert(data.message);
         }
 
-        sortAllPasswords();
+        sortAllNotes();
         renderVirtual();
     }
-    deleteSelectedBtn.addEventListener('click', async () => await deleteSelectedPasswords());
+    deleteSelectedBtn.addEventListener('click', async () => await deleteSelectedNotes());
 
-    async function fetchPasswords() {
+    async function fetchNotes() {
         if (state.loading || state.reachedEnd) return;
         state.loading = true;
 
-        const res = await fetch("/pass/search", {
+        const res = await fetch("/note/search", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -274,22 +274,22 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         const data = await res.json();
-        const list = (data.partialPasswords || []).map(normalizePassword);
+        const list = (data.partialNotes || []).map(normalizeNote);
 
         if (state.offset === 0) {
-            state.allPasswords = [];
+            state.allNotes = [];
             container.innerHTML = "";
         }
 
         list.forEach(p => {
-            state.allPasswords.push(p);
+            state.allNotes.push(p);
             (p.searchTags || []).forEach(t => state.tagSuggestions.add(t));
         });
 
-        sortAllPasswords();
+        sortAllNotes();
 
         state.offset += list.length;
-        if (state.allPasswords.length >= data.total) state.reachedEnd = true;
+        if (state.allNotes.length >= data.total) state.reachedEnd = true;
 
         renderVirtual();
         state.loading = false;
@@ -299,7 +299,7 @@ document.addEventListener("DOMContentLoaded", () => {
         state.offset = 0;
         state.reachedEnd = false;
         state.selectedIndex = -1;
-        fetchPasswords();
+        fetchNotes();
     }
 
     /* =========================
@@ -314,9 +314,9 @@ document.addEventListener("DOMContentLoaded", () => {
         visibleEnd = Math.ceil((scrollTop + viewportHeight) / rowHeight) + 5;
 
         visibleStart = Math.max(0, visibleStart);
-        visibleEnd = Math.min(state.allPasswords.length, visibleEnd);
+        visibleEnd = Math.min(state.allNotes.length, visibleEnd);
 
-        // Clear container and only render visible passwords
+        // Clear container and only render visible notes
         container.innerHTML = "";
 
         // Top spacer
@@ -324,14 +324,14 @@ document.addEventListener("DOMContentLoaded", () => {
         spacerTop.style.height = (visibleStart * rowHeight) + "px";
         container.appendChild(spacerTop);
 
-        // Render only visible passwords
+        // Render only visible notes
         for (let i = visibleStart; i < visibleEnd; i++) {
-            container.appendChild(renderRow(state.allPasswords[i], i));
+            container.appendChild(renderRow(state.allNotes[i], i));
         }
 
         // Bottom spacer
         const spacerBottom = document.createElement("div");
-        spacerBottom.style.height = ((state.allPasswords.length - visibleEnd) * rowHeight) + "px";
+        spacerBottom.style.height = ((state.allNotes.length - visibleEnd) * rowHeight) + "px";
         container.appendChild(spacerBottom);
     }
 
@@ -340,21 +340,21 @@ document.addEventListener("DOMContentLoaded", () => {
     ========================= */
     function renderRow(e, index) {
         const row = document.createElement("div");
-        row.className = "password";
+        row.className = "note";
         row.dataset.id = e._id;
         if (index === state.selectedIndex) row.classList.add("keyboardSelected");
 
         // Checkbox
         const checkbox = document.createElement('button');
-        checkbox.innerHTML = state.selectedPasswords.has(index) ? 
+        checkbox.innerHTML = state.selectedNotes.has(index) ? 
             '<i class="fa-regular fa-square-check"></i>' : 
             '<i class="fa-regular fa-square"></i>';
         checkbox.addEventListener('click', () => {
-            if (state.selectedPasswords.has(index)) {
-                state.selectedPasswords.delete(index);
+            if (state.selectedNotes.has(index)) {
+                state.selectedNotes.delete(index);
                 checkbox.innerHTML = '<i class="fa-regular fa-square"></i>';
             } else {
-                state.selectedPasswords.add(index);
+                state.selectedNotes.add(index);
                 checkbox.innerHTML = '<i class="fa-regular fa-square-check"></i>';
             }
         });
@@ -370,24 +370,24 @@ document.addEventListener("DOMContentLoaded", () => {
         favBtn.onclick = async () => {
             e.isFavourite = !e.isFavourite;
             favBtn.innerHTML = e.isFavourite ? "<i class='fa fa-star'></i>" : "<i class='fa fa-star-o'></i>";
-            fetch('/pass/toggleFavourite', {
+            fetch('/note/toggleFavourite', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id: e._id, state: e.isFavourite })
             });
-            sortAllPasswords();
+            sortAllNotes();
             renderVirtual();
         };
 
         // Copy menu
         const copyMenu = document.createElement("div");
         copyMenu.classList.add("hidden", "copy_options");
-        ["url", "username", "password", "note"].forEach(key => {
+        ["note"].forEach(key => {
             const b = document.createElement("button");
             b.innerText = key;
             b.style.cursor = "copy";
             b.onclick = async () => {
-                const res = await fetch('/pass/copy', {
+                const res = await fetch('/note/copy', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id: e._id, category: key })
@@ -417,7 +417,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Edit button
         const editBtn = document.createElement("button");
         editBtn.innerHTML = "<i class='fa fa-edit'></i>";
-        editBtn.onclick = () => location.href = `/pass/viewEdit/${e._id}`;
+        editBtn.onclick = () => location.href = `/note/viewEdit/${e._id}`;
 
         row.append(title, favBtn, copyBtn, editBtn, copyMenu);
 
@@ -475,7 +475,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (e.target.tagName === "INPUT") return;
 
         if (e.key === "ArrowDown") {
-            state.selectedIndex = Math.min(state.selectedIndex + 1, state.allPasswords.length - 1);
+            state.selectedIndex = Math.min(state.selectedIndex + 1, state.allNotes.length - 1);
             renderVirtual();
         }
 
@@ -485,7 +485,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         if (e.key === "Enter" && state.selectedIndex >= 0) {
-            location.href = '/pass/viewEdit/' + state.allPasswords[state.selectedIndex]._id;
+            location.href = '/note/viewEdit/' + state.allNotes[state.selectedIndex]._id;
         }
 
         if ((e.ctrlKey || e.metaKey) && e.key === "/") {
@@ -549,7 +549,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 break;
         }
 
-        sortAllPasswords();
+        sortAllNotes();
         renderVirtual();
     });
 
@@ -560,7 +560,7 @@ document.addEventListener("DOMContentLoaded", () => {
         renderVirtual();
 
         if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 400) {
-            fetchPasswords();
+            fetchNotes();
         }
     });
 

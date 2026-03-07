@@ -135,10 +135,7 @@ const viewEdit = async (req, res, next) => {
         const decrypted = {
             _id: note._id,
             title: note.title,
-            url: decrypt(note.url, secretKey),
             searchTags: note.searchTags,
-            username: decrypt(note.username, secretKey),
-            note: decrypt(note.note, secretKey),
             note: decrypt(note.note, secretKey),
             isFavourite: note.isFavourite,
             createdAt: note.createdAt,
@@ -174,10 +171,7 @@ const edit = async (req, res, next) => {
         const secretKey = decrypt(req.user.secretKey, req.session.kek);
 
         noteObj.title = title;
-        noteObj.url = encrypt(url, secretKey);
         noteObj.searchTags = (searchTags || []).map(t => t.toLowerCase());
-        noteObj.username = encrypt(username, secretKey);
-        noteObj.note = encrypt(note, secretKey);
         noteObj.note = encrypt(note, secretKey);
         noteObj.isFavourite = isFavourite;
 
@@ -205,10 +199,7 @@ const add = async (req, res, next) => {
         const noteObj = new Note({
             account: req.user._id,
             title,
-            url: encrypt(url || "", secretKey), 
             searchTags: (searchTags || []).map(t => t.toLowerCase()), 
-            username: encrypt(username || "", secretKey),
-            note: encrypt(note || "", secretKey),
             note: encrypt(note || "", secretKey),
             isFavourite: isFavourite || false
         });

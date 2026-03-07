@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="author" content="Robert Ohly">
+    <title>CryptDrive ∷ Note Keeper</title>
+    <script src="/js/noteKeeper.js" defer></script>
+    <script src="https://kit.fontawesome.com/0f23db6f2c.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="/css/site.css">
+    <link rel="stylesheet" href="/css/noteKeeper.css">
+</head>
+<body>
+    <%- include('components/master') %>
+    <%- include('components/nav') %>
+
+    <h1>CryptDrive ∷ Note Keeper</h1>
+
+    <!-- ADD PASSWORD -->
+    <button id="addPasswordButton"><i class="fa-solid fa-plus"></i> Add Password</button>
+
+    <!-- SEARCH PASSWORDS -->
+    <form id="searchForm">
+        <fieldset>
+            <legend>Search for Passwords</legend>
+            <input id="searchField" type="text" placeholder="Enter Title">
+
+            <button id="matchCase" type="button" title="Match Case"><i class="fa fa-font"></i></button>
+            <button id="matchEntire" type="button" title="Match Whole Word"><i class="fa-solid fa-underline"></i></button>
+            <button id="useRegex" type="button" title="Use Regex"><i class="fa fa-code"></i></button>
+
+            <button type="submit"><i class="fa-solid fa-arrow-rotate-right"></i> Refresh</button><br>
+
+            <!-- FAVORITES FILTER -->
+            <button type="button" id="favorite"> <i class="fa fa-star"></i> Favourites</button>
+
+            <!-- TITLE SORT -->
+            <button id="sortMode">Sort By: <i class="fa-solid fa-arrow-up-a-z"></i></button>
+
+            <!-- TAG FILTER -->
+            <button id="blacklistTags"><i class="fa-solid fa-filter"></i> Blacklist Tags</button>
+            <button id="clearTags"><i class="fa-solid fa-filter-circle-xmark"></i> Clear Tags</button><br>
+            <label for="tagFilter"><i class="fa-solid fa-tag"></i> Add Search Tag</label>
+            <input type="text" id="tagFilter" title="press enter to add" placeholder="Tag name..."><br>
+            <div class="tagContainer" id="newTags"></div><br>
+        </fieldset>
+    </form>
+
+    <!-- BATCH ACTIONS -->
+    <div id="batchActions">
+        <button type="button" id="selectAll">Select All</button>
+        <button type="button" id="deselectAll">Deselect All</button>
+        <button type="button" id="deleteSelected"><i class="fa-solid fa-trash"></i> Delete Selected</button>
+        <button type="button" id="favouriteSelected"><i class="fa fa-star"></i> Toggle Favourite</button>
+    </div>
+
+    <!-- PASSWORD LIST -->
+    <div id="passwordContainer"></div>
+    <div id="loadingIndicator" style="text-align:center; padding:20px; opacity:.6;">
+        <button title="Go to top" onclick="window.scrollTo({top: 0, left: 0, behavior: 'smooth'});"><i class="fa-solid fa-circle-chevron-up"></i></button>
+    </div>
+</body>
+</html>

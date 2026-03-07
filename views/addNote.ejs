@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta charset="UTF-8">
+        <meta name="author" content="Robert Ohly">
+        <title>CryptDrive ∷ New Note</title>
+        <script src="/js/addNote.js" defer></script>
+        <link rel="stylesheet" href="/css/site.css">
+        <link rel="stylesheet" href="/css/addNote.css">
+        <script src="https://kit.fontawesome.com/0f23db6f2c.js" crossorigin="anonymous"></script>
+    </head>
+    <body>
+        <%- include('components/master') %>
+
+        <h1>CryptDrive ∷ New Note</h1>
+        <form id="newNoteForm">
+        <fieldset>
+            <legend>Add Note</legend>
+
+            <label for="newTitle">Title</label><br>
+            <input id="newTitle" type="text" placeholder="Example" size="128" required><br><br>
+
+            <label for="newNote"><i class='fas fa-sticky-note'></i> Note</label><br>
+            <textarea id="newNote" rows="6" cols="64" placeholder="Your secure note..."></textarea><br><br>
+
+            <label for="newFavourite"><i class="fa-solid fa-star"></i> Flag as Favourite?</label><br>
+            <input id="newFavourite" type="checkbox"><br><br>
+
+            <label for="newTag"><i class='fas fa-tags'></i> Add Search Tag</label><br>
+            <input id="newTag" type="text" title="Press enter to add" placeholder="work"><br>
+            <div class="tagContainer" id="newTags"></div><br><br>
+
+            <input type="submit" value="Add Note">
+            <button type="button" id="back">↩ Back</button>
+        </fieldset>
+    </form>
+    </body>
+</html>

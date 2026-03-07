@@ -1,13 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
     const newTitle = document.getElementById('newTitle');
-    const newUrl = document.getElementById('newUrl');
-    const newUser = document.getElementById('newUser');
-    const newPassword = document.getElementById('newPassword');
-    const passwordPeekBtn = document.getElementById("passwordPeek");
+    const newNote = document.getElementById('newNote');
     const newTag = document.getElementById('newTag');
     const tagContainer = document.getElementById('newTags');
-    const newNote = document.getElementById('newNote');
-    const newPasswordForm = document.getElementById('newPasswordForm');
+    const newNoteForm = document.getElementById('newNoteForm');
     const newFavourite = document.getElementById('newFavourite');
 
     const backBtn = document.getElementById("back");
@@ -52,22 +48,19 @@ document.addEventListener('DOMContentLoaded', () => {
         e.currentTarget.value = '';
     });
 
-    newPasswordForm.addEventListener('submit', e => {
+    newNoteForm.addEventListener('submit', e => {
         e.preventDefault();
 
-        if (!newPasswordForm.checkValidity()) return;
+        if (!newNoteForm.checkValidity()) return;
 
         const title = newTitle.value;
-        const url = newUrl.value;
-        const username = newUser.value;
-        const password = newPassword.value;
         const note = newNote.value;
         const isFavourite = newFavourite.checked;
 
         fetch('/pass/add', {
             method: "POST",
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title, url, username, password, searchTags: [...tags], note, isFavourite })
+            body: JSON.stringify({ title, note, searchTags: [...tags], isFavourite })
         })
         .then(res => res.json())
         .then(data => {
@@ -79,26 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    const peekButton = document.getElementById('passwordPeek');
-    const showPassword = () => {
-        peekButton.innerHTML = '<i class="fa-solid fa-eye"></i>';
-        newPassword.type = 'text'
-    };
-    const hidePassword = () => {
-        peekButton.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
-        newPassword.type = 'password'
-    };
-
-    ['mousedown', 'touchstart'].forEach(evt => peekButton.addEventListener(evt, showPassword));
-    ['mouseup', 'mouseleave', 'touchend'].forEach(evt => peekButton.addEventListener(evt, hidePassword));
-
-    passwordPeekBtn.addEventListener("click", () => {
-        const visible = passwordInput.type === "password";
-        passwordInput.type = visible ? "text" : "password";
-        passwordPeekBtn.innerHTML = !visible ? '<i class="fa-solid fa-eye"></i>' : '<i class="fa-solid fa-eye-slash"></i>';
-    });
-
     backBtn.addEventListener("click", () => {
-        window.location.href = "/passwordVault";
+        window.location.href = "/noteKeeper";
     });
 });

@@ -183,7 +183,7 @@ const edit = async (req, res, next) => {
 
         await passwordObj.save();
 
-        res.json({ redirect: '/home/passwordVault' });
+        res.json({ redirect: '/passwordVault' });
 
     } catch (err) {
         next(err);
@@ -214,7 +214,7 @@ const add = async (req, res, next) => {
         });
         await passwordObj.save();
 
-        res.json({ redirect: '/home/passwordVault' });
+        res.json({ redirect: '/passwordVault' });
     } catch (err) {
         res.json({ message: 'Something went wrong when adding your password' });
         next(err);

@@ -1,0 +1,105 @@
+/* Add Note Page Styling */
+body {
+    max-width: 600px;
+    margin: 30px auto;
+    padding: 20px;
+    background-color: #f8fafc;
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+h1 {
+    font-size: 28px;
+    color: #1e3a8a;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+/* Fieldsets */
+fieldset {
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    background-color: #ffffff;
+}
+
+/* Legends */
+legend {
+    font-weight: 600;
+    color: #1e3a8a;
+    font-size: 16px;
+}
+
+/* Labels */
+label {
+    display: block;
+    font-weight: 600;
+    margin-top: 12px;
+    margin-bottom: 6px;
+    color: #334155;
+    font-size: 13px;
+}
+
+/* Inputs & Textarea */
+input[type=text],
+input[type=url],
+textarea {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    font-size: 14px;
+    transition: 0.2s;
+    box-sizing: border-box;
+}
+
+input:focus,
+textarea:focus {
+    outline: none;
+    border-color: #1e3a8a;
+    box-shadow: 0 0 0 2px rgba(30,58,138,0.15);
+}
+
+/* Submit Button */
+input[type=submit],
+button {
+    background: #1e3a8a;
+    color: white;
+    border: none;
+    border-radius: 999px;
+    padding: 10px 16px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+input[type=submit]:hover,
+button:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+}
+
+/* Note Peek Button */
+#notePeek {
+    position: absolute;
+    margin-left: -42px;
+    margin-top: 8px;
+    background: transparent;
+    color: #334155;
+    font-size: 16px;
+}
+
+#notePeek:hover {
+    color: #1e3a8a;
+}
+
+/* Responsive */
+@media screen and (max-width: 480px) {
+    body {
+        padding: 15px;
+    }
+    h1 {
+        font-size: 24px;
+    }
+}

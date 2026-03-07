@@ -177,7 +177,7 @@ const edit = async (req, res, next) => {
 
         await noteObj.save();
 
-        res.json({ redirect: '/home/noteVault' });
+        res.json({ redirect: '/noteVault' });
 
     } catch (err) {
         next(err);
@@ -205,7 +205,7 @@ const add = async (req, res, next) => {
         });
         await noteObj.save();
 
-        res.json({ redirect: '/home/noteVault' });
+        res.json({ redirect: '/noteVault' });
     } catch (err) {
         res.json({ message: 'Something went wrong when adding your note' });
         next(err);

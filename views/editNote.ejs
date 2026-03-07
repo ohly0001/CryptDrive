@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="author" content="Robert Ohly">
+        <title>CryptDrive ∷ Edit Note</title>
+        <script>
+            window.__PASSWORD__ = <%- JSON.stringify(note) %>;
+        </script>
+        <script src="/js/editNote.js" defer></script>
+        <script src="https://kit.fontawesome.com/0f23db6f2c.js" crossorigin="anonymous"></script>
+        <link rel="stylesheet" href="/css/site.css">
+        <link rel="stylesheet" href="/css/editNote.css">
+        <style>
+            body { font-family: -apple-system, sans-serif; line-height: 1.6; max-width: 900px; margin: 40px auto; padding: 0 20px; color: #333; }
+            pre { border-radius: 8px; padding: 1em; overflow: auto; }
+        </style>
+    </head>
+    <body>
+        <%- include('components/master') %>
+
+        <h1>CryptDrive ∷ Edit Note</h1>
+        <form id="editNoteForm">
+        <fieldset>
+            <legend>Edit Note</legend>
+
+            <label for="savedTitle">Title</label><br>
+            <input id="savedTitle" type="text" placeholder="<%= note.title %>" size="128" value="<%= note.title %>" required><br><br>
+
+            <label for="savedNote"><i class="fa-solid fa-note-sticky"></i> Note</label><br>
+            <textarea id="savedNote" rows="6" cols="64" placeholder="<%= note.note %>" ><%= note.note %></textarea><br>
+
+            <label for="savedFavourite"><i class="fa-solid fa-star"></i> Flag as Favourite?</label><br>
+            <input id="savedFavourite" type="checkbox" <%= note.isFavourite ? "checked" : "" %>><br><br>
+
+            <label for="savedTag"><i class="fa-solid fa-tags"></i> Add Tag</label><br>
+            <input id="savedTag" type="text" title="Press enter to add"><br>
+            <div class="tagContainer" id="savedTags"></div><br><br>
+
+            <input type="submit" value="Save">
+            <button type="button" id="delete"><i class="fa-solid fa-trash"></i> Delete</button>
+            <button type="button" id="revert"><i class="fa-solid fa-clock-rotate-left"></i> Discard Changes</button>
+            <button type="button" id="back">↩ Back</button>
+        </fieldset>
+        <p id="creationTime"><i class="fa-solid fa-clock"></i> Created On: <%= new Date(note.createdAt || Date.now()).toLocaleString() %></p>
+        <p id="updatedTime">
+        <i class="fa-regular fa-clock"></i> Last Updated On: 
+        <%= (note.updatedAt && note.createdAt && note.updatedAt !== note.createdAt) 
+            ? new Date(note.updatedAt).toLocaleString() 
+            : "Never" %>
+        </p>
+    </form>
+    </body>
+</html>

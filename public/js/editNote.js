@@ -1,29 +1,25 @@
 document.addEventListener("DOMContentLoaded", () => {
 
     // ======= Server Data =======
-    const passwordData = window.__PASSWORD__;
-    const passwordId = passwordData._id;
+    const noteData = window.__PASSWORD__;
+    const noteId = noteData._id;
 
     // ======= Elements =======
     const titleInput = document.getElementById("savedTitle");
-    const urlInput = document.getElementById("savedUrl");
-    const userInput = document.getElementById("savedUser");
-    const passwordInput = document.getElementById("savedPassword");
-    const passwordPeekBtn = document.getElementById("passwordPeek");
+    const noteInput = document.getElementById("savedNote");
     const favouriteInput = document.getElementById("savedFavourite");
 
     const tagInput = document.getElementById("savedTag");
     const tagContainer = document.getElementById("savedTags");
 
-    const noteInput = document.getElementById("savedNote");
-    const form = document.getElementById("editPasswordForm");
+    const form = document.getElementById("editNoteForm");
 
     const deleteBtn = document.getElementById("delete");
     const revertBtn = document.getElementById("revert");
     const backBtn = document.getElementById("back");
 
     // ======= State =======
-    let tags = new Set(passwordData.searchTags || []);
+    let tags = new Set(noteData.searchTags || []);
 
     // ======= Utilities =======
     function calculateColour(str) {
@@ -75,29 +71,19 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // ======= Password Reveal =======
-    passwordPeekBtn.addEventListener("click", () => {
-        const visible = passwordInput.type === "password";
-        passwordInput.type = visible ? "text" : "password";
-        passwordPeekBtn.innerHTML = !visible ? '<i class="fa-solid fa-eye"></i>' : '<i class="fa-solid fa-eye-slash"></i>';
-    });
-
     // ======= Form Submit =======
     form.addEventListener("submit", async e => {
         e.preventDefault();
 
         const payload = {
             title: titleInput.value.trim(),
-            url: urlInput.value.trim(),
-            username: userInput.value.trim(),
-            password: passwordInput.value,
-            note: noteInput.value.trim(),
+            note: noteInput.value,
             searchTags: [...tags],
             isFavourite: favouriteInput.checked
         };
 
         try {
-            const res = await fetch(`/pass/edit/${passwordId}`, {
+            const res = await fetch(`/pass/edit/${noteId}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload)
@@ -113,25 +99,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
         } catch (err) {
             console.error(err);
-            alert("Error saving password.");
+            alert("Error saving note.");
         }
     });
 
     // ======= Delete =======
     deleteBtn.addEventListener("click", async () => {
-        if (!confirm("Delete this password?")) return;
+        if (!confirm("Delete this note?")) return;
 
         try {
             await fetch("/pass/deleteOne", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ id: passwordId })
+                body: JSON.stringify({ id: noteId })
             });
 
-            window.location.href = "/passwordVault";
+            window.location.href = "/noteKeeper";
         } catch (err) {
             console.error(err);
-            alert("Failed to delete password.");
+            alert("Failed to delete note.");
         }
     });
 
@@ -142,6 +128,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ======= Back =======
     backBtn.addEventListener("click", () => {
-        window.location.href = "/passwordVault";
+        window.location.href = "/noteKeeper";
     });
 });

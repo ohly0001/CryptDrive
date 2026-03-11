@@ -104,7 +104,8 @@ const encryptFiles = async (req, files, relativePath = '') => {
 
 // ===== CONTROLLERS =====
 const view = async (req, res) => {
-    res.render('fileRepository', {})
+    const cwd = '/'; // TODO dynamically get user’s root directory path 
+    res.render('fileRepository', { cwd });
 };
 
 const viewFile = async (req, res) => {
@@ -146,24 +147,16 @@ const viewFile = async (req, res) => {
 };
 
 const viewDirectory = async (req, res) => {
-    if (!req.isAuthenticated?.() || !req.user) {
-        return res.status(401).json({ redirect: '/auth/login' });
-    }
-
-    if (!req.session?.kek) {
-        return res.status(401).json({message: 'Vault locked'});
-    }
+    if (!req.isAuthenticated?.() || !req.user) return res.status(401).json({ redirect: '/auth/login' });
+    if (!req.session?.kek) return res.status(401).json({message: 'Vault locked'});
 
     const id = req.params.id;
     const directory = await Directory.findById(id);
-
-    if (!directory) {
-        return res.status(404).send('Directory not found');
-    }
+    if (!directory) return res.status(404).send('Directory not found');
 
     const secretKey = decrypt(req.user.secretKey, req.session.kek);
 
-    const group = await Group.findById(file.shared);
+    const group = await Group.findById(directory.shared);
     const isFavourite = req.user._id in directory.isFavourite;
 
     const decrypted = {
@@ -390,6 +383,8 @@ const createDirectory = async (req, res) => {
   }
 };
 
+const deleteDirectory = async (req, res) => {}
+
 // ===== DOWNLOAD FILE =====
 const downloadFile = async (req, res) => {
   try {
@@ -455,6 +450,7 @@ export default {
   uploadMany,
   listFiles,
   createDirectory,
+  deleteDirectory,
   downloadFile,
   downloadDirectory
 };

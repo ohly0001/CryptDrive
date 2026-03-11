@@ -1,5 +1,34 @@
 //TODO allow files or folders to be dragged to drop them inside others
 
+// ===== GLOBALS =====
+let currentPath = window.__CWD__ || '/';
+const selectedFiles = new Set();
+const favoriteFiles = new Set();
+const currentUser = window.__CURRENT_USER__ || 'You'; // you can inject this server-side
+const searchField = document.getElementById('searchField') || { value: '' };
+
+const state = {
+    pageSize: 6, //only 6 are fully visible on initial page load, so fetch in sets of 6
+    offset: 0,
+    loading: false,
+    reachedEnd: false,
+
+    matchCase: false,
+    matchEntire: false,
+    useRegex: false,
+    blacklistTags: false,
+    favouritesOnly: false,
+
+    allPasswords: [],
+    selectedIndex: -1,
+    selectedPasswords: new Set(),
+    tagSuggestions: new Set(),
+
+    sortMode: 0, // 0 title asc, 1 title desc, 2 date asc, 3 date desc
+
+    searchTags: new Set()
+};
+
 const mimeToCategory = {
     'audio': new Set(['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp4']),
     'video': new Set(['video/mp4', 'video/webm', 'video/ogg']),
@@ -55,14 +84,12 @@ function getFileIcon(mime) {
     return categoryIcons.default;
 }
 
-let currentPath = '/home';
-const selectedFiles = new Set();
-const favoriteFiles = new Set();
-
 // ===== Utility Functions =====
 function updateCurrentPathDisplay() {
-    document.getElementById('currentPath').innerText = currentPath;
-    document.getElementById('navToParent').disabled = currentPath === 'root' || currentPath === '/';
+    const pathElem = document.getElementById('currentPath');
+    if (pathElem) pathElem.innerText = currentPath;
+    const navBtn = document.getElementById('navToParent');
+    if (navBtn) navBtn.disabled = currentPath === 'root' || currentPath === '/';
 }
 
 function toggleSelectFile(fileId, btn) {
@@ -166,7 +193,31 @@ async function selectFile() {
     } catch(err){ console.error('File picker error:',err); alert('Failed to select file(s).'); }
 }
 
-// uploadSingleFile, uploadMultipleFiles, uploadRequest remain unchanged (copy from original)
+async function uploadSingleFile(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    await uploadRequest('/file/upload', formData, `Uploaded "${file.name}" successfully!`);
+}
+
+async function uploadMultipleFiles(files) {
+    const formData = new FormData();
+    files.forEach(f => formData.append('file[]', f));
+    await uploadRequest('/file/uploadMany', formData, `Uploaded ${files.length} files successfully!`);
+}
+
+async function uploadRequest(url, formData, successMsg) {
+    try {
+        const res = await fetch(`${url}?path=${encodeURIComponent(currentPath)}`, { method: 'POST', body: formData });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        console.log('Upload result:', data);
+        alert(successMsg);
+        loadFiles(currentPath);
+    } catch (err) {
+        console.error('Upload error:', err);
+        alert('Upload failed. See console for details.');
+    }
+}
 
 // ===== Directory Management =====
 async function createDirectory() {
@@ -183,6 +234,7 @@ async function createDirectory() {
     } catch(err){ console.error('Create directory error:',err); }
 }
 
+// ===== DIRECTORY NAVIGATION =====
 function navigateToDir(path) {
     currentPath = path;
     updateCurrentPathDisplay();
@@ -192,7 +244,6 @@ function navigateToDir(path) {
 // ===== File / Directory Listing =====
 async function loadFiles(path) {
     try {
-        //const res = await fetch(`/file/list/${encodeURIComponent(path)}`);
         const res = await fetch('/file/search', {
             method: 'POST',
             headers: { "Content-Type": "application/json" },
@@ -205,50 +256,47 @@ async function loadFiles(path) {
                 matchEntire: state.matchEntire,
                 useRegex: state.useRegex,
                 searchTags: [...state.searchTags],
-                blacklistTags: state.blacklistTags
+                blacklistTags: state.blacklistTags,
+                cwd: path
             })
         });
+
         const data = await res.json();
         const fileList = document.getElementById('fileList');
-        fileList.innerHTML='';
-
-        //TODO current directory and parent directory at top
-        const title = document.createElement('span');
-        title.innerHTML = `<span><i class="fa-solid fa-folder-open"></i> ${dir.basename}</span>`;
+        fileList.innerHTML = '';
 
         // Directories
-        (data.directories||[]).forEach(dir=>{
-            const dirDiv=document.createElement('div');
-            dirDiv.className='file-item directory';
-
-            dirDiv.addEventListener('click', e => {
-                //TODO navigate to this directory
-            });
+        (data.directories || []).forEach(dir => {
+            const dirDiv = document.createElement('div');
+            dirDiv.className = 'file-item directory';
 
             const title = document.createElement('span');
-            title.innerText = `<span><i class="fa-solid fa-folder-closed"></i> ${dir.basename}</span>`;
-
-            // TEMP
-            ['mouseover', 'mouseenter', 'pointerenter', 'pointerover'].forEach(t => dirDiv.addEventListener(t, e => {
-                title.innerHTML = `<span><i class="fa-solid fa-folder-open"></i> ${dir.basename}</span>`;
-            }));
-            ['mouseout', 'mouseleave', 'pointerout', 'pointerleave'].forEach(t => dirDiv.addEventListener(t, e => {
-                title.innerHTML = `<span><i class="fa-solid fa-folder-closed"></i> ${dir.basename}</span>`;
-            }));
+            title.innerHTML = `<span><i class="fa-solid fa-folder-closed"></i> ${dir.basename}</span>`;
             dirDiv.appendChild(title);
 
-            dirDiv.appendChild(renderOwnership(dir.account===currentUser?currentUser:'Shared'));
+            // hover open effect
+            ['mouseover', 'mouseenter'].forEach(ev => dirDiv.addEventListener(ev, () => {
+                title.innerHTML = `<span><i class="fa-solid fa-folder-open"></i> ${dir.basename}</span>`;
+            }));
+            ['mouseout', 'mouseleave'].forEach(ev => dirDiv.addEventListener(ev, () => {
+                title.innerHTML = `<span><i class="fa-solid fa-folder-closed"></i> ${dir.basename}</span>`;
+            }));
 
-            const actions=document.createElement('div'); actions.className='file-actions';
-            const downloadBtn=document.createElement('button'); downloadBtn.innerHTML='<i class="fa-solid fa-download"></i>'; downloadBtn.title='Download folder as ZIP'; downloadBtn.onclick=e=>{ e.stopPropagation(); downloadDirectory(dir._id); }; actions.appendChild(downloadBtn);
+            dirDiv.appendChild(renderOwnership(dir.account === currentUser ? currentUser : 'Shared'));
 
-            if(dir.account===currentUser){
-                ['delete','rename','move','configure'].forEach(action=>{
-                    const btn=document.createElement('button');
-                    if(action==='delete'){ btn.innerHTML='<i class="fa-solid fa-trash"></i>'; btn.onclick=e=>{ e.stopPropagation(); deleteDirectory(dir.basename); }; }
+            const actions = document.createElement('div'); actions.className = 'file-actions';
+            const downloadBtn = document.createElement('button');
+            downloadBtn.innerHTML = '<i class="fa-solid fa-download"></i>';
+            downloadBtn.title = 'Download folder as ZIP';
+            downloadBtn.onclick = e => { e.stopPropagation(); downloadDirectory(dir._id); };
+            actions.appendChild(downloadBtn);
+
+            if (dir.account === currentUser) {
+                ['delete','rename','move','configure'].forEach(action => {
+                    const btn = document.createElement('button');
+                    if(action==='delete'){ btn.innerHTML='<i class="fa-solid fa-trash"></i>'; btn.onclick=e=>{ e.stopPropagation(); deleteDirectory(dir._id); }; }
                     if(action==='rename'){ btn.innerHTML='<i class="fa-solid fa-pen"></i>'; btn.onclick=e=>{ e.stopPropagation(); renameItem('directory',dir.basename); }; }
                     if(action==='move'){ btn.innerHTML='<i class="fa-solid fa-arrow-right-arrow-left"></i>'; btn.onclick=e=>{ e.stopPropagation(); moveFile(dir._id); }; }
-                    if(action==='configure'){  } // redirect to editDirectory
                     actions.appendChild(btn);
                 });
             }
@@ -258,37 +306,40 @@ async function loadFiles(path) {
         });
 
         // Files
-        (data.files||[]).forEach(file=>{
-            const fileDiv=document.createElement('div'); 
-            fileDiv.className='file-item'; 
-            fileDiv.innerHTML=`<span>${getFileIcon(file.mime)} ${file.original}</span>`; 
-            fileDiv.appendChild(renderOwnership(file.account===currentUser?currentUser:'Shared'));
+        (data.files || []).forEach(file => {
+            const fileDiv = document.createElement('div');
+            fileDiv.className = 'file-item';
+            fileDiv.innerHTML = `<span>${getFileIcon(file.mime)} ${file.original}</span>`;
+            fileDiv.appendChild(renderOwnership(file.account === currentUser ? currentUser : 'Shared'));
 
-            const actions=document.createElement('div'); actions.className='file-actions';
-
-            // Preview
-            const previewBtn=document.createElement('button'); 
+            const actions = document.createElement('div'); actions.className = 'file-actions';
+            const previewBtn = document.createElement('button');
             previewBtn.innerHTML = '<i class="fa-solid fa-arrows-to-eye"></i>';
-            previewBtn.title='Preview file'; 
-            previewBtn.onclick = () => { document.location.href = `/file/editFile/${file._id}` };
+            previewBtn.title = 'Preview file';
+            previewBtn.onclick = () => { document.location.href = `/file/editFile/${file._id}`; };
             actions.appendChild(previewBtn);
 
-            // Favorite
-            const favBtn=document.createElement('button'); favBtn.innerHTML=favoriteFiles.has(file._id)?'<i class="fa-solid fa-star"></i>':'<i class="fa-regular fa-star"></i>'; favBtn.title='Favorite'; favBtn.onclick=e=>{ e.stopPropagation(); toggleFavorite(file._id,favBtn); }; actions.appendChild(favBtn);
+            const favBtn = document.createElement('button');
+            favBtn.innerHTML = favoriteFiles.has(file._id) ? '<i class="fa-solid fa-star"></i>' : '<i class="fa-regular fa-star"></i>';
+            favBtn.title = 'Favorite';
+            favBtn.onclick = e => { e.stopPropagation(); toggleFavorite(file._id, favBtn); };
+            actions.appendChild(favBtn);
 
-            if(file.account===currentUser){
-                ['rename','delete','move'].forEach(action=>{
-                    const btn=document.createElement('button');
+            if(file.account === currentUser) {
+                ['rename','delete','move'].forEach(action => {
+                    const btn = document.createElement('button');
                     if(action==='rename'){ btn.innerHTML='<i class="fa-solid fa-pen"></i>'; btn.onclick=e=>{ e.stopPropagation(); renameItem('file',file.original); }; }
                     if(action==='delete'){ btn.innerHTML='<i class="fa-solid fa-trash"></i>'; btn.onclick=e=>{ e.stopPropagation(); deleteFile(file._id); }; }
                     if(action==='move'){ btn.innerHTML='<i class="fa-solid fa-arrow-right-arrow-left"></i>'; btn.onclick=e=>{ e.stopPropagation(); moveFile(file._id); }; }
                     actions.appendChild(btn);
                 });
             }
+
             fileDiv.appendChild(actions);
             fileList.appendChild(fileDiv);
         });
-    } catch(err){ console.error('Load files error:',err); }
+
+    } catch(err){ console.error('Load files error:', err); }
 }
 
 // ===== Search =====
@@ -308,36 +359,30 @@ async function searchFiles(query) {
     } catch(err){ console.error('Search error:',err); }
 }
 
-// ===== Event Listeners =====
-document.addEventListener('DOMContentLoaded',()=>{
+// ===== DOM READY =====
+document.addEventListener('DOMContentLoaded', () => {
     updateCurrentPathDisplay();
 
-    const dropZone=document.getElementById('dropZone');
-    const createDirBtn=document.getElementById('createDirBtn');
-    const navToParent=document.getElementById('navToParent');
+    const dropZone = document.getElementById('dropZone');
+    const createDirBtn = document.getElementById('createDirBtn');
+    const navToParent = document.getElementById('navToParent');
 
-    dropZone.addEventListener('click',selectFile);
-    createDirBtn.addEventListener('click',createDirectory);
-    navToParent.addEventListener('click',()=>{
+    dropZone.addEventListener('click', selectFile);
+    createDirBtn.addEventListener('click', createDirectory);
+    navToParent.addEventListener('click', () => {
         if(currentPath==='root') return;
-        const parts=currentPath.split('/'); parts.pop();
-        currentPath=parts.join('/')||'root';
+        const parts = currentPath.split('/'); parts.pop();
+        currentPath = parts.join('/') || 'root';
         updateCurrentPathDisplay();
         loadFiles(currentPath);
     });
 
-    dropZone.addEventListener('dragover',e=>{ e.preventDefault(); dropZone.classList.add('hover'); });
-    dropZone.addEventListener('dragleave',()=>dropZone.classList.remove('hover'));
-    dropZone.addEventListener('drop',e=>{
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('hover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('hover'));
+    dropZone.addEventListener('drop', e => {
         e.preventDefault();
         dropZone.classList.remove('hover');
         uploadMultipleFiles(Array.from(e.dataTransfer.files));
-    });
-
-    const searchInput=document.createElement('input'); searchInput.type='text'; searchInput.placeholder='Search files...';
-    dropZone.insertAdjacentElement('afterend',searchInput);
-    searchInput.addEventListener('input',e=>{
-        const query=e.target.value.trim(); query?searchFiles(query):loadFiles(currentPath);
     });
 
     loadFiles(currentPath);

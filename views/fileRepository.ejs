@@ -8,6 +8,9 @@
     <meta charset="UTF-8">
     <meta name="author" content="Robert Ohly">
     <title>CryptDrive ∷ File Repository</title>
+    <script>
+        window.__CWD__ = <%- JSON.stringify(cwd) %>;
+    </script>
     <script src="/js/fileRepository.js" defer></script>
     <script src="https://kit.fontawesome.com/0f23db6f2c.js" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="/css/site.css">
@@ -56,6 +59,8 @@
     </form>
  
     <!-- File list -->
+    <p id="currentPath"></p>
+    <button id="navToParent" title="Navigate To Parent"><i class="fa-solid fa-turn-up"></i></button>
     <div id="fileList" class="file-list"></div>
 </body>
 </html>

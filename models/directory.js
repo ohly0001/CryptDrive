@@ -21,7 +21,8 @@ const DirectorySchema = new mongoose.Schema({
         ref: "Directory", 
         default: null
     },
-    path: { type: String, required: true, trim: true },
+    path: { type: String, required: true, trim: true },        // UI navigation
+    storagePath: { type: String, required: true },             // actual encrypted file
     searchTags: { type: [String], index: true },
     basename: { type: String, index: true },
     note: { type: String }

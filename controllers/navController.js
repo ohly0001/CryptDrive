@@ -14,8 +14,7 @@ const viewPasswordFactory = async (req, res, next) => {
     res.render('passwordFactory', {});
 };
 const viewFileRepository = async (req, res, next) => {
-    const cwd = '/'; // placeholder; later you can fetch user’s root dir from DB
-    res.render('fileRepository', { cwd });
+    res.render('fileRepository', {});
 };
 const viewNotekeeper = async (req, res, next) => {
     res.render('noteKeeper', {});

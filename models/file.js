@@ -18,7 +18,8 @@ const FileSchema = new mongoose.Schema({
     filename: { type: String, trim: true, required: true },
     mime: { type: String, trim: true },
     size: { type: Number, default: 0 }, 
-    path: { type: String, required: true, trim: true },
+    path: { type: String, required: true, trim: true },        // UI navigation
+    storagePath: { type: String, required: true },             // actual encrypted file
     searchTags: { type: [String], index: true },
     iv: { type: String, required: true },
     authTag: { type: String, required: true },

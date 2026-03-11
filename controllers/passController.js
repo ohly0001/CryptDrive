@@ -91,8 +91,6 @@ const search = async (req, res, next) => {
 
 const copy = async (req, res, next) => {
     try {
-        //if (!req.session?.kek) return res.status(401).json({message: 'Vault locked'});
-
         const { id, category } = req.body;
 
         const allowed = ['url', 'username','password','note'];
@@ -117,8 +115,6 @@ const copy = async (req, res, next) => {
 
 const viewEdit = async (req, res, next) => {
     try {
-        //if (!req.session?.kek) return res.status(401).json({message: 'Vault locked'});
-
         const id = req.params.id;
 
         const password = await Password.findOne({
@@ -157,8 +153,6 @@ const viewEdit = async (req, res, next) => {
 
 const edit = async (req, res, next) => {
     try {
-        //if (!req.session?.kek) return res.status(401).json({message: 'Vault locked'});
-
         const id = req.params.id;
         const { title, url, searchTags, username, password, note, isFavourite } = req.body;
 
@@ -196,8 +190,6 @@ const viewAdd = async (req, res, next) => {
 
 const add = async (req, res, next) => {
     try {
-        //if (!req.session?.kek) return res.status(401).json({message: 'Vault locked'});
-
         const { title, url, searchTags, username, password, note, isFavourite } = req.body;
 
         const secretKey = decrypt(req.user.secretKey, req.session.kek);

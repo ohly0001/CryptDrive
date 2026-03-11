@@ -2,7 +2,7 @@
 let currentPath = '/';
 const selectedFiles = new Set();
 const favoriteFiles = new Set();
-const currentUser = window.__CURRENT_USER__ || 'You';
+const currentUser = window.__CURRENT_USER__;
 const searchField = document.getElementById('searchField') || { value: '' };
 
 const state = {
@@ -78,6 +78,7 @@ function updateCurrentPathDisplay() {
 }
 
 function toggleSelectFile(fileId, btn) {
+    //TODO add selection checkboxes in renderer
     if (selectedFiles.has(fileId)) {
         selectedFiles.delete(fileId);
         btn.innerHTML = '<i class="fa-regular fa-square"></i>';
@@ -88,6 +89,7 @@ function toggleSelectFile(fileId, btn) {
 }
 
 function toggleFavorite(fileId, btn) {
+    //TODO add for both directors and implement API route
     if (favoriteFiles.has(fileId)) {
         favoriteFiles.delete(fileId);
         btn.innerHTML = '<i class="fa-regular fa-star"></i>';
@@ -110,7 +112,7 @@ async function deleteFile(fileId) {
     try {
         const res = await fetch(`/file/delete/${fileId}`, { method: 'DELETE' });
         if (!res.ok) throw new Error('Delete failed');
-        loadFiles(currentPath);
+        loadFiles();
     } catch (err) { console.error(err); alert('Failed to delete file'); }
 }
 
@@ -124,7 +126,7 @@ async function deleteDirectory(dirId) {
         });
         const data = await res.json();
         if (!data.success) throw new Error('Delete failed');
-        loadFiles(currentPath);
+        loadFiles();
     } catch (err) { console.error(err); alert('Failed to delete folder'); }
 }
 
@@ -138,7 +140,7 @@ async function renameItem(type, id, oldName) {
             body: JSON.stringify({ type, id, newName })
         });
         const data = await res.json();
-        if (data.success) loadFiles(currentPath);
+        if (data.success) loadFiles();
     } catch (err) { console.error(err); alert('Failed to rename item'); }
 }
 
@@ -152,7 +154,7 @@ async function moveItem(type, id) {
             body: JSON.stringify({ type, id, destPath })
         });
         const data = await res.json();
-        if (data.success) loadFiles(currentPath);
+        if (data.success) loadFiles();
     } catch (err) { console.error(err); alert('Failed to move item'); }
 }
 
@@ -188,7 +190,7 @@ async function uploadRequest(url, formData, successMsg) {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         alert(successMsg);
-        loadFiles(currentPath);
+        loadFiles();
     } catch (err) { console.error(err); alert('Upload failed'); }
 }
 
@@ -203,7 +205,7 @@ async function createDirectory() {
             body: JSON.stringify({ name, parentPath: currentPath })
         });
         const data = await res.json();
-        if (data.success) loadFiles(currentPath);
+        if (data.success) loadFiles();
     } catch (err) { console.error(err); }
 }
 
@@ -211,11 +213,11 @@ async function createDirectory() {
 function navigateToDir(path) {
     currentPath = path.startsWith('/') ? path : `/${path}`;
     updateCurrentPathDisplay();
-    loadFiles(currentPath);
+    loadFiles();
 }
 
 // ===== LOAD FILES =====
-async function loadFiles(path) {
+async function loadFiles() {
     try {
         const res = await fetch('/file/search', {
             method: 'POST',
@@ -306,7 +308,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const parts = currentPath.split('/'); parts.pop();
         currentPath = parts.join('/') || '/';
         updateCurrentPathDisplay();
-        loadFiles(currentPath);
+        loadFiles();
     });
 
     dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('hover'); });
@@ -317,5 +319,5 @@ document.addEventListener('DOMContentLoaded', () => {
         uploadMultipleFiles(Array.from(e.dataTransfer.files));
     });
 
-    loadFiles(currentPath);
+    loadFiles();
 });

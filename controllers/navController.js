@@ -14,7 +14,7 @@ const viewPasswordFactory = async (req, res, next) => {
     res.render('passwordFactory', {});
 };
 const viewFileRepository = async (req, res, next) => {
-    res.render('fileRepository', {});
+    res.render('fileRepository', { userId: req.user._id });
 };
 const viewNotekeeper = async (req, res, next) => {
     res.render('noteKeeper', {});

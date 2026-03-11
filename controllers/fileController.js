@@ -4,16 +4,60 @@ import { v4 as uuidv4 } from 'uuid';
 import multer from 'multer';
 import File from '../models/file.js';
 import Directory from '../models/directory.js';
-import cryptDriveConfig from "../config/cryptDriveConfig.json" assert { type: "json" };
-import { encryptBuffer, decryptBuffer } from '../utilities/encryption.js';
+import cryptDriveConfig from "../config/cryptDriveConfig.json" with { type: "json" };
+import { encryptBuffer, decryptBuffer, encrypt, decrypt } from '../utilities/encryption.js';
+import { lookup } from 'mime-types';
+
+const mimeToCategory = {
+    audio: new Set(['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp4']),
+    video: new Set(['video/mp4', 'video/webm', 'video/ogg']),
+    image: new Set(['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/svg+xml']),
+    pdf: new Set(['application/pdf']),
+    word: new Set(['application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document']),
+    excel: new Set(['application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']),
+    powerpoint: new Set(['application/vnd.ms-powerpoint','application/vnd.openxmlformats-officedocument.presentationml.presentation']),
+    csv: new Set(['text/csv']),
+    code: new Set(['text/html','text/css','application/javascript','application/json','application/xml']),
+    text: new Set(['text/plain','text/markdown']),
+    zip: new Set(['application/zip','application/x-7z-compressed','application/x-rar-compressed']),
+    secure: new Set(['application/pgp-encrypted','application/x-pem-file']),
+    crypto: new Set(['application/x-bitcoin']),
+    medical: new Set(['application/hl7-v2','application/fhir+json']),
+    system: new Set(['application/octet-stream'])
+};
+
+function getCategory(mime) {
+    for (const [category, mimes] of Object.entries(mimeToCategory)) {
+        if (mimes.has(mime)) return category;
+    }
+    return 'unknown/any'; // Fallback for unknown types
+};
 
 // Multer in-memory
-const uploadMemory = multer({ storage: multer.memoryStorage() });
+const uploadMemory = multer({ 
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 50MB limit per file
+    files: 10 // Max 10 files per request
+  }
+});
 
 // ===== SEARCH =====
 const search = async (req, res, next) => {
   try {
-    const { cwd, limit, offset, favouritesOnly, searchTerm, matchCase, matchEntire, useRegex, searchTags, blacklistTags } = req.body;
+    const {
+      cwd,
+      limit,
+      offset,
+      favouritesOnly,
+      searchTerm,
+      matchCase,
+      matchEntire,
+      useRegex,
+      searchTags,
+      blacklistTags
+    } = req.body;
+
     const limitNum = Math.max(parseInt(limit) || 10, 1);
     const offsetNum = Math.max(parseInt(offset) || 0, 0);
     const userId = req.user._id;
@@ -40,21 +84,52 @@ const search = async (req, res, next) => {
 
     if (searchTags?.length) {
       const normalizedTags = searchTags.map(t => t.toLowerCase());
-      if (blacklistTags) {
-        fileConditions.push({ searchTags: { $nin: normalizedTags } });
-        dirConditions.push({ searchTags: { $nin: normalizedTags } });
-      } else {
-        fileConditions.push({ searchTags: { $all: normalizedTags } });
-        dirConditions.push({ searchTags: { $all: normalizedTags } });
-      }
+      const tagQuery = blacklistTags
+        ? { $nin: normalizedTags }
+        : { $all: normalizedTags };
+
+      fileConditions.push({ searchTags: tagQuery });
+      dirConditions.push({ searchTags: tagQuery });
     }
 
-    const files = await File.find(fileConditions.length > 1 ? { $and: fileConditions } : fileConditions[0])
-      .skip(offsetNum).limit(limitNum);
+    // Fetch all matching files and directories
+    const files = await File.find(fileConditions.length > 1 ? { $and: fileConditions } : fileConditions[0]);
     const directories = await Directory.find(dirConditions.length > 1 ? { $and: dirConditions } : dirConditions[0]);
 
-    res.json({ files, directories });
-  } catch (err) { next(err); }
+    // Combine and prioritize
+    const combined = [
+      ...directories.map(d => ({ ...d.toObject(), _isDir: true })),
+      ...files.map(f => ({ ...f.toObject(), _isDir: false }))
+    ];
+
+    // Sort: favourites first, then directories first, then type -> title
+    combined.sort((a, b) => {
+      // 1. Favourites first
+      const favA = a.isFavourite === userId ? 1 : 0;
+      const favB = b.isFavourite === userId ? 1 : 0;
+      if (favB !== favA) return favB - favA;
+
+      // 2. Directories before files
+      if (a._isDir !== b._isDir) return a._isDir ? -1 : 1;
+
+      // 3. Type -> title
+      if (a.type && b.type && a.type !== b.type) return a.type.localeCompare(b.type);
+      return (a._isDir ? a.basename : a.filename).localeCompare(b._isDir ? b.basename : b.filename);
+    });
+
+    // Paginate combined list
+    const paginated = combined.slice(offsetNum, offsetNum + limitNum);
+
+    const paginatedDirs = paginated.filter(i => i._isDir);
+    const paginatedFiles = paginated.filter(i => !i._isDir);
+
+    res.json({
+      directories: paginatedDirs,
+      files: paginatedFiles
+    });
+  } catch (err) {
+    next(err);
+  }
 };
 
 // ===== UPLOAD FILES =====
@@ -62,42 +137,45 @@ const uploadFiles = [
   uploadMemory.any(),
   async (req, res, next) => {
     try {
+      if (!req.session?.kek) return res.status(401).json({ message: 'Vault locked' });
       const userId = req.user._id;
-      const secretKey = req.session?.secretKey;
-      if (!secretKey) return res.status(401).json({ message: 'Vault locked' });
-
+      const secretKey = decrypt(req.user.secretKey, req.session.kek);
       const pathParam = (req.query.path || '/').trim() || '/';
+
       const uploadedFiles = [];
-      const userFolder = path.join(cryptDriveConfig.storageRoot, userId.toString());
+      const userFolder = path.join('./uploads', userId.toString());
       if (!fs.existsSync(userFolder)) fs.mkdirSync(userFolder, { recursive: true });
 
       for (const file of req.files) {
         const { encryptedData, meta } = encryptBuffer(file.buffer, secretKey);
         const fileId = uuidv4();
         const storagePath = path.join(userFolder, `${fileId}.enc`);
+        const mime = lookup(file.originalname) || file.mimetype;
         fs.writeFileSync(storagePath, encryptedData);
 
         const dbFile = new File({
           account: userId,
           filename: file.originalname,
-          mime: file.mimetype,
+          mime,
           size: file.size,
           path: pathParam,
           storagePath,
           iv: meta.iv,
           authTag: meta.authTag,
-          searchTags: [],
-          isFavourite: []
+          searchTags: getCategory(mime),
+          isFavourite: [],
         });
-
         await dbFile.save();
         uploadedFiles.push(dbFile);
       }
 
       res.json({ success: true, uploadedFiles });
-    } catch (err) { next(err); }
+    } catch (err) {
+      next(err);
+    }
   }
 ];
+
 
 // ===== CREATE DIRECTORY =====
 const createDirectory = async (req, res, next) => {
@@ -220,14 +298,13 @@ export const getFileById = async (fileId, user) => {
 };
 
 // ===== DOWNLOAD FILE =====
-export const downloadFile = async (req, res, next) => {
+const downloadFile = async (req, res, next) => {
   try {
-    const fileId = req.params.id;
-    const secretKey = req.session?.secretKey;
-    if (!secretKey) return res.status(401).json({ message: 'Vault locked' });
+    if (!req.session?.kek) return res.status(401).json({ message: 'Vault locked' });
+    const secretKey = decrypt(req.user.secretKey, req.session.kek);
 
-    const file = await getFileById(fileId, req.user);
-    if (!file) return res.status(404).send('File not found');
+    const file = await File.findById(req.params.id);
+    if (!file || !file.account.equals(req.user._id)) return res.status(404).send('File not found');
     if (!fs.existsSync(file.storagePath)) return res.status(404).send('File missing on server');
 
     const encryptedData = fs.readFileSync(file.storagePath);
@@ -236,12 +313,53 @@ export const downloadFile = async (req, res, next) => {
     res.setHeader('Content-Disposition', `attachment; filename="${file.filename}"`);
     res.setHeader('Content-Type', file.mime || 'application/octet-stream');
     res.send(decryptedBuffer);
-  } catch (err) { next(err); }
+  } catch (err) {
+    next(err);
+  }
+};
+
+const viewFile = async (req, res, next) => {
+  try {
+      const id = req.params.id;
+
+      const file = await File.findOne({
+          _id: id,
+          account: req.user._id
+      });
+
+      if (!file) {
+          return res.status(404).send('File not found');
+      }
+
+      const secretKey = decrypt(req.user.secretKey, req.session.kek);
+
+      const decrypted = {
+          _id: password._id,
+          title: password.title,
+          url: decrypt(password.url, secretKey),
+          searchTags: password.searchTags,
+          username: decrypt(password.username, secretKey),
+          password: decrypt(password.password, secretKey),
+          note: decrypt(password.note, secretKey),
+          isFavourite: password.isFavourite,
+          createdAt: password.createdAt,
+          updatedAt: password.updatedAt
+      };
+
+      res.render('viewFile', {
+          file: decrypted,
+          account: req.user
+      });
+
+  } catch (err) {
+      next(err);
+  }
 };
 
 // ===== EXPORT =====
 export default {
   search,
+  viewFile,
   uploadFiles,
   createDirectory,
   deleteDirectory,

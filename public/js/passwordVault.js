@@ -61,13 +61,10 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("addPasswordButton").addEventListener('click', () => location.href = '/pass/viewAdd');
     
     document.getElementById("selectAll").addEventListener('click', () => {
-        const count = state.allPasswords.length;
-        const newSelection = new Set();
-        
-        for (let i = 0; i < count; i++) {
-            newSelection.add(i);
-        }
-        
+        const newSelection = new Set(
+            state.allPasswords.map(p => p._id)
+        );
+
         state.selectedPasswords = newSelection;
         renderVirtual();
     });
@@ -212,8 +209,11 @@ document.addEventListener("DOMContentLoaded", () => {
        FETCH
     ========================= */
     async function favouriteSelectedPasswords() {
-        const ids = [...state.selectedPasswords].map(i => state.allPasswords[i]._id);
-        const allFavourited = [...state.selectedPasswords].every(i => state.allPasswords[i].isFavourite)
+        const ids = [...state.selectedPasswords];
+
+        const allFavourited = ids.every(id =>
+            state.allPasswords.find(p => p._id === id)?.isFavourite
+        );
 
         const res = await fetch("/pass/favouriteMany", {
             method: "POST",
@@ -233,9 +233,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function deleteSelectedPasswords() {
         if (state.selectedPasswords.size === 0) return;
-        if (!confirm(`Are you sure you want to delete ${state.selectedPasswords.size} password(s)?`)) return
 
-        const ids = [...state.selectedPasswords].map(i => state.allPasswords[i]._id);
+        if (!confirm(`Are you sure you want to delete ${state.selectedPasswords.size} password(s)?`)) return;
+
+        const ids = [...state.selectedPasswords];
 
         const res = await fetch("/pass/deleteMany", {
             method: "POST",
@@ -244,9 +245,18 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         const data = await res.json();
+
         if ('message' in data) {
             alert(data.message);
         }
+
+        const deletedIds = new Set(ids);
+
+        state.allPasswords = state.allPasswords.filter(
+            p => !deletedIds.has(p._id)
+        );
+
+        state.selectedPasswords.clear();
 
         sortAllPasswords();
         renderVirtual();
@@ -346,17 +356,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Checkbox
         const checkbox = document.createElement('button');
-        checkbox.innerHTML = state.selectedPasswords.has(index) ? 
-            '<i class="fa-regular fa-square-check"></i>' : 
-            '<i class="fa-regular fa-square"></i>';
+
+        checkbox.innerHTML = state.selectedPasswords.has(e._id)
+            ? '<i class="fa-regular fa-square-check"></i>'
+            : '<i class="fa-regular fa-square"></i>';
+
         checkbox.addEventListener('click', () => {
-            if (state.selectedPasswords.has(index)) {
-                state.selectedPasswords.delete(index);
+
+            if (state.selectedPasswords.has(e._id)) {
+                state.selectedPasswords.delete(e._id);
                 checkbox.innerHTML = '<i class="fa-regular fa-square"></i>';
             } else {
-                state.selectedPasswords.add(index);
+                state.selectedPasswords.add(e._id);
                 checkbox.innerHTML = '<i class="fa-regular fa-square-check"></i>';
             }
+
         });
         row.appendChild(checkbox);
 

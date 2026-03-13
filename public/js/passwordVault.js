@@ -209,25 +209,48 @@ document.addEventListener("DOMContentLoaded", () => {
        FETCH
     ========================= */
     async function favouriteSelectedPasswords() {
-        const ids = [...state.selectedPasswords];
+        try {
+            const ids = [...state.selectedPasswords];
 
-        const allFavourited = ids.every(id =>
-            state.allPasswords.find(p => p._id === id)?.isFavourite
-        );
+            const allFavourited = ids.every(id =>
+                state.allPasswords.find(p => p._id === id)?.isFavourite
+            );
 
-        const res = await fetch("/pass/favouriteMany", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ids, state: !allFavourited })
-        });
+            const newState = !allFavourited;
 
-        const data = await res.json();
-        if ('message' in data) {
-            alert(data.message);
+            console.log("test");
+
+            const res = await fetch("/pass/favouriteMany", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ids, state: newState })
+            });
+
+            console.log("test 2");
+
+            if (!res.ok) {
+                console.error("Server error:", res.status);
+                return;
+            }
+
+            const data = await res.json();
+
+            if ('message' in data) {
+                alert(data.message);
+            }
+
+            state.allPasswords.forEach(p => {
+                if (ids.includes(p._id)) {
+                    p.isFavourite = newState;
+                }
+            });
+
+            sortAllPasswords();
+            renderVirtual();
+
+        } catch (err) {
+            console.error("Favourite bulk failed:", err);
         }
-
-        sortAllPasswords();
-        renderVirtual();
     }
     favouriteSelectedBtn.addEventListener('click', async () => await favouriteSelectedPasswords());
 

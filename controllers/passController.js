@@ -68,12 +68,11 @@ const search = async (req, res, next) => {
         const total = await Password.countDocuments(query);
 
         // =========================
-        // Fetch data with pagination & sorting
+        // Fetch data with pagination
         // =========================
         const passwords = await Password.find(query)
             .skip(offsetNum)
             .limit(limitNum)
-            .sort({ isFavourite: -1, title: 1 }) // favourites first, then title
             .select('-__v -url -password -username -note'); // minimal fields
 
         // =========================
@@ -216,44 +215,63 @@ const add = async (req, res, next) => {
 const deleteOne = async (req, res, next) => {
     try {
         await Password.findByIdAndDelete(req.body.id);
+
+        res.json({ success: true });
         
     } catch (err) {
-        res.json({ message: 'Something went wrong when deleting your password' });
-        next(err);
+        return res.status(500).json({
+            success: false,
+            message: 'Something went wrong when deleting your password'
+        });
     }
 }
 
 const deleteMany = async (req, res, next) => {
     try {
-        await Password.deleteMany({ _id: { $in: req.body.ids }})
-        
+        await Password.deleteMany({ _id: { $in: req.body.ids } });
+
+        res.json({ success: true });
+
     } catch (err) {
-        res.json({ message: 'Something went wrong when deleting your passwords' });
+        res.status(500).json({ message: 'Error deleting passwords' });
         next(err);
     }
-}
+};
 
-const favouriteMany = async (req, res, next) => {
+const favouriteMany = async (req, res) => {
     try {
         const { ids, state } = req.body;
+
         await Password.updateMany(
             { _id: { $in: ids } },
-            { $set: { isFavourite: state } } 
+            { $set: { isFavourite: state } }
         );
+
+        return res.json({ success: true });
+
     } catch (err) {
-        res.json({ message: 'Something went wrong when favouriting/unfavouriting your passwords' });
-        next(err);
+        console.error(err);
+        return res.status(500).json({
+            success: false,
+            message: 'Something went wrong when favouriting/unfavouriting your passwords'
+        });
     }
-}
+};
 
 const toggleFavourite = async (req, res, next) => {
     try {
-        await Password.findByIdAndUpdate(req.body.id, { $set: { isFavourite: req.body.state } })
+        await Password.findByIdAndUpdate(
+            req.body.id,
+            { $set: { isFavourite: req.body.state } }
+        );
+
+        res.json({ success: true }); 
+
     } catch (err) {
-        res.json({ message: 'Something went wrong when favouriting/unfavouriting your password' });
+        res.status(500).json({ message: 'Error updating favourite' });
         next(err);
     }
-}
+};
 
 export default {
     search,

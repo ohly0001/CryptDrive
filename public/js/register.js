@@ -1,102 +1,77 @@
-function processRegisterForm(form) {
-    if (!form.reportValidity()) return;
+// --- Helpers ---
+const $ = (id) => document.getElementById(id);
 
-    const username = document.getElementById("username").value.trim();
-    const email = document.getElementById("email").value.trim().toLowerCase();
-    const password = document.getElementById("password1").value;
-    const passConfirm = document.getElementById("password2").value;
+const getFormData = () => ({
+    username: $("username").value.trim(),
+    email: $("email").value.trim().toLowerCase(),
+    password: $("password1").value,
+    confirm: $("password2").value
+});
 
-    if (username === email) {
-        alert("Your cannot use your email as your usename");
+const showError = (msg) => {
+    alert(msg);
+};
+
+const isPasswordValidLength = (password) =>
+    password.length >= 12 && password.length <= 128;
+
+const getPasswordScore = (password) =>
+    zxcvbn(password).score;
+
+// --- UI: Password Strength ---
+function updatePasswordStrength(password) {
+    const meter = $("passwordStrength");
+    const label = $("passwordStrengthLabel");
+
+    if (!password) {
+        meter.value = 0;
+        label.innerText = "Password Strength";
         return;
     }
 
-    if (password !== passConfirm) {
-        alert("Passwords must match");
+    if (!isPasswordValidLength(password)) {
+        meter.value = 0;
+        label.innerText =
+            password.length < 12 ? "Too Short" : "Too Long";
         return;
     }
 
-    if (password.length < 12 || password.length > 128) {
-        alert(`Password must be between 12 to 128 characters.`);
-        return;
-    }
+    const score = getPasswordScore(password);
+    const labels = ["Very Weak", "Weak", "Fair", "Strong", "Very Strong"];
 
-    if (password.length < 12 || password.length > 99) {
-        alert(`Password must be between 12 to 99 characters.`);
-        return;
-    }
-
-    if (zxcvbn(passInput).value.score < 3) {
-        alert(`Password strength is insufficient`);
-        return;
-    }
-
-    fetch('/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, email, password })
-    })
-    .then(async (res) => {
-        if (!res.ok) {
-            try {
-                const data = await res.json();
-                alert(data?.error || "Registration failed");
-            } catch {
-                const text = await res.text();
-                alert(`Server Error: ${text}`);
-            }
-        } else {
-            document.location.replace('./activationCode.html');
-        }
-    })
+    meter.value = score;
+    label.innerText = labels[score];
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('form');
-    form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        processRegisterForm(form);
-    });
+// --- Password Peek ---
+function setupPasswordPeek() {
+    const input = $("password1");
+    const button = $("passwordPeek");
 
-    const password = document.getElementById('password1');
-    password.addEventListener('input', () => {
-        const passwordStrengthGauge = document.getElementById('passwordStrength');
-        const passwordStrengthLabel = document.getElementById('passwordStrengthLabel');
-
-        if (!passInput.value) {
-            passwordStrengthGauge.value = 0;
-            passwordStrengthLabel.innerText = "Password Strength";
-            return;
-        }
-
-        if (passInput.value.length < 12) {
-            passwordStrengthGauge.value = 0;
-            passwordStrengthLabel.innerText = "Too Short";
-            return;
-        }
-
-        if (passInput.value.length > 128) {
-            passwordStrengthGauge.value = 0;
-            passwordStrengthLabel.innerText = "Too Long";
-            return;
-        }
-
-        const score = zxcvbn(passInput.value).score;
-        passwordStrengthGauge.value = score;
-        const labels = ["Very Weak", "Weak", "Fair", "Strong", "Very Strong"];
-        passwordStrengthLabel.innerText = labels[score];
-    });
-
-    const peekButton = document.getElementById('passwordPeek');
-    const showPassword = () => {
-        peekButton.innerHTML = '<i class="fa-solid fa-eye"></i>';
-        password.type = 'text'
-    };
-    const hidePassword = () => {
-        peekButton.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
-        password.type = 'password'
+    const show = () => {
+        input.type = "text";
+        button.innerHTML = '<i class="fa-solid fa-eye"></i>';
     };
 
-    ['mousedown', 'touchstart'].forEach(evt => peekButton.addEventListener(evt, showPassword));
-    ['mouseup', 'mouseleave', 'touchend'].forEach(evt => peekButton.addEventListener(evt, hidePassword));
+    const hide = () => {
+        input.type = "password";
+        button.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
+    };
+
+    ["mousedown", "touchstart"].forEach(e =>
+        button.addEventListener(e, show)
+    );
+
+    ["mouseup", "mouseleave", "touchend"].forEach(e =>
+        button.addEventListener(e, hide)
+    );
+}
+
+// --- Init ---
+document.addEventListener("DOMContentLoaded", () => {
+    $("password1").addEventListener("input", (e) =>
+        updatePasswordStrength(e.target.value)
+    );
+
+    setupPasswordPeek();
 });

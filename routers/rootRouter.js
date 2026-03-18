@@ -13,7 +13,7 @@ import { isAuthenticated } from '../middleware/authCheck.js';
 const router = express.Router();
 
 router.use('/auth', authRouter); 
-router.use('/', isAuthenticated, navRouter);
+router.use('/', navRouter);
 router.use('/pass', isAuthenticated, passRouter);
 router.use('/note', isAuthenticated, noteRouter);
 router.use('/file', isAuthenticated, fileRouter);

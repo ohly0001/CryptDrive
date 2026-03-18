@@ -1,5 +1,6 @@
 import cryptDriveConfig from '../config/cryptDriveConfig.json' with { type: 'json' };
 import mongoose from 'mongoose';
+import bcrypt from 'bcrypt';
 
 const lifeSpan = 10 * 60;
 

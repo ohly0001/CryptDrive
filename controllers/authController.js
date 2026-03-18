@@ -27,11 +27,11 @@ const sendConfirmationEmail = async (email, code) => {
     return transporter.sendMail(mailOptions);
 };
 
-const resend = async (req, res) => {
+const resend = async (req, res, next) => {
     //TODO resent OTP / code
 };
 
-const register = async (req, res) => {
+const register = async (req, res, next) => {
     try {
         const { username, email, password } = req.body;
 
@@ -143,7 +143,8 @@ const login = async (req, res, next) => {
 
                 await account.updateOne({ expireAt: null });
                 //res.redirect('/auth/completed');
-                res.json({ redirect: '/home' });
+                //res.json({ redirect: '/home' });
+                res.render('home');
             });
         });
     })(req, res, next);
@@ -176,14 +177,23 @@ const logout = async (req, res, next) => {
         req.session.destroy((err) => {
             if (err) return next(err);
             res.clearCookie('cryptdrive');
-            res.json({redirect: '/login.html'});
+            //res.json({redirect: '/login.html'});
+            res.render('login');
         });
     });
 };
 
-const autologin = async (req, res) => {
-    res.redirect(req.isAuthenticated?.() ? '/home' : '/login.html');
+const autologin = async (req, res, next) => {
+    res.render(req.isAuthenticated?.() ? 'home' : 'login');
 }; 
+
+const viewRegister = async (req, res, next) => {
+    res.render('register', { error: null });
+};
+
+const viewLogin = async (req, res, next) => {
+    res.render('login', { error: null });
+};
 
 export default {
     register,
@@ -192,5 +202,7 @@ export default {
     deregister,
     logout,
     autologin,
-    resend
+    resend,
+    viewRegister,
+    viewLogin
 };

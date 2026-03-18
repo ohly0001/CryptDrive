@@ -19,6 +19,12 @@ const viewFileRepository = async (req, res, next) => {
 const viewNotekeeper = async (req, res, next) => {
     res.render('noteKeeper', {});
 };
+const viewRegister = async (req, res, next) => {
+    res.render('register', {});
+};
+const viewLogin = async (req, res, next) => {
+    res.render('login', {});
+};
 
 export default {
     viewHome,
@@ -27,5 +33,7 @@ export default {
     viewPasswordVault,
     viewPasswordFactory,
     viewFileRepository,
-    viewNotekeeper
+    viewNotekeeper,
+    viewRegister,
+    viewLogin
 };

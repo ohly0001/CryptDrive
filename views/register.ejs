@@ -7,12 +7,13 @@
         <title>CryptDrive ∷ Registration</title>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/zxcvbn/4.4.2/zxcvbn.js"></script>
         <script src="js/register.js" defer></script>
+        <script src="https://kit.fontawesome.com/0f23db6f2c.js" crossorigin="anonymous"></script>
         <link rel="stylesheet" href="/css/site.css">
         <link rel="stylesheet" href="/css/auth.css">
     </head>
     <body>
         <h1>CryptDrive ∷ Registration</h1>
-        <form id="form">
+        <form id="form" action="/auth/register" method="POST">
             <fieldset>
                 <legend>Register</legend>
                 <label for="username"><i class="fa-solid fa-hashtag"></i> Username</label><br>
@@ -30,7 +31,7 @@
             </fieldset>
             <fieldset>
                 <legend>Other</legend>
-                <button onclick="document.location.href='./login.html'">Login</button>
+                <button onclick="document.location.href='/login'">Login</button>
             </fieldset>
         </form>
     </body>

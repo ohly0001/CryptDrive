@@ -1,3 +1,4 @@
+// register.js
 function processRegisterForm(form) {
     if (!form.reportValidity()) return;
 
@@ -26,7 +27,7 @@ function processRegisterForm(form) {
         return;
     }
 
-    if (zxcvbn(passInput).value.score < 3) {
+    if (zxcvbn(password).score < 3) {
         alert(`Password strength is insufficient`);
         return;
     }
@@ -37,16 +38,13 @@ function processRegisterForm(form) {
         body: JSON.stringify({ username, email, password })
     })
     .then(async (res) => {
+        const contentType = res.headers.get('content-type');
+        const body = contentType && contentType.includes('application/json') ? await res.json() : await res.text();
+        
         if (!res.ok) {
-            try {
-                const data = await res.json();
-                alert(data?.error || "Registration failed");
-            } catch {
-                const text = await res.text();
-                alert(`Server Error: ${text}`);
-            }
+            alert(body?.error || body || "Registration failed");
         } else {
-            document.location.replace('./activationCode.html');
+            //document.location.replace('./activationCode.html');
         }
     })
 }
@@ -63,25 +61,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const passwordStrengthGauge = document.getElementById('passwordStrength');
         const passwordStrengthLabel = document.getElementById('passwordStrengthLabel');
 
-        if (!passInput.value) {
+        if (!password.value) {
             passwordStrengthGauge.value = 0;
             passwordStrengthLabel.innerText = "Password Strength";
             return;
         }
 
-        if (passInput.value.length < 12) {
+        if (password.value.length < 12) {
             passwordStrengthGauge.value = 0;
             passwordStrengthLabel.innerText = "Too Short";
             return;
         }
 
-        if (passInput.value.length > 128) {
+        if (password.value.length > 128) {
             passwordStrengthGauge.value = 0;
             passwordStrengthLabel.innerText = "Too Long";
             return;
         }
 
-        const score = zxcvbn(passInput.value).score;
+        const score = zxcvbn(password.value).score;
         passwordStrengthGauge.value = score;
         const labels = ["Very Weak", "Weak", "Fair", "Strong", "Very Strong"];
         passwordStrengthLabel.innerText = labels[score];

@@ -5,14 +5,31 @@ import Code from '../models/codes.js';
 import nodemailer from 'nodemailer';
 import { randomInt } from 'crypto';
 import { derivekek } from "../utilities/encryption.js";
+import dns from "dns";
 
 const sendConfirmationEmail = async (email, code) => {
     const transporter = nodemailer.createTransport({
-        service: "gmail",
+        host: "smtp.gmail.com",
+        port: 587,
+        secure: false, // TLS
         auth: {
             user: process.env.GMAIL_USER,
             pass: process.env.GMAIL_APP_PASSWORD,
         },
+        tls: {
+            rejectUnauthorized: false,
+        },
+        // Force IPv4
+        dns: {
+            lookup: (hostname, options, callback) => {
+                if (typeof options === "function") {
+                    callback = options;
+                    options = {};
+                }
+                options.family = 4; // IPv4 only
+                dns.lookup(hostname, options, callback);
+            }
+        }
     });
     const mailOptions = {
         from: `"CryptDrive No Reply" <${process.env.GMAIL_USER}>`,
@@ -65,8 +82,8 @@ const register = async (req, res) => {
             await sendConfirmationEmail(email, activationCode);
             console.log(`Confirmation email sent to ${email}`);
         } catch (err) {
-            console.error('Error sending activation email:', err);
-            return res.status(500).send('Failed to send activation email.');
+            console.error('Email failed:', err);
+            // Optionally inform user but do not break registration
         }
 
         res.render('activationCode', { email }); // Render page to enter activation code

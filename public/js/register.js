@@ -39,14 +39,15 @@ function processRegisterForm(form) {
     })
     .then(async (res) => {
         const contentType = res.headers.get('content-type');
-        const body = contentType && contentType.includes('application/json') ? await res.json() : await res.text();
+        const body = contentType.includes('application/json') ? await res.json() : await res.text();
         
         if (!res.ok) {
             alert(body?.error || body || "Registration failed");
         } else {
-            //document.location.replace('./activationCode.html');
+            // Redirect to activation code page
+            window.location.replace(body.redirect);
         }
-    })
+    });
 }
 
 document.addEventListener('DOMContentLoaded', () => {

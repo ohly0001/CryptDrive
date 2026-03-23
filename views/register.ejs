@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta charset="UTF-8">
+        <meta name="author" content="Robert Ohly">
+        <title>CryptDrive ∷ Registration</title>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/zxcvbn/4.4.2/zxcvbn.js"></script>
+        <script src="/js/register.js" defer></script>
+        <link rel="stylesheet" href="/css/site.css">
+        <link rel="stylesheet" href="/css/auth.css">
+    </head>
+    <body>
+        <h1>CryptDrive ∷ Registration</h1>
+        <form id="form">
+            <fieldset>
+                <legend>Register</legend>
+                <label for="username"><i class="fa-solid fa-hashtag"></i> Username</label><br>
+                <input id="username" type="text" placeholder="John Smith" title="case-sensitive" required><br><br>
+                <label for="email"><i class="fa-solid fa-at"></i> Email</label><br>
+                <input id="email" type="email" placeholder="jsmith@email.com" title="case-insensitive" required><br><br>
+                <label for="password1"><i class="fa-solid fa-key"></i> Password</label><br>
+                <input id="password1" autocomplete="off" type="password" required>
+                <button id="passwordPeek" type="button" title="Reveal Pasword"><i class="fa-solid fa-eye"></i></button><br>
+                <meter id="passwordStrength" min="0" max="4" low="2" high="3" optimum="4" style="width: 170px;" title="Estimated Password Strength"></meter><br>
+                <label for="passwordStrength" id="passwordStrengthLabel">Password Strength</label><br><br>
+                <label for="password2"><i class="fa-solid fa-lock"></i> Confirm Password</label><br>
+                <input id="password2" autocomplete="off" type="password" required><br><br>
+                <input type="submit" value="Register">
+            </fieldset>
+            <fieldset>
+                <legend>Other</legend>
+                <button onclick="document.location.href='/auth/login'">Login</button>
+            </fieldset>
+        </form>
+    </body>
+</html>

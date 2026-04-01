@@ -38,13 +38,22 @@ let visibleEnd = 0;
 /* =========================
    INIT
 ========================= */
+async function writeClipboard(text) {
+  try {
+    state.clipboardLive = true;
+    await navigator.clipboard.writeText(text);
+  } catch (err) {
+    console.error('Failed to copy: ', err);
+  }
+}
+
 async function clearClipboard() {
     if (state.clipboardLive) await navigator.clipboard.writeText("");
 }
 
 async function clearClipboard(text) {
     navigator.clipboard.writeText(text);
-    state.clipboardLive = true;
+    state.clipboardLive = false;
 }
 
 document.addEventListener("DOMContentLoaded", () => {

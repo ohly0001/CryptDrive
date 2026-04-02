@@ -1,24 +1,154 @@
+/* --- Layout & Typography --- */
 body {
-    padding: 40px 20px;
-    max-width: 800px;
-    margin: 0 auto;
-    background-color: #f9fafb;
+    background-color: #f0f2f5;
+    color: #1c1e21;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-bottom: 50px;
 }
 
 h1 {
-    font-size: 28px;
-    color: #1e3a8a;
-    margin-bottom: 20px;
+    margin: 2rem 0;
+    font-size: 2rem;
+    width: 100%;
+    max-width: 600px;
+    text-align: left;
 }
 
+/* --- Container Style (Replacing Fieldsets) --- */
 fieldset {
-    border: 1px solid #cbd5e1;
-    border-radius: 10px;
-    padding: 20px;
-    margin-bottom: 20px;
+    border: none;
+    background: #ffffff;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    width: 100%;
+    max-width: 600px;
+    margin-bottom: 1.5rem;
+}
+
+legend {
+    font-weight: 700;
+    color: #4b4f56;
+    font-size: 1.1rem;
+    padding: 0 10px;
+    margin-bottom: 1rem;
+}
+
+/* --- Form Elements --- */
+#accountDetails {
+    display: grid;
+    gap: 15px;
+}
+
+#accountManagement, #navigation {
+    display: flex;
+    justify-content: space-evenly;
+}
+
+label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #606770;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: -10px; /* Tighten gap to input */
+}
+
+input {
+    width: 95%;
+    padding: 12px;
+    border: 1px solid #dddfe2;
+    border-radius: 8px;
+    font-size: 1rem;
     background-color: #ffffff;
 }
 
+/* Specific Style for Read-Only Fields */
+input[readonly] {
+    background-color: #f5f6f7;
+    color: #8d949e;
+    cursor: not-allowed;
+    border-color: #e4e6eb;
+}
+
+input:focus:not([readonly]) {
+    outline: none;
+    border-color: #1877f2;
+    box-shadow: 0 0 0 2px #e7f3ff;
+}
+
+/* --- Buttons & Actions --- */
 button {
+    padding: 12px 20px;
+    border-radius: 8px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: filter 0.2s, transform 0.1s;
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+#editAccount {
+    background-color: #1877f2;
+    color: white;
+}
+
+#cancelEditAccount {
+    background-color: #e4e6eb;
+    color: #4b4f56;
+}
+
+#deleteAccount {
+    background-color: #fbe9e7;
+    color: #d32f2f;
+    border: 1px solid #ffcdd2;
+}
+
+#deleteAccount:hover {
+    background-color: #d32f2f;
+    color: white;
+}
+
+#logout {
+    background-color: #4b4f56;
+    color: white;
+}
+
+/* --- Links --- */
+a[href*="password"] {
+    display: inline-block;
+    color: #1877f2;
+    text-decoration: none;
+    font-weight: 600;
     margin-top: 10px;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* --- Footer Timestamps --- */
+#createdAt, #updatedAt {
+    font-size: 0.85rem;
+    color: #90949c;
+    width: 100%;
+    max-width: 600px;
+    margin-top: 5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Hide line breaks used for spacing */
+br {
+    display: none;
 }

@@ -4,7 +4,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta charset="UTF-8">
         <meta name="author" content="Robert Ohly">
-        <title>CryptDrive ∷ Account Management</title>
+        <title>Account Management</title>
         <script src="/js/accountManagement.js" defer></script>
         <link rel="stylesheet" href="/css/site.css">
         <link rel="stylesheet" href="/css/accountManagement.css">
@@ -14,7 +14,7 @@
         <%- include('components/master') %>
         <%- include('components/nav') %>
         
-        <h1>CryptDrive ∷ Account Management</h1>
+        <h1>Account Management</h1>
         <fieldset>
             <legend>Account Details</legend>
             <div id="accountDetails">
@@ -28,14 +28,18 @@
         </fieldset>
         <fieldset>
             <legend>Account Management</legend>
-            <button id="editAccount"><i class="fas fa-user-edit"></i> Edit Account</button><br><br>
-            <button id="cancelEditAccount" style="display: none;"><i class="fa-solid fa-xmark"></i> Cancel Editting</button>
-            <a href="./passwordResetCode.html">Reset Password</a><br><br>
-            <button id="deleteAccount"><i class="fa-solid fa-trash"></i> Delete Account</button>
+            <div id="accountManagement">
+                <button id="editAccount"><i class="fas fa-user-edit"></i> Edit Account</button><br><br>
+                <button id="cancelEditAccount" style="display: none;"><i class="fa-solid fa-xmark"></i> Cancel Editting</button>
+                <a href="./passwordResetCode.html">Reset Password</a><br><br>
+                <button id="deleteAccount"><i class="fa-solid fa-trash"></i> Delete Account</button>
+            </div>
         </fieldset>
         <fieldset>
             <legend>Session & Navigation</legend>
-            <button id="logout"><i class="fa-solid fa-door-closed"></i> Logout</button><br><br>
+            <div id="navigation">
+                <button id="logout"><i class="fa-solid fa-door-closed"></i> Logout</button><br><br>
+            </div>
         </fieldset>
         <p id="createdAt"><i class="fa-solid fa-clock"></i> Created On:</p>
         <p id="updatedAt"><i class="fa-regular fa-clock"></i> Last Updated On:</p>

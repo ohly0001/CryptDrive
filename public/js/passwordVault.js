@@ -92,6 +92,18 @@ document.addEventListener("DOMContentLoaded", () => {
         resetSearch();
     });
 
+    document.getElementById("clearSearchField").addEventListener('click', () => {
+        searchField.value = "";
+        resetToggle("favorite", "favouritesOnly");
+        resetToggle("matchCase", "matchCase");
+        resetToggle("matchEntire", "matchEntire");
+        resetToggle("useRegex", "useRegex");
+        resetToggle("blacklistTags", "blacklistTags");
+        resetSearch();
+    });
+
+
+
     tagFilter.addEventListener('keydown', (e) => {
         if (e.key !== 'Enter') return;
         e.preventDefault();
@@ -551,6 +563,12 @@ document.addEventListener("DOMContentLoaded", () => {
     /* =========================
        TOGGLES
     ========================= */
+    function resetToggle(id, key) {
+        const el = document.getElementById(id);
+        state[key] = false;
+        el.classList.remove("toggled");
+    }
+
     function bindToggle(id, key) {
         const el = document.getElementById(id);
         el.onclick = () => {

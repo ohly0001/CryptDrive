@@ -1,0 +1,96 @@
+/* --- Global & Layout --- */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+    background-color: #f0f2f5;
+    color: #1c1e21;
+    line-height: 1.6;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* --- Main Content Card --- */
+main, .content-wrapper { /* Adjust selector based on your master component */
+    max-width: 800px;
+    width: 90%;
+    background: #ffffff;
+    padding: 2.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    margin-bottom: 3rem;
+}
+
+h1 {
+    font-size: 2.2rem;
+    margin-bottom: 0.5rem;
+    color: #1c1e21;
+    border-bottom: 2px solid #ebedf0;
+    padding-bottom: 10px;
+}
+
+h2 {
+    font-size: 1.4rem;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    color: #4b4f56;
+}
+
+p {
+    margin-bottom: 1rem;
+    color: #606770;
+}
+
+/* --- GitHub Button --- */
+button[onclick*="github"] {
+    background-color: #24292e;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    transition: background-color 0.2s;
+    margin-top: 10px;
+}
+
+button[onclick*="github"]:hover {
+    background-color: #444d56;
+}
+
+/* --- Security Tips Section --- */
+#tipsSection {
+    background-color: #f7f9fa;
+    border-left: 4px solid #1877f2;
+    padding: 1.5rem;
+    border-radius: 0 8px 8px 0;
+}
+
+#tipsSection ol, #tipsSection ul {
+    padding-left: 1.5rem;
+}
+
+#tipsSection li {
+    margin-bottom: 12px;
+    color: #4b4f56;
+}
+
+#tipsSection li::marker {
+    color: #1877f2;
+    font-weight: bold;
+}
+
+/* Mobile Adjustments */
+@media (max-width: 600px) {
+    h1 {
+        font-size: 1.8rem;
+    }
+}

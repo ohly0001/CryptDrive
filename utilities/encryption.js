@@ -22,7 +22,7 @@ export async function derivekek(password, salt) {
         hashLength: 32,
         raw: true
     });
-    return hash.toString('base64'); // Convert to base64 so encrypt/decrypt can use it
+    return hash.toString('base64'); 
 }
 
 export function saltShaker() {

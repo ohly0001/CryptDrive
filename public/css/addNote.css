@@ -7,7 +7,7 @@
 }
 
 body {
-    background-color: #f0f2f5; /* Light gray background */
+    background-color: #f0f2f5;
     color: #333;
     padding: 2rem;
     display: flex;
@@ -23,10 +23,11 @@ h1 {
     font-size: 2rem;
     width: 100%;
     max-width: 600px;
+    text-align: left;
 }
 
-/* --- Form Card Styling --- */
-#editPasswordForm {
+/* --- Form Container --- */
+#newNoteForm {
     background: #ffffff;
     padding: 2rem;
     border-radius: 8px;
@@ -54,10 +55,8 @@ label {
     color: #606770;
 }
 
-/* --- Input & Password Field Styling --- */
+/* --- Input & Textarea Styling --- */
 input[type="text"],
-input[type="url"],
-input[type="password"],
 textarea {
     width: 100%;
     padding: 12px;
@@ -65,79 +64,72 @@ textarea {
     border-radius: 6px;
     font-size: 1rem;
     margin-bottom: 1rem;
+    transition: border-color 0.2s;
 }
 
-/* Password field with peek button */
-.password-wrapper {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 1rem;
+textarea {
+    resize: vertical; /* Allows height adjustment but maintains width */
+    min-height: 150px;
 }
 
-.password-wrapper input {
-    margin-bottom: 0;
+input:focus, textarea:focus {
+    outline: none;
+    border-color: #1877f2;
+    box-shadow: 0 0 0 2px #e7f3ff;
 }
 
-#passwordPeek {
-    background-color: #f0f2f5;
-    border: 1px solid #dddfe2;
-    border-radius: 6px;
-    padding: 0 15px;
+/* --- Checkbox Styling --- */
+#newFavourite {
+    width: 18px;
+    height: 18px;
     cursor: pointer;
-    color: #4b4f56;
+    margin-bottom: 1.5rem;
 }
 
-/* --- Action Buttons --- */
-/* Save (Primary Blue) */
+/* --- Buttons --- */
 input[type="submit"] {
-    background-color: #1877f2;
+    background-color: #1877f2; /* Primary Blue */
     color: white;
     border: none;
-    padding: 10px 20px;
+    padding: 12px 24px;
     border-radius: 6px;
     font-weight: bold;
     cursor: pointer;
+    font-size: 1rem;
     transition: background-color 0.2s;
+    margin-right: 10px;
 }
 
 input[type="submit"]:hover {
     background-color: #166fe5;
 }
 
-/* Delete (Danger Red) */
-#delete {
-    background-color: #fa3e3e;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 6px;
-    font-weight: bold;
-    cursor: pointer;
-}
-
-/* Utility Buttons (Gray) */
-#revert, #back {
+#back {
     background-color: #f0f2f5;
     color: #4b4f56;
     border: 1px solid #dddfe2;
-    padding: 9px 20px;
+    padding: 11px 24px; /* Balanced with the submit button */
     border-radius: 6px;
     font-weight: bold;
     cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.2s;
 }
 
-#revert:hover, #back:hover {
+#back:hover {
     background-color: #e4e6eb;
 }
 
-/* --- Metadata Text --- */
-#creationTime, #updatedTime {
-    margin-top: 1.5rem;
-    font-size: 0.85rem;
-    color: #606770;
-    border-top: 1px solid #f0f2f5;
-    padding-top: 10px;
+/* --- Tag Styling --- */
+.tagContainer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: -5px;
+    margin-bottom: 1rem;
 }
 
-/* Hide legacy line breaks and manual styles */
-br { display: none; }
+/* Remove legacy line breaks */
+br {
+    display: none;
+}

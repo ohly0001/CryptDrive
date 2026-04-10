@@ -1,0 +1,164 @@
+/* --- Modern Reset & Layout --- */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: #f0f2f5;
+    color: #333;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Centers all direct children horizontally */
+}
+
+h1 {
+    width: 100%;
+    max-width: 1000px;
+    margin-bottom: 1.5rem;
+    color: #1c1e21;
+    font-size: 2rem;
+}
+
+/* --- Action Buttons --- */
+#addNoteButton {
+    background-color: #1877f2; /* Blue primary color */
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    
+    /* Centering Logic */
+    display: block;
+    margin: 0 auto 1.5rem auto; /* 'auto' on left/right centers the block element */
+    
+    width: fit-content; /* Ensures it doesn't stretch full-width */
+    transition: background-color 0.2s;
+}
+
+#addNoteButton:hover {
+    background-color: #166fe5;
+}
+
+/* --- Search Dashboard (Card Style) --- */
+#searchForm {
+    background: #ffffff;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 1000px;
+    margin-bottom: 2rem;
+}
+
+fieldset {
+    border: none;
+}
+
+legend {
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    color: #4b4f56;
+}
+
+/* --- Search Controls --- */
+.search-main-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+#searchField {
+    flex: 1;
+    min-width: 250px;
+    padding: 10px;
+    border: 1px solid #dddfe2;
+    border-radius: 6px;
+    font-size: 1rem;
+}
+
+/* Small Utility Buttons */
+button[type="button"], 
+button[type="submit"],
+#sortMode,
+#blacklistTags,
+#clearTags {
+    background-color: #f0f2f5;
+    border: 1px solid #dddfe2;
+    padding: 8px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #4b4f56;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.2s;
+}
+
+button:hover {
+    background-color: #e4e6eb;
+}
+
+/* Specific Highlight for Filters */
+#favorite.active {
+    color: #f7b924; /* Gold for stars */
+    border-color: #f7b924;
+}
+
+/* --- Batch Actions Bar --- */
+#batchActions {
+    width: 100%;
+    max-width: 1000px;
+    display: flex;
+    gap: 10px;
+    margin-bottom: 1.5rem;
+}
+
+#selectAll, #deselectAll {
+    background: none;
+    border: 1px solid #1877f2;
+    color: #1877f2;
+}
+
+#deleteSelected {
+    background-color: #fa3e3e;
+    color: white;
+    border: none;
+}
+
+/* --- Tag Styling --- */
+label[for="tagFilter"] {
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: #606770;
+    margin-top: 1rem;
+    display: block;
+}
+
+#tagFilter {
+    width: 200px;
+    padding: 8px;
+    border: 1px solid #dddfe2;
+    border-radius: 6px;
+    margin-top: 5px;
+}
+
+.tagContainer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 10px;
+}
+
+/* Hide legacy line breaks */
+br {
+    display: none;
+}

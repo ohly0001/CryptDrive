@@ -1,0 +1,148 @@
+/* --- Modern Reset & Layout --- */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: #f0f2f5;
+    color: #333;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+h1 {
+    width: 100%;
+    max-width: 1000px;
+    margin-bottom: 1.5rem;
+    color: #1c1e21;
+}
+
+/* --- Drag & Drop Zone --- */
+#dropZone {
+    background: #ffffff;
+    border: 2px dashed #1877f2;
+    border-radius: 8px;
+    padding: 3rem;
+    text-align: center;
+    width: 100%;
+    max-width: 1000px;
+    cursor: pointer;
+    margin-bottom: 1.5rem;
+    transition: background-color 0.2s;
+}
+
+#dropZone:hover {
+    background-color: #f0f7ff;
+}
+
+#dropZone i {
+    color: #1877f2;
+    margin-bottom: 10px;
+}
+
+/* --- New Folder Button --- */
+#createDirBtn {
+    background-color: #42b72a; /* Green for creation actions */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-bottom: 1.5rem;
+    display: block;
+}
+
+/* --- Search Dashboard (Card Style) --- */
+#searchForm {
+    background: #ffffff;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 1000px;
+    margin-bottom: 1rem;
+}
+
+fieldset {
+    border: none;
+}
+
+/* Inputs and Paths */
+#CWD {
+    background-color: #f0f2f5;
+    border: 1px solid #dddfe2;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-weight: bold;
+    color: #606770;
+    margin-bottom: 1rem;
+    width: 100%;
+}
+
+#searchField {
+    flex: 1;
+    min-width: 250px;
+    padding: 10px;
+    border: 1px solid #dddfe2;
+    border-radius: 6px;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    width: 100%;
+}
+
+/* Row Styling for utility buttons */
+button[type="button"], 
+button[type="submit"],
+#sortMode,
+#blacklistTags,
+#clearTags {
+    background-color: #f0f2f5;
+    border: 1px solid #dddfe2;
+    padding: 8px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #4b4f56;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-right: 5px;
+    margin-bottom: 5px;
+}
+
+/* --- Navigation & File List --- */
+#navToParent {
+    background: #ffffff;
+    border: 1px solid #dddfe2;
+    border-radius: 6px;
+    padding: 8px;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+
+#currentPath {
+    font-family: monospace;
+    font-size: 1.1rem;
+    margin-bottom: 5px;
+    color: #1877f2;
+}
+
+.file-list {
+    width: 100%;
+    max-width: 1000px;
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 1rem;
+    min-height: 200px;
+}
+
+/* Hide legacy line breaks */
+br {
+    display: none;
+}

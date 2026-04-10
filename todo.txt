@@ -1,4 +1,4 @@
-File Manager
+File Repository
 - Fix get issue during preview
 - Remove sub folder navigation if it proves too complicated
 

@@ -163,7 +163,6 @@ const login = async (req, res, next) => {
         req.login(account, async (err) => {
             if (err) return next(err);
 
-            // Derive KEK from the plaintext password used to log in
             const kek = await derivekek(req.body.password, account.kekSalt);
             req.session.kek = kek.toString('base64');
 

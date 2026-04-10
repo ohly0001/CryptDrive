@@ -1,21 +1,6 @@
 File Manager
-- Drag & Drop Folder and File Relocation
-- File Renaming (test)
-- File Upload (test)
-- Folder Download (test)
-- File Download (test)
-- File Deletion (test)
-- File Preview (test)
-- File Search (test)
-- Folder Navigation (test)
+- Fix get issue during preview
+- Remove sub folder navigation if it proves too complicated
 
-Password Manager
-- Add clipboard auto clearing
-
-Registration
-- Test OTP
-- Test Register Form
-
-Note Keeper
-- Mirror notes from other features or make fully standalone
- - perhaps both? A section for free notes and another for file & pass note lookup?
+Register
+- Test if register code works (you git)

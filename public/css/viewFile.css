@@ -1,0 +1,21 @@
+/* Container for the entire list */
+#metadataContainer {
+    max-width: 1000px;
+    margin: 20px auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Base Page Styling */
+body {
+    background-color: #f0f2f5; /* Light grey background from your Login page */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+h1 {
+    font-weight: 700;
+    color: #1c1e21;
+    margin-bottom: 30px;
+    text-align: center;
+}

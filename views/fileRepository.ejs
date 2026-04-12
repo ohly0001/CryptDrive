@@ -23,44 +23,53 @@
     <h1>File Repository</h1>
 
     <!-- Drag & drop / file select -->
-    <div id="dropZone">
-        <i class="fa-solid fa-file-arrow-up fa-2x"></i><br>
-        <p><b>Choose a file</b> or drag files here</p>
-    </div>
-    <div>
-        <button id="createDirBtn">
-            <i class="fa-solid fa-folder-plus"></i> New Folder
+    <main class="repository-container">
+    <section class="action-card">
+        <div id="dropZone" class="upload-area">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+            <p><b>Choose a file</b> or drag files here</p>
+        </div>
+
+        <div class="primary-actions">
+            <button id="createDirBtn" class="btn-primary">
+                <i class="fa-solid fa-plus"></i> New Folder
+            </button>
+        </div>
+
+        <form id="searchForm" class="filter-group">
+            <div class="search-bar-wrapper">
+                <input id="currentPath" type="text" class="path-input" placeholder="/" required title="Current Directory">
+                <input id="searchField" type="text" class="search-input" placeholder="Search files or folders...">
+                <div class="search-tools">
+                    <button id="matchCase" type="button" title="Match Case"><i class="fa fa-font"></i></button>
+                    <button id="matchEntire" type="button" title="Match Whole Word"><i class="fa-solid fa-underline"></i></button>
+                    <button id="useRegex" type="button" title="Use Regex"><i class="fa fa-code"></i></button>
+                    <button type="submit" class="btn-refresh"><i class="fa-solid fa-rotate"></i></button>
+                </div>
+            </div>
+
+            <div class="filter-buttons">
+                <button type="button" id="favorite" class="btn-toggle"><i class="fa-regular fa-star"></i> Favourites</button>
+                <button id="sortMode" class="btn-toggle">Sort By: <i class="fa-solid fa-arrow-down-a-z"></i></button>
+                <button id="blacklistTags" class="btn-toggle"><i class="fa-solid fa-filter"></i> Blacklist</button>
+                <button id="clearTags" class="btn-toggle"><i class="fa-solid fa-filter-circle-xmark"></i> Clear</button>
+            </div>
+            
+            <div class="tag-input-wrapper">
+                <i class="fa-solid fa-tag"></i>
+                <input type="text" id="tagFilter" placeholder="Add search tag...">
+                <div class="tagContainer" id="newTags"></div>
+            </div>
+        </form>
+    </section>
+
+    <nav class="breadcrumb-nav">
+        <button id="navToParent" class="btn-back" title="Go Back">
+            <i class="fa-solid fa-chevron-left"></i> Back
         </button>
-    </div>
-    <form id="searchForm">
-        <fieldset>
-            <input id="CWD" type="text" placeholder="/" required>
-            <input id="searchField" type="text" placeholder="Enter File or Directory Name">
+    </nav>
 
-            <button id="matchCase" type="button" title="Match Case"><i class="fa fa-font"></i></button>
-            <button id="matchEntire" type="button" title="Match Whole Word"><i class="fa-solid fa-underline"></i></button>
-            <button id="useRegex" type="button" title="Use Regex"><i class="fa fa-code"></i></button>
-
-            <button type="submit"><i class="fa-solid fa-arrow-rotate-right"></i> Refresh</button><br>
-
-            <!-- FAVORITES FILTER -->
-            <button type="button" id="favorite"> <i class="fa fa-star"></i> Favourites</button>
-
-            <!-- TITLE SORT -->
-            <button id="sortMode">Sort By: <i class="fa-solid fa-arrow-up-a-z"></i></button>
-
-            <!-- TAG FILTER -->
-            <button id="blacklistTags"><i class="fa-solid fa-filter"></i> Blacklist Tags</button>
-            <button id="clearTags"><i class="fa-solid fa-filter-circle-xmark"></i> Clear Tags</button><br>
-            <label for="tagFilter"><i class="fa-solid fa-tag"></i> Add Search Tag</label>
-            <input type="text" id="tagFilter" title="press enter to add" placeholder="Tag name..."><br>
-            <div class="tagContainer" id="newTags"></div><br>
-        </fieldset>
-    </form>
- 
-    <!-- File list -->
-    <p id="currentPath"></p>
-    <button id="navToParent" title="Navigate To Parent"><i class="fa-solid fa-turn-up"></i></button>
-    <div id="fileList" class="file-list"></div>
+    <div id="fileList" class="card-list"></div>
+</main>
 </body>
 </html>

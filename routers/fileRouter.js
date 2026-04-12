@@ -3,7 +3,7 @@ import controller from "../controllers/fileController.js";
 
 const router = express.Router();
 
-router.post("/view", controller.search);
+router.get("/view/:id", controller.viewFile);
 router.post("/search", controller.search);
 router.post("/upload", controller.uploadFiles);
 router.post("/directory/create", controller.createDirectory);

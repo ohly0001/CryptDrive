@@ -7,15 +7,15 @@ const DirectorySchema = new mongoose.Schema({
         ref: "Account", 
         required: true 
     },
-    shared: { 
+    shared: [{ 
         type: mongoose.Schema.Types.ObjectId, 
         ref: "Group", 
-    },
-    isFavourite: { 
+    }],
+    isFavourite: [{ 
         type: [mongoose.Schema.Types.ObjectId], 
         ref: "Account", 
         required: true 
-    },
+    }],
     parent: { 
         type: mongoose.Schema.Types.ObjectId, 
         ref: "Directory", 

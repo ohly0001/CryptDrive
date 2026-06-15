@@ -5,14 +5,31 @@ import Code from '../models/codes.js';
 import nodemailer from 'nodemailer';
 import { randomInt } from 'crypto';
 import { derivekek } from "../utilities/encryption.js";
+import dns from "dns";
 
 const sendConfirmationEmail = async (email, code) => {
     const transporter = nodemailer.createTransport({
-        service: "gmail",
+        host: "smtp.gmail.com",
+        port: 443,
+        secure: false, // TLS
         auth: {
             user: process.env.GMAIL_USER,
             pass: process.env.GMAIL_APP_PASSWORD,
         },
+        tls: {
+            rejectUnauthorized: false,
+        },
+        // Force IPv4
+        dns: {
+            lookup: (hostname, options, callback) => {
+                if (typeof options === "function") {
+                    callback = options;
+                    options = {};
+                }
+                options.family = 4; // IPv4 only
+                dns.lookup(hostname, options, callback);
+            }
+        }
     });
     const mailOptions = {
         from: `"CryptDrive No Reply" <${process.env.GMAIL_USER}>`,
@@ -31,7 +48,19 @@ const resend = async (req, res, next) => {
     //TODO resent OTP / code
 };
 
-const register = async (req, res, next) => {
+const viewRegister = async (req, res) => {
+    res.render('register', {});
+}
+
+const viewLogin = async (req, res) => {
+    res.render('login', {});
+}
+
+const viewRegisterCode = async (req, res) => {
+    res.render('registerCode', {});
+}
+
+const register = async (req, res) => {
     try {
         const { username, email, password } = req.body;
 
@@ -58,18 +87,19 @@ const register = async (req, res, next) => {
             code: randomInt(0, 1000000).toString().padStart(6, '0'),
             type: "account_activation"
         });
-        await activationCode.save();
 
         // Send activation email
         try {
             await sendConfirmationEmail(email, activationCode);
             console.log(`Confirmation email sent to ${email}`);
         } catch (err) {
-            console.error('Error sending activation email:', err);
-            return res.status(500).send('Failed to send activation email.');
+            console.error('Email failed:', err);
         }
 
-        res.render('activationCode', { email }); // Render page to enter activation code
+        await activationCode.save();
+
+        //res.redirect('/auth/registerCode');
+        res.json({ redirect: '/auth/registerCode' });
 
     } catch (error) {
         console.error(error);
@@ -84,12 +114,12 @@ async function testCode(codeObj, candidateCode) {
     return await codeObj.compareCode(candidateCode);
 }
 
-const activate = async (req, res, next) => {
+const registerCode = async (req, res, next) => {
     try {
         const { activationCode } = req.body;
 
         const codeObj = await Code.findOne({ code: activationCode, type: "account_activation" })
-            .sort({ timestamp: -1 });
+                                  .sort({ timestamp: -1 });
 
         const codeMatches = await testCode(codeObj, activationCode);
         if (!codeMatches) {
@@ -101,28 +131,27 @@ const activate = async (req, res, next) => {
             return res.status(404).json({ message: 'Account not found.' });
         }
 
-        // Mark account as confirmed
         await account.updateOne({ isActive: true });
-
         await codeObj.deleteOne();
 
-        const kek = req.session.kek; 
+        const kek = req.session.kek;
 
-        // Log in the user
         req.login(account, (err) => {
-        if (err) return next(err);
-
-        req.login(account, err => {
             if (err) return next(err);
 
-            req.session.kek = kek; // restore after passport overwrite
-            req.session.save(next);
+            req.login(account, err => {
+                if (err) return next(err);
+
+                req.session.kek = kek;
+                req.session.save(() => {
+                    res.json({ redirect: '/home' });
+                });
+            });
         });
-});
 
     } catch (err) {
         console.error(err);
-        res.status(500).send('Internal server error.');
+        res.status(500).json({ message: 'Internal server error.' });
     }
 };
 
@@ -134,7 +163,6 @@ const login = async (req, res, next) => {
         req.login(account, async (err) => {
             if (err) return next(err);
 
-            // Derive KEK from the plaintext password used to log in
             const kek = await derivekek(req.body.password, account.kekSalt);
             req.session.kek = kek.toString('base64');
 
@@ -142,9 +170,7 @@ const login = async (req, res, next) => {
                 if (err) return next(err);
 
                 await account.updateOne({ expireAt: null });
-                //res.redirect('/auth/completed');
-                //res.json({ redirect: '/home' });
-                res.render('home');
+                res.json({ redirect: '/home' });
             });
         });
     })(req, res, next);
@@ -160,8 +186,9 @@ const deregister = async (req, res, next) => {
 
             req.session.destroy((err) => {
                 if (err) return next(err);
-                //res.clearCookie('cryptdrive');
-                res.redirect('/login.html');
+                res.clearCookie('cryptdrive');
+                //res.redirect('/auth/login');
+                res.json({redirect: '/auth/login'})
             });
         });
 
@@ -177,32 +204,24 @@ const logout = async (req, res, next) => {
         req.session.destroy((err) => {
             if (err) return next(err);
             res.clearCookie('cryptdrive');
-            //res.json({redirect: '/login.html'});
-            res.render('login');
+            res.json({redirect: '/auth/login'});
         });
     });
 };
 
-const autologin = async (req, res, next) => {
-    res.render(req.isAuthenticated?.() ? 'home' : 'login');
+const autologin = async (req, res) => {
+    res.redirect(req.isAuthenticated?.() ? '/home' : '/auth/login');
 }; 
-
-const viewRegister = async (req, res, next) => {
-    res.render('register', { error: null });
-};
-
-const viewLogin = async (req, res, next) => {
-    res.render('login', { error: null });
-};
 
 export default {
     register,
-    activate,
+    registerCode,
     login,
     deregister,
     logout,
     autologin,
     resend,
+    viewLogin,
     viewRegister,
-    viewLogin
+    viewRegisterCode
 };

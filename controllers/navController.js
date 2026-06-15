@@ -1,5 +1,5 @@
 const viewHome = async (req, res, next) => {
-    res.render('homePage', {});
+    res.render('home', {});
 };
 const viewAccountManagement = async (req, res, next) => {
     res.render('accountManagement', {});

@@ -16,13 +16,13 @@ export async function derivekek(password, salt) {
     const hash = await argon2.hash(password, {
         type: argon2.argon2id,
         salt: Buffer.from(salt, 'base64'),
-        memoryCost: 19456,
-        timeCost: 5,
-        parallelism: 2,
+        memoryCost: 12288, 
+        timeCost: 3,
+        parallelism: 1,
         hashLength: 32,
         raw: true
     });
-    return hash.toString('base64'); // Convert to base64 so encrypt/decrypt can use it
+    return hash.toString('base64'); 
 }
 
 export function saltShaker() {

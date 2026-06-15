@@ -38,13 +38,22 @@ let visibleEnd = 0;
 /* =========================
    INIT
 ========================= */
+async function writeClipboard(text) {
+  try {
+    state.clipboardLive = true;
+    await navigator.clipboard.writeText(text);
+  } catch (err) {
+    console.error('Failed to copy: ', err);
+  }
+}
+
 async function clearClipboard() {
     if (state.clipboardLive) await navigator.clipboard.writeText("");
 }
 
 async function clearClipboard(text) {
     navigator.clipboard.writeText(text);
-    state.clipboardLive = true;
+    state.clipboardLive = false;
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -82,6 +91,18 @@ document.addEventListener("DOMContentLoaded", () => {
         tagContainer.innerHTML = "";
         resetSearch();
     });
+
+    document.getElementById("clearSearchField").addEventListener('click', () => {
+        searchField.value = "";
+        resetToggle("favorite", "favouritesOnly");
+        resetToggle("matchCase", "matchCase");
+        resetToggle("matchEntire", "matchEntire");
+        resetToggle("useRegex", "useRegex");
+        resetToggle("blacklistTags", "blacklistTags");
+        resetSearch();
+    });
+
+
 
     tagFilter.addEventListener('keydown', (e) => {
         if (e.key !== 'Enter') return;
@@ -218,15 +239,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const newState = !allFavourited;
 
-            console.log("test");
-
             const res = await fetch("/pass/favouriteMany", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ ids, state: newState })
             });
-
-            console.log("test 2");
 
             if (!res.ok) {
                 console.error("Server error:", res.status);
@@ -546,6 +563,12 @@ document.addEventListener("DOMContentLoaded", () => {
     /* =========================
        TOGGLES
     ========================= */
+    function resetToggle(id, key) {
+        const el = document.getElementById(id);
+        state[key] = false;
+        el.classList.remove("toggled");
+    }
+
     function bindToggle(id, key) {
         const el = document.getElementById(id);
         el.onclick = () => {

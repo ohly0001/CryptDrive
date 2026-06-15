@@ -3,7 +3,7 @@ function processLoginForm(form) {
 
     const identification = document.getElementById('identification').value;
     const password = document.getElementById('password').value;
-    const loginInput = document.getElementById('login');
+    const loginInput = document.getElementById('loginSubmit');
 
     loginInput.disabled = true;
     loginInput.value = 'Please Wait...';

@@ -4,28 +4,38 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta charset="UTF-8">
         <meta name="author" content="Robert Ohly">
-        <title>CryptDrive ∷ Authentication</title>
-        <script src="js/login.js" defer></script>
-        <script src="https://kit.fontawesome.com/0f23db6f2c.js" crossorigin="anonymous"></script>
+        <title>Authentication</title>
+        <script src="/js/login.js" defer></script>
         <link rel="stylesheet" href="/css/site.css">
-        <link rel="stylesheet" href="/css/auth.css">
+        <link rel="stylesheet" href="/css/login.css">
+        <script src="https://kit.fontawesome.com/0f23db6f2c.js" crossorigin="anonymous"></script>
     </head>
     <body>
-        <h1>CryptDrive ∷ Login</h1>
+        <h1>Login</h1>
         <form id="form">
             <fieldset>
                 <legend>Login</legend>
-                <label for="identification"><i class="fa-solid fa-id-card"></i> Username or Email</label><br>
-                <input id="identification" type="text" title="username is case-sensitive, email is case-insensitive" placeholder="jsmith@email.com" autocomplete="true" required><br><br>
-                <label for="password"><i class="fa-solid fa-key"></i> Password</label><br>
-                <input id="password" autocomplete="off" type="password" required>
-                <button type="button" id="passwordPeek" title="Reveal Pasword"><i class="fa-solid fa-eye"></i></button><br><br>
-                <input id="login" type="submit" value="Login"><br><br>
-                <a href="./passwordResetCode.html">Forgot Password?</a>
+                <label for="identification"><i class="fa-solid fa-id-card"></i> Username or Email</label>
+                <input id="identification" type="text" placeholder="jsmith@email.com" autocomplete="on" required>
+
+                <label for="password"><i class="fa-solid fa-key"></i> Password</label>
+                <div class="password-row">
+                    <input id="password" autocomplete="off" type="password" required>
+                    <button type="button" id="passwordPeek" title="Reveal Password">
+                        <i class="fa-solid fa-eye-slash"></i>
+                    </button>
+                </div>
+
+                <input id="loginSubmit" type="submit" value="Login">
+                
+                <div style="text-align: center; margin-top: 15px;">
+                    <a href="./passwordResetCode.html" style="text-decoration: none; color: #1877f2; font-size: 0.9rem;">Forgot Password?</a>
+                </div>
             </fieldset>
+
             <fieldset>
                 <legend>Other</legend>
-                <button onclick="document.location.href='/register'">Register</button>
+                <button id="registerBtn" type="button" onclick="document.location.href='/auth/register'">Register</button>
             </fieldset>
         </form>
     </body>

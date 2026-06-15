@@ -1,3 +1,4 @@
+// fileController.js
 import fs from 'fs';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
@@ -7,6 +8,7 @@ import Directory from '../models/directory.js';
 import cryptDriveConfig from "../config/cryptDriveConfig.json" with { type: "json" };
 import { encryptBuffer, decryptBuffer, encrypt, decrypt } from '../utilities/encryption.js';
 import { lookup } from 'mime-types';
+import Account from '../models/account.js';
 
 const mimeToCategory = {
     audio: new Set(['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp4']),
@@ -230,11 +232,11 @@ const deleteDirectory = async (req, res, next) => {
     // Delete subdirectories recursively
     const subDirs = await Directory.find({ path: path.join(dir.path, dir.basename) });
     for (const sub of subDirs) {
-      if (fs.existsSync(sub.storagePath)) fs.rmdirSync(sub.storagePath, { recursive: true });
+      if (fs.existsSync(sub.storagePath)) fs.rmSync(sub.storagePath, { recursive: true });
       await sub.deleteOne();
     }
 
-    if (fs.existsSync(dir.storagePath)) fs.rmdirSync(dir.storagePath, { recursive: true });
+    if (fs.existsSync(dir.storagePath)) fs.rmSync(dir.storagePath, { recursive: true });
     await dir.deleteOne();
 
     res.json({ success: true });
@@ -331,23 +333,23 @@ const viewFile = async (req, res, next) => {
           return res.status(404).send('File not found');
       }
 
-      const secretKey = decrypt(req.user.secretKey, req.session.kek);
+      const owner = await Account.findById(file.account);
 
-      const decrypted = {
-          _id: password._id,
-          title: password.title,
-          url: decrypt(password.url, secretKey),
-          searchTags: password.searchTags,
-          username: decrypt(password.username, secretKey),
-          password: decrypt(password.password, secretKey),
-          note: decrypt(password.note, secretKey),
-          isFavourite: password.isFavourite,
-          createdAt: password.createdAt,
-          updatedAt: password.updatedAt
+      const safeFile = {
+          _id: file._id,
+          filename: file.filename,
+          mime: file.mime,
+          size: file.size,
+          account: owner.username,
+          path: file.path,
+
+          isFavourite: file.isFavourite || [],
+          createdAt: file.createdAt,
+          updatedAt: file.updatedAt
       };
 
       res.render('viewFile', {
-          file: decrypted,
+          file: safeFile,
           account: req.user
       });
 

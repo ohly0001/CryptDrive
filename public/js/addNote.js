@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const note = newNote.value;
         const isFavourite = newFavourite.checked;
 
-        fetch('/pass/add', {
+        fetch('/note/add', {
             method: "POST",
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ title, note, searchTags: [...tags], isFavourite })

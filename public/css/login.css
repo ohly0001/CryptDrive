@@ -1,0 +1,160 @@
+/* --- Modern Reset & Base Styles --- */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: #f0f2f5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    color: #333;
+    padding: 20px;
+}
+
+h1 {
+    margin-bottom: 20px;
+    color: #1c1e21;
+    font-size: 2rem;
+    width: 100%;
+    max-width: 400px;
+    text-align: left;
+}
+
+/* --- Form Container --- */
+#form {
+    background: #ffffff;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+}
+
+fieldset {
+    border: none;
+    margin-bottom: 1.5rem;
+}
+
+legend {
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    color: #4b4f56;
+}
+
+label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: #606770;
+}
+
+/* --- Input & Unified Row Styling --- */
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #dddfe2;
+    border-radius: 6px;
+    font-size: 1rem;
+}
+
+/* The box that holds both the password input and the eye button */
+.password-row {
+    display: flex;
+    width: 100%;
+    margin-bottom: 1rem;
+    border: 1px solid #dddfe2; 
+    border-radius: 6px;
+    background-color: #fff;
+    overflow: hidden; /* Keeps the button from leaking past the rounded corners */
+}
+
+.password-row input {
+    flex: 1;
+    border: none !important; /* Removes internal borders so it looks like one box */
+    border-radius: 0;
+    margin-bottom: 0 !important;
+}
+
+#passwordPeek {
+    background-color: #ffffff;
+    border: none;
+    border-left: 1px solid #dddfe2; /* The single line between input and icon */
+    padding: 0 15px;
+    cursor: pointer;
+    color: #606770;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#passwordPeek:hover {
+    background-color: #f0f2f5;
+    color: #1877f2;
+}
+
+/* --- Buttons --- */
+/* This handles the Blue Login Button */
+#login,
+#loginSubmit,
+input[type="submit"] {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    background-color: #1877f2;
+    color: white;
+    margin-top: 10px;
+    display: block;
+}
+
+#loginSubmit:hover {
+    background-color: #166fe5;
+}
+
+#loginSubmit:disabled {
+    background-color: #686868;
+}
+
+/* This handles the Green Register Button */
+button:not(#passwordPeek),
+#registerBtn,
+button[onclick*="register"] {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    background-color: #42b72a;
+    color: white;
+    margin-top: 10px;
+}
+
+button:not(#passwordPeek):hover {
+    background-color: #36a420;
+}
+
+/* --- Links & Cleanup --- */
+a {
+    display: block;
+    text-align: center;
+    margin-top: 1rem;
+    color: #1877f2;
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+br { display: none; }

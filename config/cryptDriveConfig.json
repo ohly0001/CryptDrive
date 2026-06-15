@@ -1,7 +1,7 @@
 {
     "minPasswordSize": 12,
     "maxPasswordSize": 99,
-    "passwordSaltRounds": 16,
+    "passwordSaltRounds": 12,
     "aesKeySize": 32,
     "joinCodeDuration": 604800000,
     "storageRoot": "./uploads"

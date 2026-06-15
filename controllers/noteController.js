@@ -177,7 +177,7 @@ const edit = async (req, res, next) => {
 
         await noteObj.save();
 
-        res.json({ redirect: '/noteVault' });
+        res.json({ redirect: '/noteKeeper' });
 
     } catch (err) {
         next(err);
@@ -205,7 +205,7 @@ const add = async (req, res, next) => {
         });
         await noteObj.save();
 
-        res.json({ redirect: '/noteVault' });
+        res.json({ redirect: '/noteKeeper' });
     } catch (err) {
         res.json({ message: 'Something went wrong when adding your note' });
         next(err);
@@ -254,7 +254,12 @@ const toggleFavourite = async (req, res, next) => {
     }
 }
 
+const view = async (req, res, next) => {
+    res.render('noteKeeper', {});
+};
+
 export default {
+    view,
     search,
     copy,
     viewEdit,

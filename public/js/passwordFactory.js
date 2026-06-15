@@ -126,7 +126,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // regenerate
             document.getElementById('regeneratePassword')
-                .addEventListener('click', generatePassword);
+                .addEventListener('click', () => {
+                    generatePassword();
+                    copyPassword();
+                });
 
             // length controls
             const lengthField = document.getElementById('passwordLengthField');

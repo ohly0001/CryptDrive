@@ -45,7 +45,7 @@ function notifyServer() {
             if (res.ok) lastActivityTime = Date.now();
             if (res.status === 401) {
                 stopActivityPing();
-                window.location.replace('/login.html');
+                window.location.replace('/auth/login');
             }
         })
         .catch(err => console.warn('[ActivityPing] Failed', err));
@@ -86,7 +86,7 @@ function connectSSE() {
 
         if (data?.type === 'session_timeout' || data?.type === 'shutdown') {
             stopActivityPing();
-            window.location.replace('/login.html');
+            window.location.replace('/auth/login');
         } else {
             document.dispatchEvent(new CustomEvent('sse-message', { detail: data }));
         }

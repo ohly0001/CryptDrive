@@ -1,45 +1,75 @@
-:root {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    color: #0f172a;
-    background: #f0f4f8;
-    min-height: 100vh;
-    margin: 0;
+/* --- Navigation Bar Container --- */
+#navBar {
+    width: 100%;
+    background-color: #ffffff;
+    display: flex;
+    justify-content: center; /* Centers the menu items */
+    align-items: center;
+    padding: 0.5rem 1rem;
+    gap: 8px;
+    flex-wrap: wrap; /* Allows buttons to wrap on smaller screens */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    border-bottom: 1px solid #e0e0e0;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
 }
 
-body {
-    margin: 0;
-    padding: 0;
-    background: #f0f4f8;
-}
-
-/* Links */
-a {
-    font-size: 13px;
-    color: #2563eb;
-    text-decoration: none;
-}
-
-a:hover {
-    text-decoration: underline;
-}
-
-/* Buttons */
-button, input[type="submit"] {
-    background: #1e3a8a;
-    color: white;
-    border: none;
-    border-radius: 999px;
-    padding: 5px 8px;
-    font-size: 14px;
+/* --- Navigation Buttons --- */
+#navBar button {
+    background-color: transparent;
+    border: 1px solid transparent; /* Invisible border to prevent jumping on hover */
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #4b4f56;
     cursor: pointer;
-    transition: 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Space between icon and text */
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
-button:hover, input[type="submit"]:hover {
-    background: #2563eb;
+
+/* --- Icon Styling --- */
+#navBar button i {
+    font-size: 1.1rem;
+    color: #1877f2; /* Your brand blue */
+    transition: transform 0.2s ease;
 }
-button:disabled, input[type="submit"]:disabled {
-    background: #3A3A3A;
-    cursor: not-allowed;
+
+/* --- Hover Effects --- */
+#navBar button:hover {
+    background-color: #f0f2f5;
+    color: #1877f2;
+}
+
+#navBar button:hover i {
+    transform: scale(1.1); /* Subtle pop on the icon */
+}
+
+/* --- Active State (Optional) --- */
+/* Add this class via JS to the button of the current page */
+#navBar button.active {
+    background-color: #e7f3ff;
+    color: #1877f2;
+    border-color: #1877f2;
+}
+
+/* --- Mobile Responsive Tweak --- */
+@media (max-width: 768px) {
+    #navBar {
+        padding: 10px;
+        justify-content: flex-start; /* Better for scrolling on mobile */
+        overflow-x: auto; /* Allow horizontal swipe if too many buttons */
+        white-space: nowrap;
+        flex-wrap: nowrap;
+    }
+
+    #navBar button {
+        padding: 8px 12px;
+        flex: 0 0 auto; /* Keeps buttons from shrinking */
+    }
 }
 
 .memberTag {
@@ -57,16 +87,15 @@ button:disabled, input[type="submit"]:disabled {
     margin: 2px;
     gap: 4px;
 }
-
 .searchTag {
-    display: inline;
-    border-radius: 15px 0px 0px 15px;
-    corner-shape: bevel;
-    border-width: 3px;
-    border-style: solid;
-    padding: 2px 2px 2px 8px;
-    background-color: white;
-    font-size: 12px;
+    font-size: 0.75rem;
+    padding: 3px 10px;
+    border-radius: 12px;
+    border: 1.5px solid;
+    font-weight: 700;
+    background: white;
+    margin-left: 5px;
+    text-transform: lowercase;
 }
 .tagContainer {
     display: inline-flex;
@@ -79,4 +108,15 @@ button:disabled, input[type="submit"]:disabled {
 }
 .toggled {
     background-color: #224FBB;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  cursor: grab; /* or grab */
+}
+input[type="range"]::-moz-range-thumb {
+  cursor: pointer;
+}
+/* Optional: Changing the cursor when actively dragging */
+input[type="range"]:active {
+  cursor: grabbing;
 }

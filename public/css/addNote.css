@@ -1,105 +1,135 @@
-/* Add Note Page Styling */
+/* --- Modern Reset & Layout --- */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
 body {
-    max-width: 600px;
-    margin: 30px auto;
-    padding: 20px;
-    background-color: #f8fafc;
-    border-radius: 14px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    background-color: #f0f2f5;
+    color: #333;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
 }
 
 h1 {
-    font-size: 28px;
-    color: #1e3a8a;
     margin-bottom: 20px;
-    text-align: center;
+    color: #1c1e21;
+    font-size: 2rem;
+    width: 100%;
+    max-width: 600px;
+    text-align: left;
 }
 
-/* Fieldsets */
+/* --- Form Container --- */
+#newNoteForm {
+    background: #ffffff;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 600px;
+}
+
 fieldset {
-    border: 1px solid #cbd5e1;
-    border-radius: 10px;
-    padding: 20px;
-    margin-bottom: 20px;
-    background-color: #ffffff;
+    border: none;
 }
 
-/* Legends */
 legend {
-    font-weight: 600;
-    color: #1e3a8a;
-    font-size: 16px;
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+    color: #4b4f56;
 }
 
-/* Labels */
 label {
     display: block;
-    font-weight: 600;
-    margin-top: 12px;
-    margin-bottom: 6px;
-    color: #334155;
-    font-size: 13px;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: #606770;
 }
 
-/* Inputs & Textarea */
-input[type=text],
-input[type=url],
+/* --- Input & Textarea Styling --- */
+input[type="text"],
 textarea {
     width: 100%;
-    padding: 10px;
-    border-radius: 8px;
-    border: 1px solid #cbd5e1;
-    font-size: 14px;
-    transition: 0.2s;
-    box-sizing: border-box;
+    padding: 12px;
+    border: 1px solid #dddfe2;
+    border-radius: 6px;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    transition: border-color 0.2s;
 }
 
-input:focus,
-textarea:focus {
+textarea {
+    resize: vertical; /* Allows height adjustment but maintains width */
+    min-height: 150px;
+}
+
+input:focus, textarea:focus {
     outline: none;
-    border-color: #1e3a8a;
-    box-shadow: 0 0 0 2px rgba(30,58,138,0.15);
+    border-color: #1877f2;
+    box-shadow: 0 0 0 2px #e7f3ff;
 }
 
-/* Submit Button */
-input[type=submit],
-button {
-    background: #1e3a8a;
+/* --- Checkbox Styling --- */
+#newFavourite {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    margin-bottom: 1.5rem;
+}
+
+/* --- Buttons --- */
+input[type="submit"] {
+    background-color: #1877f2; /* Primary Blue */
     color: white;
     border: none;
-    border-radius: 999px;
-    padding: 10px 16px;
-    font-size: 14px;
+    padding: 12px 24px;
+    border-radius: 6px;
+    font-weight: bold;
     cursor: pointer;
-    transition: 0.2s;
+    font-size: 1rem;
+    transition: background-color 0.2s;
+    margin-right: 10px;
 }
 
-input[type=submit]:hover,
-button:hover {
-    background: #2563eb;
-    transform: translateY(-1px);
+input[type="submit"]:hover {
+    background-color: #166fe5;
 }
 
-/* Note Peek Button */
-#notePeek {
-    position: absolute;
-    margin-left: -42px;
-    margin-top: 8px;
-    background: transparent;
-    color: #334155;
-    font-size: 16px;
+#back {
+    background-color: #f0f2f5;
+    color: #4b4f56;
+    border: 1px solid #dddfe2;
+    padding: 11px 24px; /* Balanced with the submit button */
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.2s;
 }
 
-#notePeek:hover {
-    color: #1e3a8a;
+#back:hover {
+    background-color: #e4e6eb;
 }
 
-/* Responsive */
-@media screen and (max-width: 480px) {
-    body {
-        padding: 15px;
-    }
-    h1 {
-        font-size: 24px;
-    }
+/* --- Tag Styling --- */
+.tagContainer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: -5px;
+    margin-bottom: 1rem;
+}
+
+/* Remove legacy line breaks */
+br {
+    display: none;
 }

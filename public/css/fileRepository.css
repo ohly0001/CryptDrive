@@ -1,13 +1,123 @@
-#dropZone {
-    border: 2px dashed #aaa;
-    padding: 40px;
-    text-align: center;
-    margin-bottom: 20px;
-    cursor: pointer;
-    transition: border-color 0.2s;
+/* --- Layout Container --- */
+.repository-container {
+    max-width: 1000px;
+    margin: 40px auto;
+    padding: 0 20px;
 }
-#dropZone.hover { border-color: #555; }
-.file-list { margin-top: 20px; }
-.file-item { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid #eee; }
-.file-actions button { margin-left: 5px; }
-.directory { font-weight: bold; cursor: pointer; }
+
+/* --- The Header Card --- */
+.action-card {
+    background: #ffffff;
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    margin-bottom: 24px;
+}
+
+.upload-area {
+    border: 2px dashed #dddfe2;
+    border-radius: 8px;
+    padding: 30px;
+    text-align: center;
+    color: #606770;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 20px;
+}
+
+.upload-area:hover, .upload-area.hover {
+    border-color: #1877f2;
+    background: #f0f7ff;
+    color: #1877f2;
+}
+
+/* --- Search & Filter Styling --- */
+.search-bar-wrapper {
+    display: flex;
+    gap: 10px;
+    background: #f0f2f5;
+    padding: 8px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.path-input {
+    width: 80px;
+    background: transparent;
+    border: none;
+    font-weight: bold;
+    color: #1877f2;
+    border-right: 1px solid #dddfe2;
+}
+
+.search-input {
+    flex-grow: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-size: 1rem;
+}
+
+/* --- File/Folder Cards --- */
+.file-item {
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    padding: 16px 24px;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.file-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.file-item i { /* Icons matching folder/file types */
+    font-size: 1.2rem;
+    margin-right: 15px;
+    color: #1877f2; /* Folders/Primary */
+}
+
+.file-item span {
+    flex-grow: 1;
+    font-weight: 500;
+}
+
+/* Ownership Tag */
+.ownerIndicator {
+    font-size: 0.75rem;
+    background: #e4e6eb;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-right: 20px;
+    color: #606770;
+}
+
+/* Action Buttons within Cards */
+.file-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.file-actions button {
+    background: transparent;
+    border: none;
+    color: #606770;
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: background 0.2s;
+}
+
+.file-actions button:hover {
+    background: #f0f2f5;
+    color: #1877f2;
+}
+
+.file-actions .btn-delete:hover {
+    color: #fa3e3e;
+    background: #fff0f0;
+}

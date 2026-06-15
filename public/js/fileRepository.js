@@ -1,3 +1,4 @@
+// fileRepository.js
 // ===== GLOBALS =====
 let currentPath = '/';
 const selectedFiles = new Set();
@@ -72,7 +73,7 @@ function getFileIcon(mime) {
 // ===== UTILITY =====
 function updateCurrentPathDisplay() {
     const pathElem = document.getElementById('currentPath');
-    if (pathElem) pathElem.innerText = currentPath;
+    if (pathElem) pathElem.value = currentPath.replace("//","/");
     const navBtn = document.getElementById('navToParent');
     if (navBtn) navBtn.disabled = currentPath === '/';
 }
@@ -211,7 +212,12 @@ async function createDirectory() {
 
 // ===== DIRECTORY NAVIGATION =====
 function navigateToDir(path) {
-    currentPath = path.startsWith('/') ? path : `/${path}`;
+    if (!path) return;
+
+    path = path.trim().replace(/\/+/g, '/'); // collapse //
+    if (!path.startsWith('/')) path = '/' + path;
+
+    currentPath = path;
     updateCurrentPathDisplay();
     loadFiles();
 }
@@ -267,7 +273,7 @@ async function loadFiles() {
             div.innerHTML = `<span>${getFileIcon(file.mime)} ${displayName}</span>`;
             div.appendChild(renderOwnership(file.account === currentUser ? currentUser : 'Shared'));
 
-            div.onclick = e => { e.stopPropagation(); window.location.href = `/file/edit/${file._id}`; };
+            div.onclick = e => { e.stopPropagation(); window.location.href = `/file/view/${file._id}`; };
             div.style.cursor = 'pointer';
 
             const actions = document.createElement('div'); actions.className = 'file-actions';
@@ -300,6 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const dropZone = document.getElementById('dropZone');
     const createDirBtn = document.getElementById('createDirBtn');
     const navToParent = document.getElementById('navToParent');
+    const cwd = document.getElementById('currentPath');
 
     dropZone.addEventListener('click', selectFile);
     createDirBtn.addEventListener('click', createDirectory);
@@ -317,6 +324,15 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         dropZone.classList.remove('hover');
         uploadMultipleFiles(Array.from(e.dataTransfer.files));
+    });
+
+    cwd.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const raw = cwd.value.trim();
+            const path = raw === '' ? '/' : raw;
+            navigateToDir(path);
+        }
     });
 
     loadFiles();

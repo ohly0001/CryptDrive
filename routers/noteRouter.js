@@ -3,6 +3,7 @@ import controller from "../controllers/noteController.js";
 
 const router = express.Router();
 
+router.get("/noteKeeper", controller.view);
 router.post("/search", controller.search);
 router.post("/copy", controller.copy);
 router.post("/edit/:id", controller.edit);

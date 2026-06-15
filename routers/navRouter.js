@@ -1,5 +1,6 @@
 import express from "express";
 import controller from "../controllers/navController.js";
+import { isAuthenticated } from "../middleware/authCheck.js";
 
 const router = express.Router();
 
